@@ -11,3 +11,5 @@ eslint.config.mjs
 next.config.ts
 package.json
 postcss.config.mjs
+jest.config.js
+jest.setup.js
