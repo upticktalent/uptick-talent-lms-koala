@@ -19,8 +19,8 @@ For more details on the background, objectives, and scope, see the README files 
 
 This repository is organized into two main tracks:
 
-- [`frontend/`](./frontend/): The application's user interface (Next.js). Frontend Developers see [`frontend/ReadMe.md`](./frontend/ReadMe.md) for setup and development instructions.
-- [`backend/`](./backend/): The server-side API and business logic (Node.js, Express.js, TypeScript, Etc). See [`backend/ReadMe.md`](./backend/ReadMe.md) for setup and development instructions.
+- [`frontend/`](./frontend/): The application's user interface (Next.js). Frontend Developers see [`frontend/README.md`](./frontend/README.md) for setup and development instructions.
+- [`backend/`](./backend/): The server-side API and business logic (Node.js, Express.js, TypeScript, Etc). See [`backend/README.md`](./backend/README.md) for setup and development instructions.
 
 Each directory contains its own README with detailed instructions for installation, development, and contribution.
 
