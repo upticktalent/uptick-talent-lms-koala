@@ -1,14 +1,14 @@
 name: uptick-talent-lms-frontend-ci
 
 on:
-  pull_request: # only run on PRs
-    branches: [main]
+  pull_request: # run on PRs to main and dev
+    branches: [main, dev]
     paths:
-      - 'frontend/**'
-  push: # only run on pushes
-    branches: [main]
+      - "frontend/**"
+  push: # run on pushes to main and dev
+    branches: [main, dev]
     paths:
-      - 'frontend/**'
+      - "frontend/**"
 
 jobs:
   checks:
@@ -24,8 +24,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          cache: 'yarn'
+          node-version: "20.x"
+          cache: "yarn"
           cache-dependency-path: frontend/yarn.lock
 
       - name: Install dependencies
