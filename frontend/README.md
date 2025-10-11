@@ -192,7 +192,7 @@ yarn typecheck
 **Guidelines**
 
 - TypeScript strict mode is enabled
-- Co-locate tests and styles with components (`component.test.tsx`, `component.module.css`)
+- Co-locate tests with components (`component.test.tsx`)
 - Prefer server components when possible
 - Centralize API logic in `src/lib/api`
 
