@@ -1,10 +1,10 @@
 # Uptick Learning Management System (LMS) Backend
 
 ## Overview
-The LMS Backend powers a modern, scalable Learning Management System that enables instructors to create, manage, and deliver courses while allowing learners to enroll, study, and track their progress.
+The LMS Backend powers a modern, scalable Learning Management System that enables instructors to create learning resources and manage student activities while allowing learners to enroll, study, and track their progress.
 
-It provides a secure RESTful API for authentication, course management, user roles, assignments, analytics, and notifications.
-The backend is designed for modularity, maintainability, and extensibility — ideal for integration with multiple frontends (web, mobile, or admin dashboards).
+It provides a secure RESTful API for authentication, course management, user roles, and assignments.
+The backend is designed for modularity, maintainability, and extensibility. It is ideal for integration with multiple frontends (web, mobile, or admin dashboards).
 
 ## Tech Stack
 * Core Technologies:
@@ -15,7 +15,7 @@ The backend is designed for modularity, maintainability, and extensibility — i
 
 * Database: Postgresql (via Prisma ORM)
 
-* Cache Layer: Redis (for caching and session management)
+* Cache Layer: Redis (for caching)
 
 * Authentication: JWT (JSON Web Token) with role-based access control
 
@@ -39,10 +39,9 @@ Make sure you have the following installed:
 * Redis
 
 * Git
-* 
 1. Clone the repo
 
-    git clone https://github.com/your-org/lms-backend.git
+    git clone git@github.com:upticktalent/uptick-talent-lms-koala.git
     cd lms-backend
 
 
@@ -58,6 +57,7 @@ Open .env.example file to see the list of environment variables used in this app
 5. Running Tests
 
 6. Folder Structure
+![Folder structure](/home/crazycoder/Pictures/Screenshots/Screenshot From 2025-10-12 20-39-00.png)
 
 7. API Documentation: API documentation is available via Swagger UI.
 Once the server is running, you can access it at: 
