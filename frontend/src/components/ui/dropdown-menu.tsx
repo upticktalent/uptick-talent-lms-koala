@@ -3,7 +3,7 @@
 import * as React from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
-
+import Box from './box';
 import { cn } from '@/lib/utils';
 
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
@@ -85,11 +85,14 @@ function DropdownMenuCheckboxItem({
       checked={checked}
       {...props}
     >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+      <Box
+        as="span"
+        className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center"
+      >
         <DropdownMenuPrimitive.ItemIndicator>
           <CheckIcon className="size-4" />
         </DropdownMenuPrimitive.ItemIndicator>
-      </span>
+      </Box>
       {children}
     </DropdownMenuPrimitive.CheckboxItem>
   );
@@ -115,11 +118,14 @@ function DropdownMenuRadioItem({
       )}
       {...props}
     >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+      <Box
+        as="span"
+        className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center"
+      >
         <DropdownMenuPrimitive.ItemIndicator>
           <CircleIcon className="size-2 fill-current" />
         </DropdownMenuPrimitive.ItemIndicator>
-      </span>
+      </Box>
       {children}
     </DropdownMenuPrimitive.RadioItem>
   );
@@ -157,7 +163,8 @@ function DropdownMenuSeparator({
 
 function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<'span'>) {
   return (
-    <span
+    <Box
+      as="span"
       data-slot="dropdown-menu-shortcut"
       className={cn('text-muted-foreground ml-auto text-xs tracking-widest', className)}
       {...props}
