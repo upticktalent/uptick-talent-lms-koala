@@ -57,9 +57,9 @@ Open .env.example file to see the list of environment variables used in this app
 5. Running Tests
 
 6. Folder Structure
-![Folder structure](/home/crazycoder/Pictures/Screenshots/Screenshot From 2025-10-12 20-39-00.png)
+<img src="https://i.ibb.co/jkzTPHgv/Screenshot-from-2025-10-18-19-02-56.png" alt="Screenshot-from-2025-10-18-19-02-56" border="0">
 
-7. API Documentation: API documentation is available via Swagger UI.
+1. API Documentation: API documentation is available via Swagger UI.
 Once the server is running, you can access it at: 
 
 
