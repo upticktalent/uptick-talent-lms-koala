@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { fonts } from '@/lib/fonts';
 import { HiOutlineEyeSlash, HiOutlineEye } from 'react-icons/hi2';
 import { InferType } from 'yup';
 import { LoginFormSchema } from '@/schema/auth/login-form';
@@ -14,6 +13,7 @@ import { Role } from '@/constants/role';
 import Box from '../ui/box';
 import { cn } from '@/lib/utils';
 import '../../styles/login-form.css';
+import { roleStrings } from '@/lib/getters';
 
 export type LoginFormData = InferType<typeof LoginFormSchema>;
 
@@ -44,7 +44,7 @@ export default function LoginForm({ role, onSubmit }: LoginFormProps) {
   return (
     <Box
       as="form"
-      className={cn('ml-auto flex flex-col gap-6 justify-center max-w-lg', fonts.raleway.className)}
+      className={cn('ml-auto flex flex-col gap-6 justify-center max-w-lg')}
       onSubmit={e => formik.handleSubmit(e)}
     >
       <Box as="header" className="flex flex-col gap-3 text-white">
@@ -52,9 +52,7 @@ export default function LoginForm({ role, onSubmit }: LoginFormProps) {
           Welcome!
         </Box>
         <Box as="p" className={cn('text-center text-base leading-7 sm:text-xl sm:leading-9')}>
-          {role === Role.STUDENT
-            ? 'Access your course, submit assignments, track your progress, and stay on top of your learning goals all in one place.'
-            : 'Manage admissions, guide students, track attendance, and provide feedback seamlessly.'}
+          {role === Role.STUDENT ? roleStrings[Role.STUDENT] : roleStrings[Role.STAFF]}
         </Box>
       </Box>
 
