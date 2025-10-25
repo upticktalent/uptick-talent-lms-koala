@@ -15,7 +15,7 @@ export default function RootLayout({
     <Box as="html" lang="en" suppressHydrationWarning>
       <Box
         as="body"
-        className={cn(fonts.geistSans.variable, fonts.geistMono.variable, 'antialiased')}
+        className={cn(fonts.raleway.className, fonts.geistSans.className, 'antialiased')}
       >
         <ThemeProvider
           attribute="class"
