@@ -50,8 +50,8 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0); /* Tailwind bg-blue-600 #2563eb*/
-  --gray-500:#D1D1D1;
-  --gray-light:#FAFAFA;
+  --gray-500: #d1d1d1;
+  --gray-light: #fafafa;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -131,7 +131,7 @@ input:-webkit-autofill {
   background-color: transparent;
   height: 0;
 }
-.no-scroll-track::-webkit-scrollbar{
+.no-scroll-track::-webkit-scrollbar {
   background: transparent;
   background-color: transparent;
 }
@@ -172,7 +172,7 @@ tbody tr:nth-child(even) {
 }
 
 .horizontal-effect::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 0;
   left: 0;
