@@ -1,4 +1,4 @@
-import { getters } from "@config";
+import { getters } from "../config";
 import mongoose from "mongoose";
 
 export const connectDatabase = async () => {
@@ -23,3 +23,9 @@ export const connectDatabase = async () => {
 export const disconnectDatabase = async () => {
   await mongoose.connection.close();
 };
+
+// Export all models
+export * from "./User";
+export * from "./Track";
+export * from "./Cohort";
+export * from "./Application";
