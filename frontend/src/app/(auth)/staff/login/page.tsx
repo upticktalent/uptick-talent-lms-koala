@@ -8,7 +8,8 @@ import Box from '@/components/ui/box';
 export default function LoginPage() {
   return (
     <Box className="flex h-screen bg-black relative justify-between overflow-hidden">
-      <Box className="absolute inset-0 " style={{ backgroundImage: "url('/noise.svg')" }}></Box>
+      <Box className="absolute inset-0 bg-[url('/noise.svg')] bg-cover bg-center" />
+
       {/* Left side */}
 
       <Box className="hidden lg:flex lg:w-1/2 max-w-2xl h-screen relative">

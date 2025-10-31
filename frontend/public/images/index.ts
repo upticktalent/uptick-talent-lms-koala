@@ -1,3 +1,3 @@
-import Mentor from '@/../public/images/Frame2.jpg';
+import Mentor from '@/../public/images/staff.jpg';
 
 export { Mentor };
