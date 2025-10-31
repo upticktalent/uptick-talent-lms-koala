@@ -1,6 +1,6 @@
 import app from "./app";
 import { connectDatabase } from "./models/db";
-import { getters } from "@config";
+import { getters } from "./config";
 
 const port = getters.getAppPort();
 
