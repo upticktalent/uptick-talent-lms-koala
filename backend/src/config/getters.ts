@@ -1,4 +1,4 @@
-import { constants } from "@constants";
+import { constants } from "../constants";
 import { env } from "./dynamicEnv";
 
 const getCurrentLanguage = () => {

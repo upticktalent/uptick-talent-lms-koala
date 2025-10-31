@@ -5,7 +5,7 @@ export const constants = {
   defaults: {
     currentLanguage: "en",
     environment: "development",
-    appPort: 7000,
+    appPort: 3000,
   },
   i18n,
   urls,
