@@ -4,9 +4,10 @@ import { Track } from "../models/Track";
 import { hashPassword, generatePassword } from "../utils/auth";
 import { emailService } from "../services/email.service";
 import { AuthRequest } from "../middleware/auth";
+import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
 
-export const getUsers = async (req: AuthRequest, res: Response) => {
-  try {
+export const getUsers = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
     const { role, isActive, page = 1, limit = 10 } = req.query;
 
     // Build filter query
@@ -44,41 +45,35 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
         },
       },
     });
-  } catch (error) {
-    console.error("Get users error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);
 
-export const getMentors = async (req: Request, res: Response) => {
-  try {
-    const mentors = await User.find({
-      role: "mentor",
-      isActive: true,
-    })
-      .populate("assignedTracks", "name trackId")
-      .sort({ firstName: 1 });
+export const getMentors = asyncHandler(async (req: Request, res: Response) => {
+  const mentors = await User.find({
+    role: "mentor",
+    isActive: true,
+  })
+    .populate("assignedTracks", "name trackId")
+    .sort({ firstName: 1 });
 
-    res.status(200).json({
-      success: true,
-      message: "Mentors retrieved successfully",
-      data: mentors,
-    });
-  } catch (error) {
-    console.error("Get mentors error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  res.status(200).json({
+    success: true,
+    message: "Mentors retrieved successfully",
+    data: mentors,
+  });
+});
 
-export const getUserDetails = async (req: Request, res: Response) => {
-  try {
+export const getUserDetails = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+    }
 
     const user = await User.findById(id)
       .populate("assignedTracks", "name trackId description")
@@ -96,17 +91,11 @@ export const getUserDetails = async (req: Request, res: Response) => {
       message: "User details retrieved successfully",
       data: user,
     });
-  } catch (error) {
-    console.error("Get user details error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);
 
-export const createUser = async (req: AuthRequest, res: Response) => {
-  try {
+export const createUser = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
     const {
       firstName,
       lastName,
@@ -185,63 +174,65 @@ export const createUser = async (req: AuthRequest, res: Response) => {
       message: `${role.charAt(0).toUpperCase() + role.slice(1)} created successfully`,
       data: newUser,
     });
-  } catch (error) {
-    console.error("Create user error:", error);
-    res.status(500).json({
+  },
+);
+
+export const updateUser = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  // Validate ObjectId format
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({
       success: false,
-      message: "Internal server error",
+      message: "Invalid user ID",
     });
   }
-};
 
-export const updateUser = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-
-    // Validate assigned tracks if provided
-    if (updates.assignedTracks) {
-      const validTracks = await Track.find({
-        _id: { $in: updates.assignedTracks },
-      });
-      if (validTracks.length !== updates.assignedTracks.length) {
-        return res.status(400).json({
-          success: false,
-          message: "One or more assigned tracks are invalid",
-        });
-      }
-    }
-
-    const user = await User.findByIdAndUpdate(
-      id,
-      { ...updates, updatedAt: new Date() },
-      { new: true, runValidators: true },
-    ).populate("assignedTracks", "name trackId");
-
-    if (!user) {
-      return res.status(404).json({
+  // Validate assigned tracks if provided
+  if (updates.assignedTracks) {
+    const validTracks = await Track.find({
+      _id: { $in: updates.assignedTracks },
+    });
+    if (validTracks.length !== updates.assignedTracks.length) {
+      return res.status(400).json({
         success: false,
-        message: "User not found",
+        message: "One or more assigned tracks are invalid",
       });
     }
+  }
 
-    res.status(200).json({
-      success: true,
-      message: "User updated successfully",
-      data: user,
-    });
-  } catch (error) {
-    console.error("Update user error:", error);
-    res.status(500).json({
+  const user = await User.findByIdAndUpdate(
+    id,
+    { ...updates, updatedAt: new Date() },
+    { new: true, runValidators: true },
+  ).populate("assignedTracks", "name trackId");
+
+  if (!user) {
+    return res.status(404).json({
       success: false,
-      message: "Internal server error",
+      message: "User not found",
     });
   }
-};
 
-export const toggleUserStatus = async (req: Request, res: Response) => {
-  try {
+  res.status(200).json({
+    success: true,
+    message: "User updated successfully",
+    data: user,
+  });
+});
+
+export const toggleUserStatus = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+    }
 
     const user = await User.findById(id);
     if (!user) {
@@ -259,19 +250,21 @@ export const toggleUserStatus = async (req: Request, res: Response) => {
       message: `User ${user.isActive ? "activated" : "deactivated"} successfully`,
       data: { isActive: user.isActive },
     });
-  } catch (error) {
-    console.error("Toggle user status error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);
 
-export const assignTracksToMentor = async (req: Request, res: Response) => {
-  try {
+export const assignTracksToMentor = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
     const { trackIds } = req.body;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+    }
 
     const mentor = await User.findById(id);
     if (!mentor) {
@@ -306,37 +299,31 @@ export const assignTracksToMentor = async (req: Request, res: Response) => {
       message: "Tracks assigned to mentor successfully",
       data: mentor,
     });
-  } catch (error) {
-    console.error("Assign tracks error:", error);
-    res.status(500).json({
+  },
+);
+
+export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  // Validate ObjectId format
+  if (!isValidObjectId(id)) {
+    return res.status(400).json({
       success: false,
-      message: "Internal server error",
+      message: "Invalid user ID",
     });
   }
-};
 
-export const deleteUser = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
+  const user = await User.findByIdAndDelete(id);
 
-    const user = await User.findByIdAndDelete(id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "User deleted successfully",
-    });
-  } catch (error) {
-    console.error("Delete user error:", error);
-    res.status(500).json({
+  if (!user) {
+    return res.status(404).json({
       success: false,
-      message: "Internal server error",
+      message: "User not found",
     });
   }
-};
+
+  res.status(200).json({
+    success: true,
+    message: "User deleted successfully",
+  });
+});

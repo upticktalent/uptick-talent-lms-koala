@@ -8,9 +8,10 @@ import { emailService } from "../services/email.service";
 import { getFileUrl } from "../services/upload.service";
 import { AuthRequest } from "../middleware/auth";
 import { HttpStatusCode } from "../config";
+import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
 
-export const submitApplication = async (req: Request, res: Response) => {
-  try {
+export const submitApplication = asyncHandler(
+  async (req: Request, res: Response) => {
     const {
       firstName,
       lastName,
@@ -119,17 +120,11 @@ export const submitApplication = async (req: Request, res: Response) => {
         submittedAt: application.submittedAt,
       },
     });
-  } catch (error) {
-    console.error("Submit application error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);
 
-export const getApplications = async (req: AuthRequest, res: Response) => {
-  try {
+export const getApplications = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
     const { status, cohort, track, page = 1, limit = 10 } = req.query;
 
     // Build filter query
@@ -150,11 +145,8 @@ export const getApplications = async (req: AuthRequest, res: Response) => {
     const skip = (Number(page) - 1) * Number(limit);
 
     const applications = await Application.find(filter)
-      .populate(
-        "applicant",
-        "firstName lastName email phoneNumber gender country state",
-      )
-      .populate("cohort", "name startDate endDate")
+      .populate("applicant", "firstName lastName email")
+      .populate("cohort", "name")
       .populate("track", "name")
       .populate("reviewedBy", "firstName lastName")
       .sort({ submittedAt: -1 })
@@ -176,20 +168,22 @@ export const getApplications = async (req: AuthRequest, res: Response) => {
         },
       },
     });
-  } catch (error) {
-    console.error("Get applications error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);
 
-export const reviewApplication = async (req: AuthRequest, res: Response) => {
-  try {
+export const reviewApplication = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { status, reviewNotes, rejectionReason } = req.body;
     const reviewerId = req.user._id;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid application ID",
+      });
+    }
 
     const application = await Application.findById(id)
       .populate("applicant")
@@ -263,18 +257,19 @@ export const reviewApplication = async (req: AuthRequest, res: Response) => {
       message: `Application ${status} successfully`,
       data: application,
     });
-  } catch (error) {
-    console.error("Review application error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-export const getApplicationDetails = async (req: Request, res: Response) => {
-  try {
+  },
+);
+export const getApplicationDetails = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid application ID",
+      });
+    }
 
     const application = await Application.findById(id)
       .populate(
@@ -297,11 +292,5 @@ export const getApplicationDetails = async (req: Request, res: Response) => {
       message: "Application details retrieved successfully",
       data: application,
     });
-  } catch (error) {
-    console.error("Get application details error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);

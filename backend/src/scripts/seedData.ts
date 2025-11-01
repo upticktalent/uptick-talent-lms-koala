@@ -94,7 +94,7 @@ const seedData = async () => {
       lastName: "User",
       email: "admin@upticktalent.com",
       phoneNumber: "+1234567890",
-      gender: "prefer-not-to-say",
+      gender: "male",
       country: "Nigeria",
       state: "Lagos",
       password: adminPassword,

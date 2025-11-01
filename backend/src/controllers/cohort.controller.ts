@@ -1,56 +1,49 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { Cohort } from "../models/Cohort";
 import { Track } from "../models/Track";
+import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
 
-export const getCohorts = async (req: Request, res: Response) => {
-  try {
-    const { status, isAcceptingApplications, page = 1, limit = 10 } = req.query;
+export const getCohorts = asyncHandler(async (req: Request, res: Response) => {
+  const { status, isAcceptingApplications, page = 1, limit = 10 } = req.query;
 
-    // Build filter query
-    const filter: any = {};
+  // Build filter query
+  const filter: any = {};
 
-    if (status) {
-      filter.status = status;
-    }
-
-    if (isAcceptingApplications !== undefined) {
-      filter.isAcceptingApplications = isAcceptingApplications === "true";
-    }
-
-    const skip = (Number(page) - 1) * Number(limit);
-
-    const cohorts = await Cohort.find(filter)
-      .populate("tracks", "name description")
-      .sort({ startDate: -1 })
-      .skip(skip)
-      .limit(Number(limit));
-
-    const total = await Cohort.countDocuments(filter);
-
-    res.status(200).json({
-      success: true,
-      message: "Cohorts retrieved successfully",
-      data: {
-        cohorts,
-        pagination: {
-          total,
-          page: Number(page),
-          limit: Number(limit),
-          pages: Math.ceil(total / Number(limit)),
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Get cohorts error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+  if (status) {
+    filter.status = status;
   }
-};
 
-export const getActiveCohorts = async (req: Request, res: Response) => {
-  try {
+  if (isAcceptingApplications !== undefined) {
+    filter.isAcceptingApplications = isAcceptingApplications === "true";
+  }
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const cohorts = await Cohort.find(filter)
+    .populate("tracks", "name description")
+    .sort({ startDate: -1 })
+    .skip(skip)
+    .limit(Number(limit));
+
+  const total = await Cohort.countDocuments(filter);
+
+  res.status(200).json({
+    success: true,
+    message: "Cohorts retrieved successfully",
+    data: {
+      cohorts,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        pages: Math.ceil(total / Number(limit)),
+      },
+    },
+  });
+});
+
+export const getActiveCohorts = asyncHandler(
+  async (req: Request, res: Response) => {
     const cohorts = await Cohort.find({
       isAcceptingApplications: true,
       status: { $in: ["upcoming", "active"] },
@@ -63,18 +56,20 @@ export const getActiveCohorts = async (req: Request, res: Response) => {
       message: "Active cohorts retrieved successfully",
       data: cohorts,
     });
-  } catch (error) {
-    console.error("Get active cohorts error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);
 
-export const getCohortDetails = async (req: Request, res: Response) => {
-  try {
+export const getCohortDetails = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort ID",
+      });
+    }
 
     const cohort = await Cohort.findById(id).populate(
       "tracks",
@@ -93,17 +88,11 @@ export const getCohortDetails = async (req: Request, res: Response) => {
       message: "Cohort details retrieved successfully",
       data: cohort,
     });
-  } catch (error) {
-    console.error("Get cohort details error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);
 
-export const createCohort = async (req: Request, res: Response) => {
-  try {
+export const createCohort = asyncHandler(
+  async (req: Request, res: Response) => {
     const {
       name,
       description,
@@ -111,6 +100,7 @@ export const createCohort = async (req: Request, res: Response) => {
       endDate,
       maxStudents,
       tracks,
+      cohortNumber,
       isAcceptingApplications = true,
     } = req.body;
 
@@ -131,6 +121,7 @@ export const createCohort = async (req: Request, res: Response) => {
       maxStudents,
       tracks,
       isAcceptingApplications,
+      cohortNumber,
     });
 
     await cohort.save();
@@ -141,27 +132,21 @@ export const createCohort = async (req: Request, res: Response) => {
       message: "Cohort created successfully",
       data: cohort,
     });
-  } catch (error) {
-    console.error("Create cohort error:", error);
+  },
+);
 
-    if (error instanceof Error && error.message.includes("duplicate key")) {
-      return res.status(400).json({
-        success: false,
-        message: "A cohort with this name already exists",
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-export const updateCohort = async (req: Request, res: Response) => {
-  try {
+export const updateCohort = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
     const updates = req.body;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort ID",
+      });
+    }
 
     // Validate tracks if provided
     if (updates.tracks) {
@@ -192,18 +177,20 @@ export const updateCohort = async (req: Request, res: Response) => {
       message: "Cohort updated successfully",
       data: cohort,
     });
-  } catch (error) {
-    console.error("Update cohort error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);
 
-export const deleteCohort = async (req: Request, res: Response) => {
-  try {
+export const deleteCohort = asyncHandler(
+  async (req: Request, res: Response) => {
     const { id } = req.params;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort ID",
+      });
+    }
 
     const cohort = await Cohort.findByIdAndDelete(id);
 
@@ -218,11 +205,5 @@ export const deleteCohort = async (req: Request, res: Response) => {
       success: true,
       message: "Cohort deleted successfully",
     });
-  } catch (error) {
-    console.error("Delete cohort error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+  },
+);

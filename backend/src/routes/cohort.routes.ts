@@ -20,7 +20,7 @@ router.use(authenticate);
 router.use(authorize("admin"));
 
 router.get("/", getCohorts);
-router.post("/", createCohort);
+router.post("/create", createCohort);
 router.put("/:id", updateCohort);
 router.delete("/:id", deleteCohort);
 
