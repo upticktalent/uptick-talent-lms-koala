@@ -26,6 +26,10 @@ const servicesLoader = [
     path: joinUrls(constants.urls.tracks.entry().path),
     handler: [routers.track],
   },
+  {
+    path: joinUrls(constants.urls.users.entry().path),
+    handler: [routers.user],
+  },
 ];
 
 export const loadServices = (app: Express) => {

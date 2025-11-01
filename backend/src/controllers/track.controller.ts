@@ -90,12 +90,13 @@ export const getTrackDetails = async (req: Request, res: Response) => {
 
 export const createTrack = async (req: Request, res: Response) => {
   try {
-    const { name, description, isActive = true } = req.body;
+    const { name, description, trackId, isActive = true } = req.body;
 
     const track = new Track({
       name: name.trim(),
       description: description?.trim(),
       isActive,
+      trackId,
     });
 
     await track.save();

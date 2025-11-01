@@ -20,7 +20,7 @@ router.use(authenticate);
 router.use(authorize("admin"));
 
 router.get("/", getTracks);
-router.post("/", createTrack);
+router.post("/create", createTrack);
 router.put("/:id", updateTrack);
 router.delete("/:id", deleteTrack);
 

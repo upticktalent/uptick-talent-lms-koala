@@ -8,3 +8,5 @@ user_emails.csv
 # src/playground
 .env_STAGING
 docker-compose.yml
+POSTMAN_COLLECTION_README.md
+SYSTEM_DOCUMENTATION.md

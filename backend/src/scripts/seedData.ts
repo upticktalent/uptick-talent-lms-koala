@@ -11,6 +11,13 @@ const seedData = async () => {
     await connectDatabase();
     console.log("✅ Database connected");
 
+    // Clear existing data
+    console.log("🧹 Clearing existing data...");
+    await Track.deleteMany({});
+    await Cohort.deleteMany({});
+    await User.deleteMany({});
+    console.log("✅ Cleared existing data");
+
     // Create tracks
     const tracks = [
       {
@@ -111,15 +118,38 @@ const seedData = async () => {
       password: mentorPassword,
       role: "mentor",
       isPasswordDefault: false,
+      assignedTracks: [createdTracks[0]._id, createdTracks[2]._id], // Frontend and Fullstack
+      createdBy: admin._id,
     });
 
     await mentor.save();
-    console.log("✅ Created mentor user");
+    console.log("✅ Created mentor user with assigned tracks");
+
+    // Create another mentor user
+    const mentor2Password = await hashPassword("mentor123");
+    const mentor2 = new User({
+      firstName: "Jane",
+      lastName: "Smith",
+      email: "jane.mentor@upticktalent.com",
+      phoneNumber: "+1234567892",
+      gender: "female",
+      country: "Nigeria",
+      state: "Lagos",
+      password: mentor2Password,
+      role: "mentor",
+      isPasswordDefault: false,
+      assignedTracks: [createdTracks[1]._id, createdTracks[6]._id], // Backend and Data Science
+      createdBy: admin._id,
+    });
+
+    await mentor2.save();
+    console.log("✅ Created second mentor user with assigned tracks");
 
     console.log("\n🎉 Database seeding completed successfully!");
     console.log("\n📝 Default credentials:");
     console.log("Admin: admin@upticktalent.com / admin123");
-    console.log("Mentor: mentor@upticktalent.com / mentor123");
+    console.log("Mentor 1: mentor@upticktalent.com / mentor123");
+    console.log("Mentor 2: jane.mentor@upticktalent.com / mentor123");
   } catch (error) {
     console.error("❌ Error seeding database:", error);
   } finally {

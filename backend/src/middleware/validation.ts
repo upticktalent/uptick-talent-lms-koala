@@ -16,6 +16,7 @@ export interface ValidationError {
 const validate = (schema: z.ZodSchema<any>, checkFile: boolean = false) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
+      console.log(req.body);
       // Validate request body
       const validatedData = schema.parse(req.body);
 
@@ -172,3 +173,60 @@ export const validatePagination = (
     });
   }
 };
+
+// User management validation
+export const validateCreateUser = validate(
+  z.object({
+    firstName: z
+      .string()
+      .min(1, "First name is required")
+      .max(50, "First name cannot exceed 50 characters")
+      .trim(),
+    lastName: z
+      .string()
+      .min(1, "Last name is required")
+      .max(50, "Last name cannot exceed 50 characters")
+      .trim(),
+    email: z
+      .email("Please enter a valid email address")
+      .min(1, "Email is required")
+      .toLowerCase()
+      .trim(),
+    phoneNumber: z.string().min(1, "Phone number is required").trim(),
+    gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
+    country: z.string().min(1, "Country is required").trim(),
+    state: z.string().min(1, "State is required").trim(),
+    role: z.enum(["mentor", "admin"]),
+    assignedTracks: z.array(z.string()).optional().default([]),
+  }),
+);
+
+export const validateUpdateUser = validate(
+  z.object({
+    firstName: z
+      .string()
+      .min(1, "First name is required")
+      .max(50, "First name cannot exceed 50 characters")
+      .trim()
+      .optional(),
+    lastName: z
+      .string()
+      .min(1, "Last name is required")
+      .max(50, "Last name cannot exceed 50 characters")
+      .trim()
+      .optional(),
+    phoneNumber: z
+      .string()
+      .min(1, "Phone number is required")
+      .trim()
+      .optional(),
+    gender: z.enum(["male", "female", "other", "prefer-not-to-say"]).optional(),
+    country: z.string().min(1, "Country is required").trim().optional(),
+    state: z.string().min(1, "State is required").trim().optional(),
+    assignedTracks: z.array(z.string()).optional(),
+    isActive: z
+      .boolean()
+      .or(z.string().transform((val) => val === "true"))
+      .optional(),
+  }),
+);

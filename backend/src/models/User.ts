@@ -6,13 +6,15 @@ export interface IUser extends Document {
   lastName: string;
   email: string;
   phoneNumber: string;
-  gender: "male" | "female";
+  gender: "male" | "female" | "other" | "prefer-not-to-say";
   country: string;
   state: string;
   password: string;
   role: "applicant" | "student" | "mentor" | "admin";
+  assignedTracks?: mongoose.Types.ObjectId[]; // For mentors - tracks they can review
   isActive: boolean;
   isPasswordDefault: boolean;
+  createdBy?: mongoose.Types.ObjectId; // Who created this user (for admins/mentors)
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -79,6 +81,12 @@ const UserSchema: Schema = new Schema(
       },
       default: "applicant",
     },
+    assignedTracks: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Track",
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,
@@ -86,6 +94,10 @@ const UserSchema: Schema = new Schema(
     isPasswordDefault: {
       type: Boolean,
       default: false,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
     lastLogin: {
       type: Date,
