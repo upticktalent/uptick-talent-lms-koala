@@ -16,7 +16,6 @@ export interface ValidationError {
 const validate = (schema: z.ZodSchema<any>, checkFile: boolean = false) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log(req.body);
       // Validate request body
       const validatedData = schema.parse(req.body);
 
