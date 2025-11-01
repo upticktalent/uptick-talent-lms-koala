@@ -6,7 +6,11 @@ import {
   getApplicationDetails,
 } from "../controllers/application.controller";
 import { authenticate, authorize } from "../middleware/auth";
-import { validateApplication } from "../middleware/validation";
+import {
+  validateApplication,
+  validateReviewApplication,
+  validatePagination,
+} from "../middleware/validation";
 import { uploadCV } from "../services/upload.service";
 
 const router = Router();
@@ -26,7 +30,17 @@ router.use(authenticate);
 router.get("/:id", getApplicationDetails);
 
 // Mentor/Admin routes
-router.get("/", authorize("mentor", "admin"), getApplications);
-router.patch("/:id/review", authorize("mentor", "admin"), reviewApplication);
+router.get(
+  "/",
+  authorize("mentor", "admin"),
+  validatePagination,
+  getApplications,
+);
+router.patch(
+  "/:id/review",
+  authorize("mentor", "admin"),
+  validateReviewApplication,
+  reviewApplication,
+);
 
 export default router;

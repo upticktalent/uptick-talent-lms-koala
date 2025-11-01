@@ -1,183 +1,174 @@
 import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import {
+  applicationSchema,
+  loginSchema,
+  passwordResetSchema,
+  reviewApplicationSchema,
+} from "../schemas/validation";
 
 export interface ValidationError {
   field: string;
   message: string;
 }
 
-export const validateApplication = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  const {
-    firstName,
-    lastName,
-    email,
-    phoneNumber,
-    gender,
-    country,
-    state,
-    educationalQualification,
-    track,
-    cohort,
-  } = req.body;
-  const errors: ValidationError[] = [];
+// Generic validation middleware factory
+const validate = (schema: z.ZodSchema<any>, checkFile: boolean = false) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Validate request body
+      const validatedData = schema.parse(req.body);
 
-  // Required field validations
-  if (!firstName?.trim()) {
-    errors.push({ field: "firstName", message: "First name is required" });
-  } else if (firstName.trim().length > 50) {
-    errors.push({
-      field: "firstName",
-      message: "First name cannot exceed 50 characters",
-    });
-  }
+      // Replace req.body with validated and transformed data
+      req.body = validatedData;
 
-  if (!lastName?.trim()) {
-    errors.push({ field: "lastName", message: "Last name is required" });
-  } else if (lastName.trim().length > 50) {
-    errors.push({
-      field: "lastName",
-      message: "Last name cannot exceed 50 characters",
-    });
-  }
+      // Check for CV file if required
+      if (checkFile && !req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors: [{ field: "cv", message: "CV file is required" }],
+        });
+      }
 
-  // Email validation
-  if (!email?.trim()) {
-    errors.push({ field: "email", message: "Email is required" });
-  } else {
-    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-    if (!emailRegex.test(email.trim())) {
-      errors.push({
-        field: "email",
-        message: "Please enter a valid email address",
+      next();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: ValidationError[] = error.issues.map((err) => ({
+          field: err.path.join("."),
+          message: err.message,
+        }));
+
+        return res.status(400).json({
+          success: false,
+          message: "Validation failed",
+          errors,
+        });
+      }
+
+      // Handle unexpected errors
+      return res.status(500).json({
+        success: false,
+        message: "Internal validation error",
       });
     }
-  }
-
-  if (!phoneNumber?.trim()) {
-    errors.push({ field: "phoneNumber", message: "Phone number is required" });
-  }
-
-  // Gender validation
-  const validGenders = ["male", "female", "other", "prefer-not-to-say"];
-  if (!gender) {
-    errors.push({ field: "gender", message: "Gender is required" });
-  } else if (!validGenders.includes(gender)) {
-    errors.push({ field: "gender", message: "Invalid gender selection" });
-  }
-
-  if (!country?.trim()) {
-    errors.push({ field: "country", message: "Country is required" });
-  }
-
-  if (!state?.trim()) {
-    errors.push({ field: "state", message: "State is required" });
-  }
-
-  if (!educationalQualification?.trim()) {
-    errors.push({
-      field: "educationalQualification",
-      message: "Educational qualification is required",
-    });
-  } else if (educationalQualification.trim().length > 200) {
-    errors.push({
-      field: "educationalQualification",
-      message: "Educational qualification cannot exceed 200 characters",
-    });
-  }
-
-  if (!track) {
-    errors.push({ field: "track", message: "Track selection is required" });
-  }
-
-  if (!cohort) {
-    errors.push({ field: "cohort", message: "Cohort selection is required" });
-  }
-
-  // CV file validation
-  if (!req.file) {
-    errors.push({ field: "cv", message: "CV file is required" });
-  }
-
-  if (errors.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      errors,
-    });
-  }
-
-  next();
+  };
 };
 
-export const validateLogin = (
+// Application validation (with CV file check)
+export const validateApplication = validate(applicationSchema, true);
+
+// Login validation
+export const validateLogin = validate(loginSchema);
+
+// Password reset validation
+export const validatePasswordReset = validate(passwordResetSchema);
+
+// Application review validation
+export const validateReviewApplication = validate(reviewApplicationSchema);
+
+// Cohort validation
+export const validateCohort = validate(
+  z.object({
+    name: z
+      .string()
+      .min(1, "Cohort name is required")
+      .max(100, "Cohort name cannot exceed 100 characters")
+      .trim(),
+    description: z
+      .string()
+      .max(1000, "Description cannot exceed 1000 characters")
+      .trim()
+      .optional(),
+    startDate: z
+      .string()
+      .or(z.date())
+      .transform((val) => new Date(val)),
+    endDate: z
+      .string()
+      .or(z.date())
+      .transform((val) => new Date(val)),
+    maxStudents: z
+      .number()
+      .min(1, "Maximum students must be at least 1")
+      .or(z.string().transform((val) => parseInt(val, 10))),
+    tracks: z.array(z.string()).min(1, "At least one track is required"),
+    isAcceptingApplications: z
+      .boolean()
+      .or(z.string().transform((val) => val === "true"))
+      .optional()
+      .default(true),
+  }),
+);
+
+// Track validation
+export const validateTrack = validate(
+  z.object({
+    name: z
+      .string()
+      .min(1, "Track name is required")
+      .max(100, "Track name cannot exceed 100 characters")
+      .trim(),
+    description: z
+      .string()
+      .max(500, "Description cannot exceed 500 characters")
+      .trim()
+      .optional(),
+    trackId: z.string().min(1, "Track ID is required").trim(),
+  }),
+);
+
+// Query validation for pagination
+export const validatePagination = (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const { email, password } = req.body;
-  const errors: ValidationError[] = [];
+  try {
+    const paginationSchema = z.object({
+      page: z
+        .string()
+        .optional()
+        .default("1")
+        .transform((val) => parseInt(val, 10))
+        .refine((val) => val > 0, "Page must be greater than 0"),
+      limit: z
+        .string()
+        .optional()
+        .default("10")
+        .transform((val) => parseInt(val, 10))
+        .refine(
+          (val) => val > 0 && val <= 100,
+          "Limit must be between 1 and 100",
+        ),
+      status: z
+        .enum(["pending", "under-review", "accepted", "rejected", "waitlisted"])
+        .optional(),
+      cohort: z.string().optional(),
+      track: z.string().optional(),
+    });
 
-  if (!email?.trim()) {
-    errors.push({ field: "email", message: "Email is required" });
-  } else {
-    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-    if (!emailRegex.test(email.trim())) {
-      errors.push({
-        field: "email",
-        message: "Please enter a valid email address",
+    const validatedQuery = paginationSchema.parse(req.query);
+    req.query = validatedQuery as any;
+
+    next();
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const errors: ValidationError[] = error.issues.map((err) => ({
+        field: err.path.join("."),
+        message: err.message,
+      }));
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid query parameters",
+        errors,
       });
     }
-  }
 
-  if (!password) {
-    errors.push({ field: "password", message: "Password is required" });
-  }
-
-  if (errors.length > 0) {
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
-      message: "Validation failed",
-      errors,
+      message: "Internal validation error",
     });
   }
-
-  next();
-};
-
-export const validatePasswordReset = (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  const { currentPassword, newPassword } = req.body;
-  const errors: ValidationError[] = [];
-
-  if (!currentPassword) {
-    errors.push({
-      field: "currentPassword",
-      message: "Current password is required",
-    });
-  }
-
-  if (!newPassword) {
-    errors.push({ field: "newPassword", message: "New password is required" });
-  } else if (newPassword.length < 6) {
-    errors.push({
-      field: "newPassword",
-      message: "New password must be at least 6 characters long",
-    });
-  }
-
-  if (errors.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      errors,
-    });
-  }
-
-  next();
 };
