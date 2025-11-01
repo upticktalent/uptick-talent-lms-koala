@@ -3,7 +3,8 @@ import auth from "./auth.routes";
 import application from "./application.routes";
 import cohort from "./cohort.routes";
 import track from "./track.routes";
+import user from "./user.routes";
 
-export { health, auth, application, cohort, track };
+export { health, auth, application, cohort, track, user };
 
-export default { health, auth, application, cohort, track };
+export default { health, auth, application, cohort, track, user };

@@ -33,6 +33,7 @@ const TrackSchema: Schema = new Schema(
           "product-design",
           "data-science",
           "devops-engineering",
+          "blockchain-development",
         ],
         message:
           "Track ID must be one of the predefined values: frontend-development, backend-development, fullstack-development, mobile-development, product-management, product-design, data-science, devops-engineering",

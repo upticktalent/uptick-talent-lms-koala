@@ -39,4 +39,14 @@ export const urls = {
     update: (id: string) => `/${id}`,
     delete: (id: string) => `/${id}`,
   },
+  users: {
+    entry: () => routeCreator("users"),
+    list: () => "/",
+    create: () => "/create",
+    details: (id: string) => `/${id}`,
+    update: (id: string) => `/${id}`,
+    delete: (id: string) => `/${id}`,
+    assignTracks: (id: string) => `/${id}/assign-tracks`,
+    toggleStatus: (id: string) => `/${id}/toggle-status`,
+  },
 };

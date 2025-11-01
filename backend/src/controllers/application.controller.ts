@@ -20,20 +20,28 @@ export const submitApplication = async (req: Request, res: Response) => {
       country,
       state,
       educationalQualification,
-      track,
-      cohort,
+      trackId,
+      cohortNumber,
     } = req.body;
 
     const cvFile = req.file;
 
     // Verify cohort and track exist
     const selectedCohort = await Cohort.findOne({
-      cohortNumber: cohort.trim(),
+      cohortNumber,
     });
     if (!selectedCohort) {
       return res.status(400).json({
         success: false,
         message: "Selected cohort not found",
+      });
+    }
+
+    const selectedTrack = await Track.findOne({ trackId });
+    if (!selectedTrack) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected track not found",
       });
     }
     // Check if user already exists with this email
@@ -80,14 +88,6 @@ export const submitApplication = async (req: Request, res: Response) => {
       });
     }
 
-    const selectedTrack = await Track.findOne({ trackId: track.trim() });
-    if (!selectedTrack) {
-      return res.status(400).json({
-        success: false,
-        message: "Selected track not found",
-      });
-    }
-
     // Create application
     const cvUrl = getFileUrl(cvFile!.filename);
 
@@ -95,7 +95,7 @@ export const submitApplication = async (req: Request, res: Response) => {
       applicant: user._id,
       cohort: selectedCohort._id,
       track: selectedTrack._id,
-      educationalQualification: educationalQualification.trim(),
+      educationalQualification: educationalQualification?.trim(),
       cvUrl,
       status: "pending",
     });

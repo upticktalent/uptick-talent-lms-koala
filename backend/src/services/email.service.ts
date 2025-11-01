@@ -177,6 +177,81 @@ class EmailService {
       html,
     });
   }
+
+  // Welcome email for new mentors/admins
+  async sendWelcomeEmail(
+    userEmail: string,
+    userName: string,
+    role: string,
+    password: string,
+    assignedTracks?: string,
+  ): Promise<void> {
+    const loginUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const subject = `Welcome to Uptick Talent - ${role.charAt(0).toUpperCase() + role.slice(1)} Account Created`;
+
+    const trackSection = assignedTracks
+      ? `
+      <div style="background-color: #f0f9ff; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #2563eb;">
+        <h3 style="margin-top: 0; color: #1d4ed8;">Your Assigned Tracks</h3>
+        <p><strong>Tracks:</strong> ${assignedTracks}</p>
+        <p>You can review applications and manage students for these tracks.</p>
+      </div>
+    `
+      : "";
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #16a34a;">🎉 Welcome to Uptick Talent!</h2>
+        <p>Dear ${userName},</p>
+        <p>Your <strong>${role}</strong> account has been created successfully for the Uptick Talent Learning Management System.</p>
+        
+        <div style="background-color: #dcfce7; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #16a34a;">
+          <h3 style="margin-top: 0; color: #15803d;">Your Login Credentials</h3>
+          <p><strong>Email:</strong> ${userEmail}</p>
+          <p><strong>Temporary Password:</strong> <code style="background-color: #fff; padding: 4px 8px; border-radius: 4px; font-family: monospace;">${password}</code></p>
+          <p><strong>Login URL:</strong> <a href="${loginUrl}/login" style="color: #2563eb;">${loginUrl}/login</a></p>
+        </div>
+
+        ${trackSection}
+
+        <div style="background-color: #fef3c7; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #f59e0b;">
+          <h3 style="margin-top: 0; color: #d97706;">Important Security Notice</h3>
+          <p>⚠️ This is a temporary password. For your security, you'll be required to change it upon your first login.</p>
+        </div>
+
+        <div style="background-color: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px;">
+          <h3 style="margin-top: 0;">As a ${role}, you can:</h3>
+          <ul>
+            ${
+              role === "admin"
+                ? `
+              <li>Create and manage cohorts</li>
+              <li>Create mentors and assign tracks</li>
+              <li>Review all applications</li>
+              <li>Manage system settings</li>
+            `
+                : `
+              <li>Review applications for your assigned tracks</li>
+              <li>Accept or reject applications</li>
+              <li>Manage students in your tracks</li>
+              <li>Provide feedback to applicants</li>
+            `
+            }
+          </ul>
+        </div>
+
+        <p>If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
+        
+        <p>Best regards,<br>The Uptick Talent Team</p>
+      </div>
+    `;
+
+    await this.sendEmail({
+      to: userEmail,
+      subject,
+      html,
+    });
+  }
 }
 
 export const emailService = new EmailService();
