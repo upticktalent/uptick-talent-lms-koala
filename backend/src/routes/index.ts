@@ -1,5 +1,10 @@
 import health from "./health.routes";
+import auth from "./auth.routes";
+import application from "./application.routes";
+import cohort from "./cohort.routes";
+import track from "./track.routes";
+import user from "./user.routes";
 
-export { health };
+export { health, auth, application, cohort, track, user };
 
-export default { health };
+export default { health, auth, application, cohort, track, user };

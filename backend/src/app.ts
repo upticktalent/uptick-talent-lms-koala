@@ -1,8 +1,8 @@
 import express, { ErrorRequestHandler } from "express";
-
 import cors from "cors";
-import { getters } from "@config";
+import { getters } from "./config";
 import { loadServices } from "./loader";
+import { mapMongooseError } from "./utils/mongooseErrorHandler";
 
 // Add more route imports as needed
 
@@ -34,16 +34,16 @@ app.use((_req, res) => {
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error("🔥 Error:", err.stack || err.message || err);
 
-  const message =
-    process.env.NODE_ENV === "production"
-      ? "Internal Server Error"
-      : err.message;
+  // Try to map Mongoose/MongoDB errors first
+  const { status, body } = mapMongooseError(err);
 
-  res.status(err.status || 500).json({
-    success: false,
-    message,
-    ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
-  });
+  // In development, add stack trace for debugging
+  const response =
+    process.env.NODE_ENV === "production"
+      ? body
+      : { ...body, stack: err.stack };
+
+  res.status(status).json(response);
 };
 
 app.use(errorHandler);
