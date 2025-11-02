@@ -7,7 +7,7 @@ export interface IApplication extends Document {
   track: mongoose.Types.ObjectId;
   educationalQualification: string;
   cvUrl: string;
-  status: "pending" | "under-review" | "accepted" | "rejected" | "waitlisted";
+  status: "pending" | "under-review" | "accepted" | "rejected" | "shortlisted";
   reviewedBy?: mongoose.Types.ObjectId;
   reviewedAt?: Date;
   reviewNotes?: string;
@@ -55,10 +55,10 @@ const ApplicationSchema: Schema = new Schema(
           "under-review",
           "accepted",
           "rejected",
-          "waitlisted",
+          "shortlisted",
         ],
         message:
-          "Status must be pending, under-review, accepted, rejected, or waitlisted",
+          "Status must be pending, under-review, accepted, rejected, or shortlisted",
       },
       default: "pending",
     },

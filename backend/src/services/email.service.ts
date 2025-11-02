@@ -252,6 +252,66 @@ class EmailService {
       html,
     });
   }
+
+  // Assessment email for shortlisted applicants
+  async sendAssessmentEmail(
+    applicantEmail: string,
+    applicantName: string,
+    cohortName: string,
+    assessmentLink: string,
+  ): Promise<void> {
+    const subject = `Assessment Required - ${cohortName} Application`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2c3e50;">Congratulations! You've Been Shortlisted</h2>
+        
+        <p>Dear ${applicantName},</p>
+        
+        <p>Great news! Your application for the <strong>${cohortName}</strong> program has been reviewed and you've been <strong>shortlisted</strong> for the next stage.</p>
+        
+        <p>To proceed with your application, you are required to complete an assessment. This assessment will help us better understand your skills and determine your final acceptance into the program.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #2c3e50; margin-top: 0;">Assessment Details:</h3>
+          <p><strong>Program:</strong> ${cohortName}</p>
+          <p><strong>Status:</strong> Shortlisted</p>
+          <p><strong>Next Step:</strong> Complete Assessment</p>
+        </div>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${assessmentLink}" 
+             style="background-color: #3498db; color: white; padding: 12px 30px; 
+                    text-decoration: none; border-radius: 5px; display: inline-block;
+                    font-weight: bold;">
+            Start Assessment
+          </a>
+        </div>
+        
+        <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Important:</strong></p>
+          <ul style="margin: 10px 0;">
+            <li>Please complete the assessment within the specified timeframe</li>
+            <li>Make sure you have a stable internet connection</li>
+            <li>The assessment can only be taken once</li>
+            <li>Results will be used for final admission decisions</li>
+          </ul>
+        </div>
+        
+        <p>If you have any questions about the assessment or technical issues, please don't hesitate to contact our support team.</p>
+        
+        <p>Best of luck with your assessment!</p>
+        
+        <p>Best regards,<br>The Uptick Talent Team</p>
+      </div>
+    `;
+
+    await this.sendEmail({
+      to: applicantEmail,
+      subject,
+      html,
+    });
+  }
 }
 
 export const emailService = new EmailService();

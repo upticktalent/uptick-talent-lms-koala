@@ -1,6 +1,4 @@
 import express, { ErrorRequestHandler } from "express";
-import path from "path";
-
 import cors from "cors";
 import { getters } from "./config";
 import { loadServices } from "./loader";
@@ -20,9 +18,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Serve static files (for CV uploads)
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Register routes via loader
 loadServices(app);
