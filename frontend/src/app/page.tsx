@@ -3,6 +3,7 @@ import React from 'react';
 
 const Entry = () => {
   return <Box>page</Box>;
+  
 };
 
 export default Entry;
