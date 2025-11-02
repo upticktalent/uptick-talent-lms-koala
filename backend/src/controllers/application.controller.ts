@@ -90,7 +90,7 @@ export const submitApplication = asyncHandler(
     }
 
     // Create application
-    const cvUrl = getFileUrl(cvFile!.filename);
+    const cvUrl = getFileUrl((cvFile as any).path); // Cloudinary URL is in the path property
 
     const application = new Application({
       applicant: user._id,
