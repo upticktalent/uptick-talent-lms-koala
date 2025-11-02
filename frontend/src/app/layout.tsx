@@ -1,23 +1,10 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AppProvider } from '@/lib/providers';
 import { Toaster } from 'sonner';
-
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
-
-export const metadata: Metadata = {
-  title: 'Mentor Hub',
-  description: 'A web-based mentorship platform for reasearch students',
-};
+import { ThemeProvider } from '@/lib/providers/theme-provider';
+import { fonts } from '@/lib/fonts';
+import { cn } from '@/lib/utils';
+import Box from '@/components/ui/box';
 
 export default function RootLayout({
   children,
@@ -25,15 +12,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+    <Box as="html" lang="en" suppressHydrationWarning>
+      <Box
+        as="body"
+        className={cn(fonts.raleway.className, fonts.geistSans.className, 'antialiased')}
       >
-        <AppProvider>
-          {children}
-          <Toaster />
-        </AppProvider>
-      </body>
-    </html>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AppProvider>
+            {children}
+            <Toaster />
+          </AppProvider>
+        </ThemeProvider>
+        <Toaster position="top-right" />
+      </Box>
+    </Box>
   );
 }
