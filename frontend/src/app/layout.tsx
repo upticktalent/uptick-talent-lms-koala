@@ -5,6 +5,12 @@ import { ThemeProvider } from '@/lib/providers/theme-provider';
 import { fonts } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
 import Box from '@/components/ui/box';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Uptick LMS - Learn Tech Skills',
+  description: 'Explore program tracks and launch your tech career with Uptick Talent LMS.',
+};
 
 export default function RootLayout({
   children,

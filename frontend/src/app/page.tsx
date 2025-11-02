@@ -1,8 +1,19 @@
-import Box from '@/components/ui/box';
-import React from 'react';
+import About from '@/components/common/about';
+import FAQ from '@/components/common/faq';
+import Footer from '@/components/common/footer';
+import Header from '@/components/common/header';
+import Hero from '@/components/common/hero';
+import Tracks from '@/components/common/tracks';
 
-const Entry = () => {
-  return <Box>page</Box>;
-};
-
-export default Entry;
+export default function Home() {
+  return (
+    <main className="min-h-screen ">
+      <Header />
+      <Hero />
+      <About />
+      <Tracks />
+      <FAQ />
+      <Footer />
+    </main>
+  );
+}
