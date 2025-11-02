@@ -21,21 +21,13 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ) => {
-  // Accept only PDF and DOC/DOCX files
-  const allowedMimes = [
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
+  // Accept only PDF files
+  const allowedMimes = ["application/pdf"];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(
-      new Error(
-        "Invalid file type. Only PDF, DOC, and DOCX files are allowed.",
-      ),
-    );
+    cb(new Error("Invalid file type. Only PDF files are allowed."));
   }
 };
 
