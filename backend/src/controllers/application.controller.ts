@@ -211,11 +211,22 @@ export const reviewApplication = asyncHandler(
 
     await application.save();
 
-    // Handle acceptance/rejection emails
+    // Handle status-specific actions and emails
     const applicant = application.applicant as any;
     const cohort = application.cohort as any;
 
-    if (status === "accepted") {
+    if (status === "shortlisted") {
+      // Generate assessment link
+      const assessmentLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/assessment/${application._id}`;
+
+      // Send assessment email
+      await emailService.sendAssessmentEmail(
+        applicant.email,
+        `${applicant.firstName} ${applicant.lastName}`,
+        cohort.name,
+        assessmentLink,
+      );
+    } else if (status === "accepted") {
       // Generate password and update user role
       const tempPassword = generatePassword();
       const hashedPassword = await hashPassword(tempPassword);
