@@ -1,5 +1,9 @@
-import StaffLoginPage from "@/components/staffLoginPage";
+import Box from '@/components/ui/box';
+import React from 'react';
 
-export default function LoginPage() {
-  return <StaffLoginPage />;
-}
+const Entry = () => {
+  return <Box>page</Box>;
+  
+};
+
+export default Entry;

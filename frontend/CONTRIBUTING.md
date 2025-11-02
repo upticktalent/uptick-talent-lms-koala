@@ -28,6 +28,7 @@ Thank you for your interest in contributing to the Uptick Talent LMS frontend! T
 - **Before starting any new work, always switch to the `dev` branch and pull the latest changes:**
 
   ```sh
+    git checkout dev
   git pull origin dev
   git checkout -b name-of-branch
   ```
