@@ -59,6 +59,27 @@ export const getActiveCohorts = asyncHandler(
   },
 );
 
+export const getCurrentActiveCohort = asyncHandler(
+  async (req: Request, res: Response) => {
+    const activeCohort = await Cohort.findOne({
+      status: "active",
+    }).populate("tracks", "name description");
+
+    if (!activeCohort) {
+      return res.status(404).json({
+        success: false,
+        message: "No active cohort found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Active cohort retrieved successfully",
+      data: activeCohort,
+    });
+  },
+);
+
 export const getCohortDetails = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;

@@ -86,6 +86,47 @@ CohortSchema.pre("save", function (next) {
   next();
 });
 
+// Ensure only one active cohort exists
+CohortSchema.pre("save", async function (next) {
+  if (this.status === "active") {
+    // Check if there's already an active cohort (excluding current document)
+    const existingActiveCohort = await mongoose.model("Cohort").findOne({
+      status: "active",
+      _id: { $ne: this._id },
+    });
+
+    if (existingActiveCohort) {
+      next(new Error("Only one cohort can be active at a time"));
+      return;
+    }
+  }
+  next();
+});
+
+// Static method to get the current active cohort
+CohortSchema.statics.getCurrentActive = function () {
+  return this.findOne({ status: "active" }).populate(
+    "tracks",
+    "name description",
+  );
+};
+
+// Static method to activate a cohort (deactivates others)
+CohortSchema.statics.activateCohort = async function (cohortId: string) {
+  // First, set all other cohorts to upcoming/completed based on dates
+  await this.updateMany(
+    { status: "active", _id: { $ne: cohortId } },
+    { status: "upcoming" },
+  );
+
+  // Then activate the specified cohort
+  return this.findByIdAndUpdate(
+    cohortId,
+    { status: "active" },
+    { new: true },
+  ).populate("tracks", "name description");
+};
+
 // Index for performance
 CohortSchema.index({ status: 1 });
 CohortSchema.index({ startDate: 1 });
