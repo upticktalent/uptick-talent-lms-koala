@@ -59,6 +59,27 @@ export const getActiveCohorts = asyncHandler(
   },
 );
 
+export const getCurrentActiveCohort = asyncHandler(
+  async (req: Request, res: Response) => {
+    const activeCohort = await Cohort.findOne({
+      status: "active",
+    }).populate("tracks", "name description");
+
+    if (!activeCohort) {
+      return res.status(404).json({
+        success: false,
+        message: "No active cohort found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Active cohort retrieved successfully",
+      data: activeCohort,
+    });
+  },
+);
+
 export const getCohortDetails = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -106,7 +127,7 @@ export const createCohort = asyncHandler(
 
     // Validate tracks exist
     const validTracks = await Track.find({ _id: { $in: tracks } });
-    if (validTracks.length !== tracks.length) {
+    if (!validTracks || validTracks.length !== tracks?.length) {
       return res.status(400).json({
         success: false,
         message: "One or more tracks are invalid",

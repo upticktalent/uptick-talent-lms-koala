@@ -12,7 +12,6 @@ const startServer = async () => {
 
     app.listen(port, () => {
       console.log(`${getters.geti18ns().LOGS.RUNNING_APP} ${port}`);
-      console.log(`🚀 Server: http://localhost:${port}`);
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);

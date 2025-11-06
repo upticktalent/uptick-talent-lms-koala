@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getCohorts,
   getActiveCohorts,
+  getCurrentActiveCohort,
   getCohortDetails,
   createCohort,
   updateCohort,
@@ -13,6 +14,7 @@ const router = Router();
 
 // Public routes
 router.get("/active", getActiveCohorts);
+router.get("/current-active", getCurrentActiveCohort);
 router.get("/:id", getCohortDetails);
 
 // Protected routes - Admin only

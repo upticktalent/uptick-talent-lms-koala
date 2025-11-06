@@ -5,6 +5,9 @@ import {
   loginSchema,
   passwordResetSchema,
   reviewApplicationSchema,
+  emailTemplateSchema,
+  updateEmailTemplateSchema,
+  sendSingleEmailSchema,
 } from "../schemas/validation";
 
 export interface ValidationError {
@@ -13,7 +16,10 @@ export interface ValidationError {
 }
 
 // Generic validation middleware factory
-const validate = (schema: z.ZodSchema<any>, checkFile: boolean = false) => {
+export const validate = (
+  schema: z.ZodSchema<any>,
+  checkFile: boolean = false,
+) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       // Validate request body
@@ -142,7 +148,13 @@ export const validatePagination = (
           "Limit must be between 1 and 100",
         ),
       status: z
-        .enum(["pending", "under-review", "accepted", "rejected", "waitlisted"])
+        .enum([
+          "pending",
+          "under-review",
+          "accepted",
+          "rejected",
+          "shortlisted",
+        ])
         .optional(),
       cohort: z.string().optional(),
       track: z.string().optional(),
@@ -229,3 +241,10 @@ export const validateUpdateUser = validate(
       .optional(),
   }),
 );
+
+// Email template validation
+export const validateEmailTemplate = validate(emailTemplateSchema);
+
+export const validateUpdateEmailTemplate = validate(updateEmailTemplateSchema);
+
+export const validateSendSingleEmail = validate(sendSingleEmailSchema);
