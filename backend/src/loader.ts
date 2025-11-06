@@ -19,6 +19,10 @@ const servicesLoader = [
     handler: [routers.application],
   },
   {
+    path: joinUrls(constants.urls.assessments.entry().path),
+    handler: [routers.assessment],
+  },
+  {
     path: joinUrls(constants.urls.cohorts.entry().path),
     handler: [routers.cohort],
   },
@@ -30,12 +34,16 @@ const servicesLoader = [
     path: joinUrls(constants.urls.users.entry().path),
     handler: [routers.user],
   },
+  {
+    path: joinUrls(constants.urls.emailTemplates.entry().path),
+    handler: [routers.emailTemplate],
+  },
 ];
 
 export const loadServices = (app: Express) => {
   servicesLoader.map((service) => {
     console.log(service.path);
-    app.use(service.path, ...service.handler);
+    app.use(`/api${service.path}`, ...service.handler);
   });
 
   app.use("*", (...rest) => {

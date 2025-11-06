@@ -127,7 +127,7 @@ export const createCohort = asyncHandler(
 
     // Validate tracks exist
     const validTracks = await Track.find({ _id: { $in: tracks } });
-    if (validTracks.length !== tracks.length) {
+    if (!validTracks || validTracks.length !== tracks?.length) {
       return res.status(400).json({
         success: false,
         message: "One or more tracks are invalid",

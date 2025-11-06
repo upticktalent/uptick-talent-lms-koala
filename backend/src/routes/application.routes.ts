@@ -11,14 +11,35 @@ import {
   validateReviewApplication,
   validatePagination,
 } from "../middleware/validation";
-import { uploadCV } from "../services/upload.service";
+import { uploadCV, handleUploadError } from "../services/upload.service";
+import { Request, Response, NextFunction } from "express";
 
 const router = Router();
+
+// Upload error handling middleware
+const handleFileUploadErrors = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const upload = uploadCV.single("cv");
+  upload(req as any, res as any, (err: any) => {
+    if (err) {
+      const errorResponse = handleUploadError(err);
+      return res.status(errorResponse.status).json({
+        success: false,
+        message: errorResponse.message,
+        errorType: errorResponse.type,
+      });
+    }
+    next();
+  });
+};
 
 // Public routes
 router.post(
   "/apply",
-  uploadCV.single("cv") as any,
+  handleFileUploadErrors,
   validateApplication,
   submitApplication,
 );

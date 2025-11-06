@@ -7,11 +7,14 @@ export interface IApplication extends Document {
   track: mongoose.Types.ObjectId;
   educationalQualification: string;
   cvUrl: string;
+  tools: string[];
   status: "pending" | "under-review" | "accepted" | "rejected" | "shortlisted";
   reviewedBy?: mongoose.Types.ObjectId;
   reviewedAt?: Date;
   reviewNotes?: string;
   rejectionReason?: string;
+  motivation?: string;
+  referralSource?: string;
   submittedAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -47,6 +50,10 @@ const ApplicationSchema: Schema = new Schema(
       required: [true, "CV is required"],
       trim: true,
     },
+    tools: {
+      type: [String],
+      default: [],
+    },
     status: {
       type: String,
       enum: {
@@ -73,6 +80,16 @@ const ApplicationSchema: Schema = new Schema(
       type: String,
       trim: true,
       maxlength: [1000, "Review notes cannot exceed 1000 characters"],
+    },
+    motivation: {
+      type: String,
+      trim: true,
+      maxlength: [1000, "Motivation cannot exceed 1000 characters"],
+    },
+    referralSource: {
+      type: String,
+      trim: true,
+      maxlength: [500, "Referral source cannot exceed 500 characters"],
     },
     rejectionReason: {
       type: String,

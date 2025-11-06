@@ -29,3 +29,7 @@ export * from "./User";
 export * from "./Track";
 export * from "./Cohort";
 export * from "./Application";
+export * from "./Assessment";
+export * from "./EmailTemplate";
+export * from "./EmailCampaign";
+export * from "./EmailLog";

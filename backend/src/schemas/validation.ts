@@ -27,6 +27,11 @@ export const applicationSchema = z.object({
     .max(200, "Educational qualification cannot exceed 200 characters")
     .trim()
     .optional(),
+  tools: z
+    .array(z.string().min(1, "Tool name cannot be empty").trim())
+    .max(20, "Maximum 20 tools allowed")
+    .optional()
+    .default([]),
   trackId: z.enum([
     "frontend-development",
     "backend-development",
@@ -39,6 +44,12 @@ export const applicationSchema = z.object({
     "blockchain-development",
   ]),
   cohortNumber: z.string().min(1, "Cohort number is required").trim(),
+  referralSource: z.string().trim().optional(),
+  motivation: z
+    .string()
+    .max(1000, "Motivation cannot exceed 1000 characters")
+    .trim()
+    .optional(),
 });
 
 // Login schema
@@ -113,7 +124,7 @@ export const reviewApplicationSchema = z.object({
     "under-review",
     "accepted",
     "rejected",
-    "waitlisted",
+    "shortlisted",
   ]),
   reviewNotes: z
     .string()
@@ -187,3 +198,84 @@ export const updateUserSchema = z.object({
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
+// Assessment submission schema
+export const assessmentSubmissionSchema = z.object({
+  applicationId: z
+    .string()
+    .min(1, "Application ID is required")
+    .regex(/^[0-9a-fA-F]{24}$/, "Invalid application ID format"),
+  linkUrl: z.string().url("Please provide a valid URL").optional(),
+  notes: z
+    .string()
+    .max(1000, "Notes cannot exceed 1000 characters")
+    .trim()
+    .optional(),
+});
+
+// Assessment review schema
+export const assessmentReviewSchema = z.object({
+  status: z.enum(["under-review", "reviewed"]),
+  reviewNotes: z
+    .string()
+    .max(1000, "Review notes cannot exceed 1000 characters")
+    .trim()
+    .optional(),
+  score: z
+    .number()
+    .min(0, "Score cannot be negative")
+    .max(100, "Score cannot exceed 100")
+    .optional(),
+});
+
+export type AssessmentSubmissionInput = z.infer<
+  typeof assessmentSubmissionSchema
+>;
+export type AssessmentReviewInput = z.infer<typeof assessmentReviewSchema>;
+
+// Email Template schemas
+export const emailTemplateSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Template name is required")
+    .max(100, "Template name cannot exceed 100 characters")
+    .trim(),
+  subject: z
+    .string()
+    .min(1, "Subject is required")
+    .max(200, "Subject cannot exceed 200 characters")
+    .trim(),
+  htmlContent: z.string().min(1, "HTML content is required"),
+  textContent: z.string().trim().optional(),
+  templateType: z.enum([
+    "application_confirmation",
+    "application_acceptance",
+    "application_rejection",
+    "assessment_invitation",
+    "assessment_confirmation",
+    "assessment_review",
+    "welcome_email",
+    "custom",
+  ]),
+  variables: z.array(z.string().trim().min(1)).optional().default([]),
+  isActive: z.boolean().optional().default(true),
+});
+
+export const updateEmailTemplateSchema = emailTemplateSchema.partial().extend({
+  isActive: z.boolean().optional(),
+});
+
+export const sendSingleEmailSchema = z.object({
+  templateId: z.string().min(1, "Template ID is required"),
+  recipientEmail: z.email("Please enter a valid email address"),
+  recipientName: z.string().trim().optional(),
+  recipientId: z.string().trim().optional(),
+  recipientType: z.enum(["user", "applicant", "external"]).optional(),
+  customVariables: z.record(z.string(), z.any()).optional(),
+});
+
+export type EmailTemplateInput = z.infer<typeof emailTemplateSchema>;
+export type UpdateEmailTemplateInput = z.infer<
+  typeof updateEmailTemplateSchema
+>;
+export type SendSingleEmailInput = z.infer<typeof sendSingleEmailSchema>;
