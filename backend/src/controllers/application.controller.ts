@@ -155,18 +155,11 @@ export const submitApplication = asyncHandler(
       await application.save();
 
       // Send confirmation email
-<<<<<<< HEAD
       await brevoEmailService.sendApplicationConfirmation(
         user.email,
         `${user.firstName} ${user.lastName}`,
         selectedTrack.name,
         application._id.toString(),
-=======
-      await emailService.sendApplicationConfirmation(
-        user.email,
-        `${user.firstName} ${user.lastName}`,
-        selectedCohort.name,
->>>>>>> main
       );
 
       res.status(201).json({
