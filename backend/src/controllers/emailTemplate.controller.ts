@@ -197,7 +197,7 @@ export const previewEmailTemplate = async (req: AuthRequest, res: Response) => {
       recipientEmail: "john.doe@example.com",
       applicantName: "John Doe",
       cohortName: "Full Stack Development Cohort 2024",
-      trackName: "Frontend Development",
+      trackName: "Backend Development",
       platformName: "Uptick Talent",
       currentDate: new Date().toLocaleDateString(),
       loginUrl: process.env.FRONTEND_URL || "http://localhost:3000",

@@ -1,8 +1,6 @@
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import { v2 as cloudinary } from "cloudinary";
-import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 // Validate required environment variables
 const validateCloudinaryConfig = () => {
@@ -161,79 +159,6 @@ const cvFileFilter = (
 
 // File filter for assessment uploads with detailed error messages
 const assessmentFileFilter = (
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true, // Force HTTPS
-});
-
-// Test Cloudinary connection
-const testCloudinaryConnection = async () => {
-  try {
-    const result = await cloudinary.api.ping();
-    console.log("✅ Cloudinary connection successful");
-    return true;
-  } catch (error) {
-    console.error("❌ Cloudinary connection failed:", error);
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("Cloudinary connection failed in production");
-    }
-    return false;
-  }
-};
-
-// Test connection on startup
-testCloudinaryConnection().catch((error) => {
-  console.error("Critical: Cloudinary connection failed:", error);
-  if (process.env.NODE_ENV === "production") {
-    process.exit(1);
-  }
-});
-
-// Configure Cloudinary storage for CVs with error handling
-const cvStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "uptick-talent/cvs",
-    resource_type: "auto",
-    public_id: (req: any, file: any) => {
-      try {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9]/g, "_");
-        return `cv-${sanitizedName}-${uniqueSuffix}`;
-      } catch (error) {
-        console.error("Error generating CV public_id:", error);
-        return `cv-${Date.now()}`;
-      }
-    },
-    transformation: [{ quality: "auto:eco" }], // Optimize file size
-  } as any,
-});
-
-// Configure Cloudinary storage for assessments with error handling
-const assessmentStorage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "uptick-talent/assessments",
-    resource_type: "auto",
-    public_id: (req: any, file: any) => {
-      try {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9]/g, "_");
-        return `assessment-${sanitizedName}-${uniqueSuffix}`;
-      } catch (error) {
-        console.error("Error generating assessment public_id:", error);
-        return `assessment-${Date.now()}`;
-      }
-    },
-    transformation: [{ quality: "auto:eco" }], // Optimize file size
-  } as any,
-});
-
-// File filter for CV uploads with detailed error messages
-const cvFileFilter = (
   req: any,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
@@ -268,42 +193,6 @@ const cvFileFilter = (
   }
 };
 
-// File filter for assessment uploads with detailed error messages
-const assessmentFileFilter = (
-  req: any,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback,
-) => {
-  try {
-    // Accept PDF and DOCX files for assessments
-    const allowedMimes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ];
-
-    const allowedExtensions = [".pdf", ".docx"];
-    const fileExtension = file.originalname
-      .toLowerCase()
-      .substring(file.originalname.lastIndexOf("."));
-
-    if (
-      allowedMimes.includes(file.mimetype) &&
-      allowedExtensions.includes(fileExtension)
-    ) {
-      cb(null, true);
-    } else {
-      const error = new Error(
-        `Invalid file type. Only PDF and DOCX files are allowed for assessment uploads. Received: ${file.mimetype} (${fileExtension})`,
-      );
-      error.name = "FILE_TYPE_ERROR";
-      cb(error);
-    }
-  } catch (error) {
-    console.error("Error in assessment file filter:", error);
-    cb(new Error("File validation failed"));
-  }
-};
-
 // Configure multer for CV uploads with comprehensive error handling
 export const uploadCV = multer({
   storage: cvStorage as any,
@@ -322,7 +211,6 @@ export const uploadAssessment = multer({
     files: 1, // Only one file
   },
   fileFilter: assessmentFileFilter,
-  fileFilter: cvFileFilter,
 });
 
 // Helper function to get CV file URL (now returns Cloudinary URL directly)

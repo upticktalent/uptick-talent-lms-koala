@@ -1,4 +1,4 @@
-import { EmailTemplate } from "../models/EmailTemplate";
+import { EmailTemplate } from "../models/EmailTemplate.model";
 import mongoose from "mongoose";
 
 // Default email templates for the system

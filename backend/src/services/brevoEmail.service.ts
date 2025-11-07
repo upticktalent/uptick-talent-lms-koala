@@ -249,6 +249,125 @@ class BrevoEmailService {
     }
   }
 
+  // Send email directly with provided content (no template required)
+  async sendDirectEmail(options: {
+    recipient: EmailRecipient;
+    subject: string;
+    htmlContent: string;
+    textContent?: string;
+    variables?: EmailVariables;
+    metadata?: { [key: string]: any };
+  }): Promise<boolean> {
+    try {
+      // Get recipient data for personalization if ID provided
+      let recipientData: EmailVariables = {};
+      if (options.recipient.id && options.recipient.type) {
+        recipientData = await this.getRecipientData(
+          options.recipient.id,
+          options.recipient.type,
+        );
+      }
+
+      // Merge all variables
+      const allVariables: EmailVariables = {
+        ...recipientData,
+        ...options.variables,
+        recipientName:
+          options.recipient.name || recipientData.recipientName || "",
+        recipientEmail: options.recipient.email,
+        currentDate: new Date().toLocaleDateString(),
+        currentTime: new Date().toLocaleTimeString(),
+        platformName: process.env.APP_NAME || "Uptick Talent",
+        supportEmail: process.env.SUPPORT_EMAIL || "support@upticktalent.com",
+        loginUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+      };
+
+      // Process content with variables
+      const processedSubject = this.replaceVariables(
+        options.subject,
+        allVariables,
+      );
+      const processedHtml = this.replaceVariables(
+        options.htmlContent,
+        allVariables,
+      );
+      const processedText = options.textContent
+        ? this.replaceVariables(options.textContent, allVariables)
+        : undefined;
+
+      // Create email log entry (without template reference)
+      const emailLog = new EmailLog({
+        recipientEmail: options.recipient.email,
+        recipientName: options.recipient.name,
+        recipientId: options.recipient.id
+          ? new mongoose.Types.ObjectId(options.recipient.id)
+          : undefined,
+        recipientType: options.recipient.type,
+        subject: processedSubject,
+        htmlContent: processedHtml,
+        textContent: processedText,
+        status: "pending",
+        metadata: options.metadata,
+      });
+
+      await emailLog.save();
+
+      // Send email via Brevo
+      const sendSmtpEmail: brevo.SendSmtpEmail = {
+        to: [
+          {
+            email: options.recipient.email,
+            name: options.recipient.name,
+          },
+        ],
+        subject: processedSubject,
+        htmlContent: processedHtml,
+        sender: {
+          name: process.env.APP_NAME || "Uptick Talent",
+          email: process.env.SENDER_EMAIL || "noreply@upticktalent.com",
+        },
+      };
+
+      if (processedText) {
+        sendSmtpEmail.textContent = processedText;
+      }
+
+      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+
+      // Update email log
+      emailLog.status = "sent";
+      emailLog.sentAt = new Date();
+      await emailLog.save();
+
+      console.log(
+        `Direct email sent successfully to ${options.recipient.email}`,
+      );
+      return true;
+    } catch (error) {
+      console.error("Error sending direct email:", error);
+
+      // Update email log with error if it exists
+      try {
+        await EmailLog.findOneAndUpdate(
+          {
+            recipientEmail: options.recipient.email,
+            status: "pending",
+          },
+          {
+            status: "failed",
+            errorMessage:
+              error instanceof Error ? error.message : "Unknown error",
+          },
+          { sort: { createdAt: -1 } },
+        );
+      } catch (logError) {
+        console.error("Error updating email log:", logError);
+      }
+
+      return false;
+    }
+  }
+
   // Backward compatibility methods
   async sendApplicationConfirmation(
     applicantEmail: string,
