@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { User } from "../models/User";
-import { Track } from "../models/Track";
+import { User } from "../models/User.model";
+import { Track } from "../models/Track.model";
 import { hashPassword, generatePassword } from "../utils/auth";
-import { emailService } from "../services/email.service";
+import { brevoEmailService } from "../services/brevoEmail.service";
 import { AuthRequest } from "../middleware/auth";
 import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
 
@@ -161,7 +161,7 @@ export const createUser = asyncHandler(
             .join(", ")
         : "";
 
-    await emailService.sendWelcomeEmail(
+    await brevoEmailService.sendWelcomeEmail(
       newUser.email,
       `${newUser.firstName} ${newUser.lastName}`,
       role,

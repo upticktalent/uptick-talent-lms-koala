@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { User } from "../models/User";
+import { User } from "../models/User.model";
 import { comparePassword, generateToken, hashPassword } from "../utils/auth";
 import { AuthRequest } from "../middleware/auth";
 import { asyncHandler } from "../utils/mongooseErrorHandler";

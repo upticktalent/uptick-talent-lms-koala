@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../utils/auth";
-import { User } from "../models/User";
+import { User } from "../models/User.model";
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -13,7 +13,6 @@ export const authenticate = async (
 ) => {
   try {
     const token = req.header("Authorization")?.replace("Bearer ", "");
-
     if (!token) {
       return res.status(401).json({
         success: false,

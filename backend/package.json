@@ -14,12 +14,18 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "test": "jest",
     "seed": "ts-node src/scripts/seedData.ts",
-    "seed:prod": "node dist/scripts/seedData.js"
+    "seed:prod": "node dist/scripts/seedData.js",
+    "seed:email": "ts-node src/scripts/seedEmailTemplates.ts",
+    "db:reset": "./scripts/reset-db.sh",
+    "db:status": "mongosh --eval 'db.stats()' uptick_talent_lms",
+    "type-check": "tsc --noEmit",
+    "validate": "npm run type-check && npm run lint"
   },
   "keywords": [],
   "author": "tylerdgenius",
   "license": "ISC",
   "dependencies": {
+    "@getbrevo/brevo": "^3.0.1",
     "@types/bcryptjs": "^3.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
