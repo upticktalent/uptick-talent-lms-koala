@@ -26,6 +26,30 @@ try {
   process.exit(1); // Exit in production if config is invalid
 }
 
+// Validate required environment variables
+const validateCloudinaryConfig = () => {
+  const requiredVars = [
+    "CLOUDINARY_CLOUD_NAME",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_API_SECRET",
+  ];
+  const missingVars = requiredVars.filter((varName) => !process.env[varName]);
+
+  if (missingVars.length > 0) {
+    throw new Error(
+      `Missing required Cloudinary environment variables: ${missingVars.join(", ")}`,
+    );
+  }
+};
+
+// Validate config before setting up Cloudinary
+try {
+  validateCloudinaryConfig();
+} catch (error) {
+  console.error("❌ Cloudinary configuration error:", error);
+  process.exit(1); // Exit in production if config is invalid
+}
+
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -140,7 +164,7 @@ const assessmentFileFilter = (
   cb: multer.FileFilterCallback,
 ) => {
   try {
-    // Accept PDF and DOCX files for assessments
+    // Accept PDF and DOCX files for CVs
     const allowedMimes = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -158,13 +182,13 @@ const assessmentFileFilter = (
       cb(null, true);
     } else {
       const error = new Error(
-        `Invalid file type. Only PDF and DOCX files are allowed for assessment uploads. Received: ${file.mimetype} (${fileExtension})`,
+        `Invalid file type. Only PDF and DOCX files are allowed for CV uploads. Received: ${file.mimetype} (${fileExtension})`,
       );
       error.name = "FILE_TYPE_ERROR";
       cb(error);
     }
   } catch (error) {
-    console.error("Error in assessment file filter:", error);
+    console.error("Error in CV file filter:", error);
     cb(new Error("File validation failed"));
   }
 };

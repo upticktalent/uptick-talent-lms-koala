@@ -4,12 +4,17 @@ import { Application } from "../models/Application.model";
 import { Cohort } from "../models/Cohort.model";
 import { Track } from "../models/Track.model";
 import { hashPassword, generatePassword } from "../utils/auth";
+<<<<<<< HEAD
 import {
   uploadCV,
   validateUploadedFile,
   getFileUrl,
 } from "../services/upload.service";
 import { brevoEmailService } from "../services/brevoEmail.service";
+=======
+import { emailService } from "../services/email.service";
+import { getFileUrl, validateUploadedFile } from "../services/upload.service";
+>>>>>>> main
 import { AuthRequest } from "../middleware/auth";
 import { HttpStatusCode } from "../config";
 import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
@@ -155,11 +160,18 @@ export const submitApplication = asyncHandler(
       await application.save();
 
       // Send confirmation email
+<<<<<<< HEAD
       await brevoEmailService.sendApplicationConfirmation(
         user.email,
         `${user.firstName} ${user.lastName}`,
         selectedTrack.name,
         application._id.toString(),
+=======
+      await emailService.sendApplicationConfirmation(
+        user.email,
+        `${user.firstName} ${user.lastName}`,
+        selectedCohort.name,
+>>>>>>> main
       );
 
       res.status(201).json({
