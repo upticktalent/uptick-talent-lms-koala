@@ -259,6 +259,7 @@ class EmailService {
     applicantName: string,
     cohortName: string,
     assessmentLink: string,
+    applicationId: string,
   ): Promise<void> {
     const subject = `Assessment Required - ${cohortName} Application`;
 
@@ -271,7 +272,8 @@ class EmailService {
         <p>Great news! Your application for the <strong>${cohortName}</strong> program has been reviewed and you've been <strong>shortlisted</strong> for the next stage.</p>
         
         <p>To proceed with your application, you are required to complete an assessment. This assessment will help us better understand your skills and determine your final acceptance into the program.</p>
-        
+        <p>Here is your application ID: <strong><code>${applicationId}</code></strong> it will be required when submitting your assessment.</p>
+
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
           <h3 style="color: #2c3e50; margin-top: 0;">Assessment Details:</h3>
           <p><strong>Program:</strong> ${cohortName}</p>
@@ -292,8 +294,6 @@ class EmailService {
           <p style="margin: 0;"><strong>Important:</strong></p>
           <ul style="margin: 10px 0;">
             <li>Please complete the assessment within the specified timeframe</li>
-            <li>Make sure you have a stable internet connection</li>
-            <li>The assessment can only be taken once</li>
             <li>Results will be used for final admission decisions</li>
           </ul>
         </div>
@@ -301,6 +301,107 @@ class EmailService {
         <p>If you have any questions about the assessment or technical issues, please don't hesitate to contact our support team.</p>
         
         <p>Best of luck with your assessment!</p>
+        
+        <p>Best regards,<br>The Uptick Talent Team</p>
+      </div>
+    `;
+
+    await this.sendEmail({
+      to: applicantEmail,
+      subject,
+      html,
+    });
+  }
+
+  // Assessment submission confirmation email
+  async sendAssessmentConfirmation(
+    applicantEmail: string,
+    applicantName: string,
+    trackName: string,
+    submissionType: string,
+  ): Promise<void> {
+    const subject = `Assessment Submitted Successfully - ${trackName}`;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #27ae60;">Assessment Submitted Successfully!</h2>
+        
+        <p>Dear ${applicantName},</p>
+        
+        <p>Thank you for submitting your assessment for the <strong>${trackName}</strong> program. We have successfully received your submission.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #2c3e50; margin-top: 0;">Submission Details:</h3>
+          <p><strong>Program:</strong> ${trackName}</p>
+          <p><strong>Submission Type:</strong> ${submissionType === "file" ? "File Upload" : "Link Submission"}</p>
+          <p><strong>Status:</strong> Submitted</p>
+          <p><strong>Submitted At:</strong> ${new Date().toLocaleString()}</p>
+        </div>
+        
+        <div style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h4 style="color: #27ae60; margin-top: 0;">What happens next?</h4>
+          <ul style="margin: 10px 0;">
+            <li>Our team will review your assessment</li>
+            <li>You will receive an email notification once the review is complete</li>
+            <li>The review process typically takes 3-5 business days</li>
+            <li>Final admission decisions will be communicated via email</li>
+          </ul>
+        </div>
+        
+        <p>If you have any questions or concerns about your submission, please don't hesitate to contact our support team.</p>
+        
+        <p>Thank you for your interest in joining our program!</p>
+        
+        <p>Best regards,<br>The Uptick Talent Team</p>
+      </div>
+    `;
+
+    await this.sendEmail({
+      to: applicantEmail,
+      subject,
+      html,
+    });
+  }
+
+  // Assessment review notification email
+  async sendAssessmentReviewNotification(
+    applicantEmail: string,
+    applicantName: string,
+    trackName: string,
+    status: string,
+    score?: number,
+  ): Promise<void> {
+    const subject = `Assessment Review Complete - ${trackName}`;
+    const statusColor = status === "reviewed" ? "#27ae60" : "#3498db";
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: ${statusColor};">Assessment Review Complete</h2>
+        
+        <p>Dear ${applicantName},</p>
+        
+        <p>We have completed the review of your assessment for the <strong>${trackName}</strong> program.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #2c3e50; margin-top: 0;">Review Results:</h3>
+          <p><strong>Program:</strong> ${trackName}</p>
+          <p><strong>Status:</strong> <span style="color: ${statusColor}; font-weight: bold;">${status.charAt(0).toUpperCase() + status.slice(1)}</span></p>
+          ${score !== undefined ? `<p><strong>Score:</strong> ${score}/100</p>` : ""}
+          <p><strong>Reviewed At:</strong> ${new Date().toLocaleString()}</p>
+        </div>
+        
+        ${
+          status === "reviewed"
+            ? `
+          <div style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p style="margin: 0;"><strong>Next Steps:</strong></p>
+            <p style="margin: 10px 0;">Our admissions team will now make the final decision on your application. You will receive a notification about the final outcome within the next few days.</p>
+          </div>
+        `
+            : ""
+        }
+        
+        <p>Thank you for your patience during the review process.</p>
         
         <p>Best regards,<br>The Uptick Talent Team</p>
       </div>
