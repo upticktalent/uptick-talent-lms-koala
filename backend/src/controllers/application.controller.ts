@@ -1,11 +1,20 @@
 import { Request, Response } from "express";
-import { User } from "../models/User";
-import { Application } from "../models/Application";
-import { Cohort } from "../models/Cohort";
-import { Track } from "../models/Track";
+import { User } from "../models/User.model";
+import { Application } from "../models/Application.model";
+import { Cohort } from "../models/Cohort.model";
+import { Track } from "../models/Track.model";
 import { hashPassword, generatePassword } from "../utils/auth";
+<<<<<<< HEAD
+import {
+  uploadCV,
+  validateUploadedFile,
+  getFileUrl,
+} from "../services/upload.service";
+import { brevoEmailService } from "../services/brevoEmail.service";
+=======
 import { emailService } from "../services/email.service";
 import { getFileUrl, validateUploadedFile } from "../services/upload.service";
+>>>>>>> main
 import { AuthRequest } from "../middleware/auth";
 import { HttpStatusCode } from "../config";
 import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
@@ -151,10 +160,18 @@ export const submitApplication = asyncHandler(
       await application.save();
 
       // Send confirmation email
+<<<<<<< HEAD
+      await brevoEmailService.sendApplicationConfirmation(
+        user.email,
+        `${user.firstName} ${user.lastName}`,
+        selectedTrack.name,
+        application._id.toString(),
+=======
       await emailService.sendApplicationConfirmation(
         user.email,
         `${user.firstName} ${user.lastName}`,
         selectedCohort.name,
+>>>>>>> main
       );
 
       res.status(201).json({
@@ -275,7 +292,7 @@ export const reviewApplication = asyncHandler(
       const assessmentLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/assessment/${application._id}`;
 
       // Send assessment email
-      await emailService.sendAssessmentEmail(
+      await brevoEmailService.sendAssessmentEmail(
         applicant.email,
         `${applicant.firstName} ${applicant.lastName}`,
         cohort.name,
@@ -295,7 +312,7 @@ export const reviewApplication = asyncHandler(
         await user.save();
 
         // Send acceptance email with credentials
-        await emailService.sendAcceptanceEmail(
+        await brevoEmailService.sendAcceptanceEmail(
           applicant.email,
           `${applicant.firstName} ${applicant.lastName}`,
           cohort.name,
@@ -311,7 +328,7 @@ export const reviewApplication = asyncHandler(
       }
     } else if (status === "rejected") {
       // Send rejection email
-      await emailService.sendRejectionEmail(
+      await brevoEmailService.sendRejectionEmail(
         applicant.email,
         `${applicant.firstName} ${applicant.lastName}`,
         cohort.name,

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { Cohort } from "../models/Cohort";
-import { Track } from "../models/Track";
+import { Cohort } from "../models/Cohort.model";
+import { Track } from "../models/Track.model";
 import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
 
 export const getCohorts = asyncHandler(async (req: Request, res: Response) => {

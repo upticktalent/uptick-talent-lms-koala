@@ -25,6 +25,16 @@ export const disconnectDatabase = async () => {
 };
 
 // Export all models
+<<<<<<< HEAD
+export * from "./User.model";
+export * from "./Track.model";
+export * from "./Cohort.model";
+export * from "./Application.model";
+export * from "./Assessment.model";
+export * from "./EmailTemplate.model";
+export * from "./EmailCampaign.model";
+export * from "./EmailLog.model.";
+=======
 export * from "./User";
 export * from "./Track";
 export * from "./Cohort";
@@ -33,3 +43,4 @@ export * from "./Assessment";
 export * from "./EmailTemplate";
 export * from "./EmailCampaign";
 export * from "./EmailLog";
+>>>>>>> main

@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IApplication extends Document {
@@ -119,4 +117,3 @@ export const Application = mongoose.model<IApplication>(
   "Application",
   ApplicationSchema,
 );
->>>>>>> main
