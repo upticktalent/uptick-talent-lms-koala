@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { Assessment } from "../models/Assessment";
-import { Application } from "../models/Application";
-import { Track } from "../models/Track";
-import { User } from "../models/User";
+import { Assessment } from "../models/Assessment.model";
+import { Application } from "../models/Application.model";
+import { Track } from "../models/Track.model";
+import { User } from "../models/User.model";
 import { asyncHandler } from "../utils/mongooseErrorHandler";
 import { isValidObjectId } from "../utils/mongooseErrorHandler";
 import { getAssessmentFileUrl } from "../services/upload.service";
-import { emailService } from "../services/email.service";
+import { brevoEmailService } from "../services/brevoEmail.service";
 import { AuthRequest } from "../middleware/auth";
 
 // Check if application ID exists and is eligible for assessment
@@ -195,7 +195,7 @@ export const submitAssessment = asyncHandler(
       const applicant = (assessment.application as any).applicant;
       const trackName = (assessment.application as any).track.name;
       const submissionType = assessment.fileUrl ? "file" : "link";
-      await emailService.sendAssessmentConfirmation(
+      await brevoEmailService.sendAssessmentConfirmation(
         applicant.email,
         `${applicant.firstName} ${applicant.lastName}`,
         trackName,
@@ -369,7 +369,7 @@ export const reviewAssessment = asyncHandler(
     const applicant = (assessment.application as any).applicant;
     const trackName = (assessment.application as any).track.name;
 
-    await emailService.sendAssessmentReviewNotification(
+    await brevoEmailService.sendAssessmentReviewNotification(
       applicant.email,
       `${applicant.firstName} ${applicant.lastName}`,
       trackName,

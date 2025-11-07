@@ -279,3 +279,44 @@ export type UpdateEmailTemplateInput = z.infer<
   typeof updateEmailTemplateSchema
 >;
 export type SendSingleEmailInput = z.infer<typeof sendSingleEmailSchema>;
+
+export const directEmailSchema = z.object({
+  recipient: z.object({
+    email: z.email("Invalid email address"),
+    name: z.string().min(1, "Recipient name is required"),
+    id: z.string().optional(),
+    type: z.enum(["user", "applicant", "external"]).optional(),
+  }),
+  subject: z
+    .string()
+    .min(1, "Subject is required")
+    .max(200, "Subject too long"),
+  content: z.string().min(1, "Content is required"),
+  contentType: z.enum(["html", "markdown"]).default("html"),
+  variables: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+    .optional(),
+});
+
+export const bulkEmailSchema = z.object({
+  recipients: z
+    .array(
+      z.object({
+        email: z.email(),
+        name: z.string(),
+        variables: z
+          .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+          .optional(),
+      }),
+    )
+    .min(1, "At least one recipient is required"),
+  subject: z.string().min(1, "Subject is required"),
+  content: z.string().min(1, "Content is required"),
+  contentType: z.enum(["html", "markdown"]).default("html"),
+  globalVariables: z
+    .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+    .optional(),
+});
+
+export type directEmailInput = z.infer<typeof directEmailSchema>;
+export type bulkEmailInput = z.infer<typeof bulkEmailSchema>;

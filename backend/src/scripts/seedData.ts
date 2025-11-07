@@ -1,9 +1,9 @@
 import { connectDatabase } from "../models/db";
-import { Track } from "../models/Track";
-import { Cohort } from "../models/Cohort";
-import { User } from "../models/User";
-import { Application } from "../models/Application";
-import { Assessment } from "../models/Assessment";
+import { Track } from "../models/Track.model";
+import { Cohort } from "../models/Cohort.model";
+import { User } from "../models/User.model";
+import { Application } from "../models/Application.model";
+import { Assessment } from "../models/Assessment.model";
 import { hashPassword } from "../utils/auth";
 import { seedEmailTemplates } from "./seedEmailTemplates";
 

@@ -72,4 +72,10 @@ export const urls = {
     recipients: () => "/recipients/list",
     logs: () => "/logs/history",
   },
+  directEmail: {
+    entry: () => routeCreator("direct-email"),
+    send: () => "/send",
+    bulk: () => "/bulk",
+    history: () => "/history",
+  },
 };

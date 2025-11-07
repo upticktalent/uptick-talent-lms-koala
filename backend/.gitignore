@@ -9,6 +9,6 @@ user_emails.csv
 .env_STAGING
 docker-compose.yml
 # Documentation
-Uptick-Talent-LMS-*
+Uptick-Talent-LMS*
 POSTMAN_COLLECTION_README.md
 SYSTEM_DOCUMENTATION.md

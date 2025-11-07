@@ -8,6 +8,8 @@ import {
   emailTemplateSchema,
   updateEmailTemplateSchema,
   sendSingleEmailSchema,
+  directEmailSchema,
+  bulkEmailSchema,
 } from "../schemas/validation";
 
 export interface ValidationError {
@@ -248,3 +250,7 @@ export const validateEmailTemplate = validate(emailTemplateSchema);
 export const validateUpdateEmailTemplate = validate(updateEmailTemplateSchema);
 
 export const validateSendSingleEmail = validate(sendSingleEmailSchema);
+
+// Validation  for direct email sending
+export const validateDirectEmail = validate(directEmailSchema);
+export const validateBulkEmail = validate(bulkEmailSchema);

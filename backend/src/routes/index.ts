@@ -6,6 +6,7 @@ import cohort from "./cohort.routes";
 import track from "./track.routes";
 import user from "./user.routes";
 import emailTemplate from "./emailTemplate.routes";
+import directEmail from "./directEmail.routes";
 
 export {
   health,
@@ -16,6 +17,7 @@ export {
   track,
   user,
   emailTemplate,
+  directEmail,
 };
 
 export default {
@@ -27,4 +29,5 @@ export default {
   track,
   user,
   emailTemplate,
+  directEmail,
 };

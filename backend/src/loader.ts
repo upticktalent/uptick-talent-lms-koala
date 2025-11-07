@@ -38,6 +38,10 @@ const servicesLoader = [
     path: joinUrls(constants.urls.emailTemplates.entry().path),
     handler: [routers.emailTemplate],
   },
+  {
+    path: joinUrls(constants.urls.directEmail.entry().path),
+    handler: [routers.directEmail],
+  },
 ];
 
 export const loadServices = (app: Express) => {
