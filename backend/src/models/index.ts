@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { Application } from "./Application.model";
 import { Cohort } from "./Cohort.model";
 import { Track } from "./Track.model";
