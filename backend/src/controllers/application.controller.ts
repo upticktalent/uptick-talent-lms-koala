@@ -1,125 +1,185 @@
 import { Request, Response } from "express";
-import { User } from "../models/User";
-import { Application } from "../models/Application";
-import { Cohort } from "../models/Cohort";
-import { Track } from "../models/Track";
+import { User } from "../models/User.model";
+import { Application } from "../models/Application.model";
+import { Cohort } from "../models/Cohort.model";
+import { Track } from "../models/Track.model";
 import { hashPassword, generatePassword } from "../utils/auth";
-import { emailService } from "../services/email.service";
-import { getFileUrl } from "../services/upload.service";
+import {
+  uploadCV,
+  validateUploadedFile,
+  getFileUrl,
+} from "../services/upload.service";
+import { brevoEmailService } from "../services/brevoEmail.service";
 import { AuthRequest } from "../middleware/auth";
 import { HttpStatusCode } from "../config";
 import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
+import { getCurrentActiveCohort } from "./cohort.controller";
 
 export const submitApplication = asyncHandler(
   async (req: Request, res: Response) => {
-    const {
-      firstName,
-      lastName,
-      email,
-      phoneNumber,
-      gender,
-      country,
-      state,
-      educationalQualification,
-      trackId,
-      cohortNumber,
-    } = req.body;
+    try {
+      const {
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        gender,
+        country,
+        state,
+        educationalQualification,
+        tools,
+        trackId,
+        cohortNumber,
+        referralSource,
+        motivation,
+      } = req.body;
 
-    const cvFile = req.file;
+      const cvFile = req.file;
 
-    // Verify cohort and track exist
-    const selectedCohort = await Cohort.findOne({
-      cohortNumber,
-    });
-    if (!selectedCohort) {
-      return res.status(400).json({
-        success: false,
-        message: "Selected cohort not found",
-      });
-    }
-
-    const selectedTrack = await Track.findOne({ trackId });
-    if (!selectedTrack) {
-      return res.status(400).json({
-        success: false,
-        message: "Selected track not found",
-      });
-    }
-    // Check if user already exists with this email
-    let user = await User.findOne({ email: email.toLowerCase() });
-
-    if (user) {
-      // Check if user already has an application for this cohort
-      const existingApplication = await Application.findOne({
-        applicant: user._id,
-        cohort: selectedCohort._id,
-      });
-
-      if (existingApplication) {
-        return res.status(HttpStatusCode.BAD_REQUEST).json({
+      // Validate uploaded file first
+      if (!cvFile) {
+        return res.status(400).json({
           success: false,
-          message: "You have already applied for this cohort",
+          message: "CV file is required. Please upload a PDF or DOCX file.",
         });
       }
-    } else {
-      // Create new user account
-      const tempPassword = generatePassword();
-      const hashedPassword = await hashPassword(tempPassword);
 
-      user = new User({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.toLowerCase().trim(),
-        phoneNumber: phoneNumber.trim(),
-        gender,
-        country: country.trim(),
-        state: state.trim(),
-        password: hashedPassword,
-        role: "applicant",
-        isPasswordDefault: true,
+      try {
+        validateUploadedFile(cvFile);
+      } catch (fileError) {
+        console.error("File validation error:", fileError);
+        return res.status(400).json({
+          success: false,
+          message:
+            fileError instanceof Error
+              ? fileError.message
+              : "Invalid file upload",
+        });
+      }
+
+      // Verify cohort and track exist
+      const selectedCohort = await Cohort.findOne({
+        cohortNumber,
+      });
+      if (!selectedCohort) {
+        return res.status(400).json({
+          success: false,
+          message: "Selected cohort not found",
+        });
+      }
+
+      const selectedTrack = await Track.findOne({ trackId });
+      if (!selectedTrack) {
+        return res.status(400).json({
+          success: false,
+          message: "Selected track not found",
+        });
+      }
+
+      const activeCohort = await Cohort.findOne({
+        status: "active",
+      }).populate("tracks", "name description");
+
+      // Check if user already exists with this email
+      let user = await User.findOne({ email: email.toLowerCase() });
+
+      if (user) {
+        // Check if user already has an application for this cohort
+        const existingApplication = await Application.findOne({
+          applicant: user._id,
+          cohort: activeCohort?._id || selectedCohort._id,
+        });
+
+        if (existingApplication) {
+          return res.status(HttpStatusCode.BAD_REQUEST).json({
+            success: false,
+            message: "You have already applied for this cohort",
+          });
+        }
+      } else {
+        // Create new user account
+        const tempPassword = generatePassword();
+        const hashedPassword = await hashPassword(tempPassword);
+
+        user = new User({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.toLowerCase().trim(),
+          phoneNumber: phoneNumber.trim(),
+          gender,
+          country: country.trim(),
+          state: state.trim(),
+          password: hashedPassword,
+          role: "applicant",
+          isPasswordDefault: true,
+        });
+
+        await user.save();
+      }
+
+      if (!selectedCohort.isAcceptingApplications) {
+        return res.status(400).json({
+          success: false,
+          message: "This cohort is not currently accepting applications",
+        });
+      }
+
+      // Extract CV URL safely from Cloudinary upload
+      let cvUrl: string;
+      try {
+        // Cloudinary URL can be in path or secure_url properties
+        const fileAny = cvFile as any;
+        cvUrl = getFileUrl(fileAny.path || fileAny.secure_url || fileAny.url);
+      } catch (urlError) {
+        console.error("Error extracting CV URL:", urlError);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to process uploaded CV. Please try again.",
+        });
+      }
+
+      const application = new Application({
+        applicant: user._id,
+        cohort: selectedCohort._id,
+        track: selectedTrack._id,
+        educationalQualification: educationalQualification?.trim(),
+        tools: Array.isArray(tools)
+          ? tools.map((tool: string) => tool.trim()).filter(Boolean)
+          : [],
+        cvUrl,
+        status: "pending",
+        referralSource: referralSource?.trim(),
+        motivation: motivation?.trim(),
       });
 
-      await user.save();
-    }
+      await application.save();
 
-    if (!selectedCohort.isAcceptingApplications) {
-      return res.status(400).json({
+      // Send confirmation email
+      await brevoEmailService.sendApplicationConfirmation(
+        user.email,
+        `${user.firstName} ${user.lastName}`,
+        selectedTrack.name,
+        application._id.toString(),
+      );
+
+      res.status(201).json({
+        success: true,
+        message:
+          "Application submitted successfully! You will receive an email confirmation shortly.",
+        data: {
+          applicationId: application._id,
+          status: application.status,
+          submittedAt: application.submittedAt,
+        },
+      });
+    } catch (error) {
+      console.error("Application submission error:", error);
+      return res.status(500).json({
         success: false,
-        message: "This cohort is not currently accepting applications",
+        message:
+          "An error occurred while processing your application. Please try again.",
       });
     }
-
-    // Create application
-    const cvUrl = getFileUrl((cvFile as any).path); // Cloudinary URL is in the path property
-
-    const application = new Application({
-      applicant: user._id,
-      cohort: selectedCohort._id,
-      track: selectedTrack._id,
-      educationalQualification: educationalQualification?.trim(),
-      cvUrl,
-      status: "pending",
-    });
-
-    await application.save();
-
-    // Send confirmation email
-    await emailService.sendApplicationConfirmation(
-      user.email,
-      `${user.firstName} ${user.lastName}`,
-      selectedCohort.name,
-    );
-
-    res.status(201).json({
-      success: true,
-      message:
-        "Application submitted successfully! You will receive an email confirmation shortly.",
-      data: {
-        applicationId: application._id,
-        status: application.status,
-        submittedAt: application.submittedAt,
-      },
-    });
   },
 );
 
@@ -220,11 +280,12 @@ export const reviewApplication = asyncHandler(
       const assessmentLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/assessment/${application._id}`;
 
       // Send assessment email
-      await emailService.sendAssessmentEmail(
+      await brevoEmailService.sendAssessmentEmail(
         applicant.email,
         `${applicant.firstName} ${applicant.lastName}`,
         cohort.name,
         assessmentLink,
+        application._id,
       );
     } else if (status === "accepted") {
       // Generate password and update user role
@@ -239,7 +300,7 @@ export const reviewApplication = asyncHandler(
         await user.save();
 
         // Send acceptance email with credentials
-        await emailService.sendAcceptanceEmail(
+        await brevoEmailService.sendAcceptanceEmail(
           applicant.email,
           `${applicant.firstName} ${applicant.lastName}`,
           cohort.name,
@@ -255,7 +316,7 @@ export const reviewApplication = asyncHandler(
       }
     } else if (status === "rejected") {
       // Send rejection email
-      await emailService.sendRejectionEmail(
+      await brevoEmailService.sendRejectionEmail(
         applicant.email,
         `${applicant.firstName} ${applicant.lastName}`,
         cohort.name,
