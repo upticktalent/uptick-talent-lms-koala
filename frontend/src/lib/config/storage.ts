@@ -12,6 +12,8 @@ export const storeCookie = ({ key, value }: StorageProps) => {
   const expireTime = new Date(date.getTime() + 1 * 60 * 60 * 1000);
   const maxAge = 12 * 60 * 60;
 
+  console.log(key, value);
+
   if (key && value)
     return setCookie(key, value, {
       expires: expireTime,
@@ -44,10 +46,7 @@ export const deleteStorageCookie = ({ key }: StorageProps) => deleteCookie(key);
 
 export const setLocalItem = ({ key, value }: StorageProps) => {
   if (typeof window !== 'undefined')
-    return window.localStorage.setItem(
-      key,
-      DomPurify.sanitize(JSON.stringify(value))
-    );
+    return window.localStorage.setItem(key, DomPurify.sanitize(JSON.stringify(value)));
 };
 
 export const getLocalItem = <T>({ key }: StorageProps): T | null => {

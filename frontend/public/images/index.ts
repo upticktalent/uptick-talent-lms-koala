@@ -12,6 +12,8 @@ import fullstackIcon from '@/../public/images/fullstack.jpg';
 import Overlay from '@/../public/achieve-pattern.svg';
 import Wave from '@/../public/waves.svg';
 import AboutPattern from '@/../public/about-pattern.svg';
+import AdminLogo from '@/../public/images/admin-logo.png';
+import UpLogo from '@/../public/images/up-logo.png';
 
 export {
   Mentor,
@@ -27,4 +29,6 @@ export {
   Overlay,
   Wave,
   AboutPattern,
+  AdminLogo,
+  UpLogo,
 };
