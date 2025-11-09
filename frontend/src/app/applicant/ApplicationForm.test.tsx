@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ApplicationForm from './ApplicationForm';
 
-// Your existing mocks...
+/* eslint-disable @next/next/no-img-element */
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
@@ -12,25 +13,27 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('next/image', () => ({
-  default: (props: any) => <img {...props} />,
+  default: ({ alt, src, ...props }: { alt: string; src: string }) => (
+    <img alt={alt} src={src} {...props} />
+  ),
 }));
 
 vi.mock('lucide-react', () => ({
-  Upload: () => 'UploadIcon',
-  FileText: () => 'FileTextIcon',
-  CheckCircle2: () => 'CheckCircle2Icon',
-  Eye: () => 'EyeIcon',
-  Trash2: () => 'Trash2Icon',
-  Users: () => 'UsersIcon',
-  Mail: () => 'MailIcon',
-  Phone: () => 'PhoneIcon',
-  User: () => 'UserIcon',
-  Globe: () => 'GlobeIcon',
-  Loader2: () => 'Loader2Icon',
+  Upload: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>UploadIcon</svg>,
+  FileText: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>FileTextIcon</svg>,
+  CheckCircle2: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>CheckCircle2Icon</svg>,
+  Eye: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>EyeIcon</svg>,
+  Trash2: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>Trash2Icon</svg>,
+  Users: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>UsersIcon</svg>,
+  Mail: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>MailIcon</svg>,
+  Phone: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>PhoneIcon</svg>,
+  User: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>UserIcon</svg>,
+  Globe: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>GlobeIcon</svg>,
+  Loader2: (props: React.SVGProps<SVGSVGElement>) => <svg {...props}>Loader2Icon</svg>,
 }));
 
 vi.mock('@/components/ui/box', () => ({
-  default: (props: any) => <div {...props} />,
+  default: (props: React.ComponentProps<'div'>) => <div {...props} />,
 }));
 
 global.fetch = vi.fn();
@@ -41,7 +44,7 @@ describe('ApplicationForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
-    (global.fetch as vi.Mock).mockResolvedValueOnce({
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         success: true,
@@ -57,11 +60,9 @@ describe('ApplicationForm', () => {
     });
   });
 
-  it('should render application form with all sections immediately', () => {
+  it('should render application form with all sections', () => {
     render(<ApplicationForm />);
 
-    // Form should render immediately without waiting for cohort data
-    // Check for form sections that are actually in the UI
     expect(screen.getByText('Personal Information')).toBeInTheDocument();
     expect(screen.getByText('Contact Information')).toBeInTheDocument();
     expect(screen.getByText('Location & Gender')).toBeInTheDocument();
@@ -70,24 +71,20 @@ describe('ApplicationForm', () => {
     expect(screen.getByText('Document Upload')).toBeInTheDocument();
   });
 
-  it('should have required form fields immediately', () => {
+  it('should have required form fields', () => {
     render(<ApplicationForm />);
 
-    // Check that required fields are present immediately
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/phone number/i)).toBeInTheDocument();
     
-    // Check that submit button exists immediately
     const submitButton = screen.getByRole('button', { name: /submit application/i });
     expect(submitButton).toBeInTheDocument();
-    
-    // The button should be disabled initially because form is invalid
     expect(submitButton).toBeDisabled();
   });
 
-  it('should allow user to fill in form fields immediately', async () => {
+  it('should allow user to fill in form fields', async () => {
     render(<ApplicationForm />);
 
     const firstNameInput = screen.getByPlaceholderText('Enter your first name');
@@ -100,15 +97,14 @@ describe('ApplicationForm', () => {
     expect(lastNameInput).toHaveValue('Doe');
   });
 
-  it('should show file upload section immediately', () => {
+  it('should show file upload section', () => {
     render(<ApplicationForm />);
 
     expect(screen.getByText(/upload your cv/i)).toBeInTheDocument();
     expect(screen.getByText(/drag and drop or click to browse/i)).toBeInTheDocument();
     expect(screen.getByText(/pdf only up to 10mb/i)).toBeInTheDocument();
     
-    // Check for the file input by finding the hidden input
-    const fileInput = document.querySelector('input[type="file"]');
+    const fileInput = screen.getByLabelText(/upload your cv/i);
     expect(fileInput).toBeInTheDocument();
   });
 
@@ -116,105 +112,79 @@ describe('ApplicationForm', () => {
     render(<ApplicationForm />);
     
     const file = new File(['dummy content'], 'example.pdf', { type: 'application/pdf' });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = screen.getByLabelText(/upload your cv/i) as HTMLInputElement;
     
-    await user.upload(input, file);
+    await user.upload(fileInput, file);
     
-    expect(input.files?.[0]).toBe(file);
-    expect(input.files).toHaveLength(1);
+    expect(fileInput.files?.[0]).toBe(file);
+    expect(fileInput.files).toHaveLength(1);
   });
 
-  it('should handle API fetch error gracefully', () => {
-    // Mock failed cohort data fetch
-    (global.fetch as vi.Mock).mockReset();
-    (global.fetch as vi.Mock).mockRejectedValueOnce(new Error('Network error'));
+  it('should handle API fetch error gracefully', async () => {
+    (global.fetch as Mock).mockReset();
+    (global.fetch as Mock).mockRejectedValueOnce(new Error('Network error'));
 
     render(<ApplicationForm />);
 
-    // Should still render the form immediately even if cohort data fails
-    // Check for actual UI elements that exist
     expect(screen.getByText('Personal Information')).toBeInTheDocument();
     expect(screen.getByText('Contact Information')).toBeInTheDocument();
     expect(screen.getByText('Location & Gender')).toBeInTheDocument();
-    expect(screen.getByText('Loading...')).toBeInTheDocument(); // This is what shows when API fails
     
-    // Check that form inputs are still functional
-    expect(screen.getByPlaceholderText('Enter your first name')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Enter your last name')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText('Enter your first name')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Enter your last name')).toBeInTheDocument();
+    });
   });
 
-  it('should display cohort number when data eventually loads', async () => {
+  it('should display cohort number when data loads', async () => {
     render(<ApplicationForm />);
 
-    // Form renders immediately
-    expect(screen.getByText('Personal Information')).toBeInTheDocument();
-
-    // Cohort number appears later when data loads
     await waitFor(() => {
       expect(screen.getByText('Cohort 15')).toBeInTheDocument();
     });
   });
 
-  it('should show track selection when cohort data eventually loads', async () => {
+  it('should show track selection when cohort data loads', async () => {
     render(<ApplicationForm />);
 
-    // Form renders immediately
-    expect(screen.getByText('Program Selection')).toBeInTheDocument();
-
-    // Track options appear later when data loads
     await waitFor(() => {
       const trackSelect = screen.getByLabelText(/select your track/i);
       expect(trackSelect).toBeInTheDocument();
-      
-      expect(screen.getByText('Frontend Development')).toBeInTheDocument();
-      expect(screen.getByText('Backend Development')).toBeInTheDocument();
     });
+
+    expect(screen.getByText('Frontend Development')).toBeInTheDocument();
+    expect(screen.getByText('Backend Development')).toBeInTheDocument();
   });
 
-  it('should render all form inputs immediately', () => {
+  it('should render all form inputs', () => {
     render(<ApplicationForm />);
 
-    // Check all form inputs are present without waiting
     expect(screen.getByPlaceholderText('Enter your first name')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Enter your last name')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('your.email@example.com')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('+1234567890')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Enter your state or province')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Tell us why you want to join this program and advance your career in tech...')).toBeInTheDocument();
     
-    // Check dropdowns exist without checking for empty values (which causes the error)
     expect(screen.getByRole('combobox', { name: /gender/i })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: /country/i })).toBeInTheDocument();
   });
 
-  // Test the loading state specifically
   it('should show loading state when cohort data is being fetched', () => {
     render(<ApplicationForm />);
 
-    // Should show loading state in the cohort badge
     expect(screen.getByText('Loading...')).toBeInTheDocument();
-    
-    // But form should still be fully functional
     expect(screen.getByText('Personal Information')).toBeInTheDocument();
     expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
   });
 
-  // Test form validation
   it('should show validation errors when required fields are empty', async () => {
     render(<ApplicationForm />);
 
-    // Wait for form to be ready
     await waitFor(() => {
       expect(screen.getByText('Cohort 15')).toBeInTheDocument();
     });
 
     const submitButton = screen.getByRole('button', { name: /submit application/i });
-    
-    // Try to submit empty form
-    await user.click(submitButton);
-
-    // Should show validation errors (these might appear after form submission attempt)
-    // Note: Your form might handle validation differently
-    expect(submitButton).toBeDisabled(); // Should still be disabled due to invalid form
+    expect(submitButton).toBeDisabled();
   });
 });

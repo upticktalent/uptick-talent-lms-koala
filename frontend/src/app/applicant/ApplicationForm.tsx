@@ -21,7 +21,6 @@ import Image from 'next/image';
 import Box from '@/components/ui/box';
 import logo from '../../../public/upticklogo.svg';
 
-// ✅ Interface for form values
 interface ApplicationFormValues {
   firstName: string;
   lastName: string;
@@ -40,7 +39,6 @@ interface ApplicationFormValues {
   motivation: string;
 }
 
-// ✅ Simplified interfaces for API response
 interface Track {
   _id: string;
   name: string;
@@ -57,7 +55,6 @@ interface ApiResponse {
   data: Cohort;
 }
 
-// ✅ Validation schema
 const validationSchema = Yup.object({
   firstName: Yup.string().required('First name is required'),
   lastName: Yup.string().required('Last name is required'),
@@ -87,7 +84,6 @@ const validationSchema = Yup.object({
 
 const baseUrl = 'https://uptick-lms-backend.onrender.com';
 
-// ✅ Map track names to expected track IDs
 const trackNameToIdMap: Record<string, string> = {
   'Frontend Development': 'frontend-development',
   'Backend Development': 'backend-development',
@@ -107,42 +103,6 @@ export default function ApplicationForm() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [availableTracks, setAvailableTracks] = useState<Track[]>([]);
 
-  // Fetch cohort number and tracks from API
-  useEffect(() => {
-    const fetchCohortData = async () => {
-      try {
-        const response = await fetch(`${baseUrl}/api/cohorts/current-active`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch cohort data: ${response.status}`);
-        }
-
-        const apiResponse: ApiResponse = await response.json();
-        console.log('API Response:', apiResponse);
-
-        if (apiResponse.success && apiResponse.data) {
-          const cohort = apiResponse.data;
-          console.log('Cohort data found:', {
-            cohortNumber: cohort.cohortNumber,
-            tracks: cohort.tracks,
-          });
-
-          setAvailableTracks(cohort.tracks);
-
-          // Set cohort number in form automatically
-          formik.setFieldValue('cohortNumber', cohort.cohortNumber);
-          console.log('Automatically set cohortNumber to:', cohort.cohortNumber);
-        } else {
-          throw new Error('No active cohorts found');
-        }
-      } catch (error) {
-        console.error('Error fetching cohort data:', error);
-        toast.error('Failed to load cohort information. Please refresh the page.');
-      }
-    };
-
-    fetchCohortData();
-  }, []);
-
   const formik = useFormik<ApplicationFormValues>({
     initialValues: {
       firstName: '',
@@ -154,7 +114,7 @@ export default function ApplicationForm() {
       state: '',
       trackId: '',
       tools: [],
-      cohortNumber: '', // Will be set automatically by useEffect
+      cohortNumber: '', 
       cv: null,
       otherCountry: '',
       otherState: '',
@@ -178,18 +138,15 @@ export default function ApplicationForm() {
       }, 200);
 
       try {
-        // Validate we have a cohort number
         if (!values.cohortNumber) {
           throw new Error('Cohort information is missing. Please refresh the page.');
         }
 
         const formData = new FormData();
 
-        // Use actual country/state values
         const finalCountry = values.country === 'Other' ? values.otherCountry : values.country;
         const finalState = values.state === 'Other' ? values.otherState : values.state;
 
-        // Append all fields exactly as API expects
         formData.append('firstName', values.firstName);
         formData.append('lastName', values.lastName);
         formData.append('email', values.email);
@@ -202,7 +159,6 @@ export default function ApplicationForm() {
         formData.append('referralSource', values.referralSource);
         formData.append('motivation', values.motivation);
 
-        // Append tools array
         if (values.tools.length > 0) {
           values.tools.forEach(tool => {
             formData.append('tools', tool);
@@ -238,7 +194,6 @@ export default function ApplicationForm() {
         console.log('Application API Response:', responseData);
 
         if (!response.ok) {
-          // Handle specific error cases
           if (
             responseData.message?.includes('already applied') ||
             responseData.message?.includes('already exists')
@@ -265,40 +220,76 @@ export default function ApplicationForm() {
           formik.resetForm();
           setUploadProgress(0);
           setShowSuccess(false);
-          // Reset file input
           const fileInput = document.getElementById('cv-upload') as HTMLInputElement;
           if (fileInput) fileInput.value = '';
         }, 10000);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Submission error:', error);
 
         clearInterval(progressInterval);
 
-        if (error.message.includes('Network Error')) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to submit application. Please try again.';
+
+        if (errorMessage.includes('Network Error')) {
           toast.error('Network error. Please check your connection.');
-        } else if (error.message.includes('already applied')) {
-          toast.error(error.message, {
+        } else if (errorMessage.includes('already applied')) {
+          toast.error(errorMessage, {
             action: {
               label: 'Understand',
               onClick: () => {},
             },
           });
-        } else if (error.message.includes('Cohort not found')) {
-          toast.error(error.message);
-        } else if (error.message.includes('400')) {
+        } else if (errorMessage.includes('Cohort not found')) {
+          toast.error(errorMessage);
+        } else if (errorMessage.includes('400')) {
           toast.error('Invalid data. Please check your inputs.');
-        } else if (error.message.includes('500')) {
+        } else if (errorMessage.includes('500')) {
           toast.error('Server error. Please try again later.');
-        } else if (error.message.includes('409')) {
+        } else if (errorMessage.includes('409')) {
           toast.error('You have already applied with this email address.');
         } else {
-          toast.error(error.message || 'Failed to submit application. Please try again.');
+          toast.error(errorMessage);
         }
       } finally {
         setIsSubmitting(false);
       }
     },
   });
+
+  useEffect(() => {
+    const fetchCohortData = async () => {
+      try {
+        const response = await fetch(`${baseUrl}/api/cohorts/current-active`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch cohort data: ${response.status}`);
+        }
+
+        const apiResponse: ApiResponse = await response.json();
+        console.log('API Response:', apiResponse);
+
+        if (apiResponse.success && apiResponse.data) {
+          const cohort = apiResponse.data;
+          console.log('Cohort data found:', {
+            cohortNumber: cohort.cohortNumber,
+            tracks: cohort.tracks,
+          });
+
+          setAvailableTracks(cohort.tracks);
+
+          formik.setFieldValue('cohortNumber', cohort.cohortNumber);
+          console.log('Automatically set cohortNumber to:', cohort.cohortNumber);
+        } else {
+          throw new Error('No active cohorts found');
+        }
+      } catch (error) {
+        console.error('Error fetching cohort data:', error);
+        toast.error('Failed to load cohort information. Please refresh the page.');
+      }
+    };
+
+    fetchCohortData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.currentTarget.files?.[0];
@@ -352,14 +343,13 @@ export default function ApplicationForm() {
     [],
   );
 
-  // Use tracks from API response and map to expected track IDs
   const tracks = useMemo(() => {
     return availableTracks.map(track => {
       const trackId = trackNameToIdMap[track.name] || track.name.toLowerCase().replace(/\s+/g, '-');
       return {
-        id: trackId, // Use the mapped track ID
+        id: trackId, 
         name: track.name,
-        originalId: track._id, // Keep original for reference if needed
+        originalId: track._id, 
       };
     });
   }, [availableTracks]);
@@ -508,27 +498,27 @@ export default function ApplicationForm() {
     Australia: ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'Other'],
   };
 
-   return (
-     <Box className="min-h-screen py-3 xs:py-4 sm:py-6 md:py-8 px-3 xs:px-4 sm:px-6">
+  return (
+    <Box className="min-h-screen py-3 xs:py-4 sm:py-6 md:py-8 px-3 xs:px-4 sm:px-6">
       <Box className="max-w-4xl mx-auto">
-        {/* Form Card */}
         <Box className="bg-slate-900 rounded-lg xs:rounded-xl sm:rounded-2xl md:rounded-3xl shadow-lg sm:shadow-xl md:shadow-2xl overflow-hidden border border-blue-500/20">
-          {/* Header Section */}
           <Box className="bg-blue-800 p-6 md:p-8 relative overflow-hidden">
             <Box className="absolute inset-0 bg-black/20"></Box>
             <Box className="relative z-10 flex flex-row justify-between items-center gap-3 sm:gap-4 md:gap-6 w-full">
-              {/* Logo Container */}
               <Box className="flex items-center gap-3 sm:gap-4">
                 <Box className="bg-white/15 backdrop-blur-md rounded-xl md:rounded-2xl p-3 sm:p-4 border border-white/25 shadow-lg flex items-center justify-center">
-                  <Image
-                    src={logo}
-                    alt="Uptick Logo"
-                    className="object-contain h-4 sm:w-auto sm:h-8 md:h-10 w-24"
-                  />
+                  <Box className="relative w-24 h-6 xs:w-28 sm:w-32 sm:h-8 md:w-40 md:h-10 lg:w-48 lg:h-12">
+                    <Image
+                      src={logo}
+                      alt="Uptick Logo"
+                      fill
+                      priority
+                      className="object-contain"
+                      sizes="(max-width: 640px) 96px, (max-width: 768px) 128px, (max-width: 1024px) 160px, 192px"
+                    />
+                  </Box>
                 </Box>
               </Box>
-
-              {/* Enhanced Cohort Number */}
               <Box className="bg-white/20 backdrop-blur-md rounded-xl md:rounded-2xl px-4 sm:px-5 py-2 sm:py-3 text-center border border-white/25 shadow-lg min-w-[140px]">
                 <p className="text-sm sm:text-base md:text-lg font-bold text-white">
                   {formik.values.cohortNumber
@@ -679,7 +669,6 @@ export default function ApplicationForm() {
                 </Box>
 
                 <Box className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                  {/* Gender Dropdown */}
                   <Box className="space-y-2">
                     <label htmlFor="gender" className="block text-sm sm:text-base font-semibold text-gray-200">
                       Gender *
@@ -702,8 +691,6 @@ export default function ApplicationForm() {
                     )}
                   </Box>
                   
-
-                  {/* Country Dropdown */}
                   <Box className="space-y-2">
                     <label
                       htmlFor="country"
@@ -730,7 +717,6 @@ export default function ApplicationForm() {
                       </p>
                     )}
 
-                    {/* Other Country Input */}
                     {formik.values.country === 'Other' && (
                       <Box className="mt-4 p-4 bg-blue-500/15 rounded-xl border-2 border-blue-500/30">
                         <label
@@ -756,7 +742,6 @@ export default function ApplicationForm() {
                     )}
                   </Box>
 
-                  {/* State/Province Dropdown */}
                   <Box className="space-y-2">
                     <label
                       htmlFor="state"
@@ -787,7 +772,6 @@ export default function ApplicationForm() {
                       />
                     )}
 
-                    {/* Other State Input */}
                     {formik.values.state === 'Other' && (
                       <Box className="mt-4 p-4 bg-blue-500/15 rounded-xl border-2 border-blue-500/30">
                         <label
@@ -832,7 +816,6 @@ export default function ApplicationForm() {
                   </h3>
                 </Box>
 
-                {/* Track Select Dropdown */}
                 <Box className="space-y-2">
                   <label
                     htmlFor="trackId"
@@ -864,7 +847,6 @@ export default function ApplicationForm() {
                   )}
                 </Box>
 
-                {/* Tools Checkboxes */}
                 {formik.values.trackId && (
                   <Box className="space-y-2">
                     <label className="block text-sm sm:text-base font-semibold text-gray-200">
@@ -944,7 +926,7 @@ export default function ApplicationForm() {
                 </Box>
               </Box>
 
-              {/* CV Upload Section */}
+              {/* Document Upload Section */}
               <Box className="space-y-4 sm:space-y-6">
                 <Box className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                   <Box className="bg-blue-500/25 p-2 sm:p-3 rounded-xl border border-blue-400/40 shadow-lg">
@@ -1025,7 +1007,6 @@ export default function ApplicationForm() {
                     </p>
                   )}
 
-                  {/* Upload Progress */}
                   {uploadProgress > 0 && (
                     <Box className="mt-4 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20 backdrop-blur-sm">
                       <Box className="flex justify-between text-sm font-medium text-blue-300 mb-2">
@@ -1043,7 +1024,7 @@ export default function ApplicationForm() {
                 </Box>
               </Box>
 
-              {/* Referral Source Dropdown */}
+              {/* Referral Source */}
               <Box className="space-y-2">
                 <label
                   htmlFor="referralSource"
@@ -1071,7 +1052,7 @@ export default function ApplicationForm() {
                 )}
               </Box>
 
-              {/* Enhanced Submit Button */}
+              {/* Submit Button */}
               <Box className="pt-4 sm:pt-6">
                 <button
                   type="submit"
@@ -1096,7 +1077,6 @@ export default function ApplicationForm() {
           </Box>
         </Box>
 
-        {/* Enhanced Success Modal */}
         {showSuccess && (
           <Box className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center p-4 sm:p-6 z-50 animate-fade-in">
             <Box className="bg-slate-800/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl transform animate-scale-in border border-blue-500/20">
@@ -1111,7 +1091,7 @@ export default function ApplicationForm() {
                 <span className="font-semibold text-blue-400">
                   Cohort {formik.values.cohortNumber}
                 </span>
-                . We've received your application and will review it carefully.
+                . We&apos;ve received your application and will review it carefully.
               </p>
               <Box className="w-full bg-gray-700 rounded-full h-2 mb-4 sm:mb-6">
                 <Box className="bg-gradient-to-r from-blue-400 to-blue-500 h-2 rounded-full animate-pulse" />
