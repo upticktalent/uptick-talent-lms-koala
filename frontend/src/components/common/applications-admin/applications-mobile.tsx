@@ -140,9 +140,15 @@ export default function ApplicationsMobile({
                 )}
               </SelectTrigger>
               <SelectContent className="bg-white border border-indigo-100 text-black">
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="shortlisted">Shortlist</SelectItem>
-                <SelectItem value="rejected">Reject</SelectItem>
+                <SelectItem className="focus:bg-indigo-600" value="pending">
+                  Pending
+                </SelectItem>
+                <SelectItem className="focus:bg-indigo-600" value="shortlisted">
+                  Shortlist
+                </SelectItem>
+                <SelectItem className="focus:bg-indigo-600" value="rejected">
+                  Reject
+                </SelectItem>
               </SelectContent>
             </Select>
 

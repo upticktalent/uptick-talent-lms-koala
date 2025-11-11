@@ -1,0 +1,56 @@
+      {/* View Assessment Dialog */}
+      <Dialog open={!!viewAssessment} onOpenChange={() => setViewAssessment(null)}>
+        <DialogContent className="max-w-6xl w-full bg-white border border-indigo-100 max-h-[90vh] rounded-lg shadow-lg flex flex-col">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle className="text-indigo-700 text-xl text-center font-semibold">
+              Assessment Details
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 text-center text-sm mt-1">
+              Review the submitted assessment and take action
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Scrollable content area */}
+          <Box className="overflow-y-auto flex-1 space-y-4 element">
+            {viewAssessment && <AssessmentDetails assessment={viewAssessment} />}
+          </Box>
+
+          {/* Footer with buttons, now static */}
+          <DialogFooter className="flex flex-col sm:flex-row justify-between gap-3 px-6 py-4 border-t bg-white">
+            {/* Download Button */}
+            <Button
+              onClick={() =>
+                handleDownload(viewAssessment?.fileUrl || '', getApplicantName(viewAssessment!))
+              }
+              className="flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 cursor-pointer transition-colors duration-200"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+
+            {/* Action Buttons */}
+            <Box className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Button
+                onClick={() =>
+                  handleReject(viewAssessment?._id || '', getApplicantName(viewAssessment!))
+                }
+                disabled={viewAssessment?.status === 'reviewed'}
+                className="flex-1 sm:flex-none w-full sm:w-auto bg-green-500 text-white border border-green-500 hover:bg-green-600 transition-colors duration-150 cursor-pointer"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Review
+              </Button>
+              <Button
+                onClick={() =>
+                  handleUnderReview(viewAssessment?._id || '', getApplicantName(viewAssessment!))
+                }
+                disabled={viewAssessment?.status === 'under-review'}
+                className="flex-1 sm:flex-none w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white transition-colors duration-150 cursor-pointer"
+              >
+                <ClipboardList className="w-4 h-4 mr-2" />
+                Mark for Review
+              </Button>
+            </Box>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>

@@ -25,16 +25,14 @@ const getApplicantEmail = (assessment: Assessment) => {
 
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case 'rejected':
-      return <Badge className="bg-red-100 text-red-700 border-red-200">Rejected</Badge>;
+    case 'reviewed':
+      return <Badge className="bg-green-100 text-green-700 border-green-200">Reviewed</Badge>;
     case 'under-review':
       return (
         <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">Under Review</Badge>
       );
-    case 'submitted':
-      return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">Submitted</Badge>;
     default:
-      return <Badge className="bg-gray-100 text-gray-700 border-gray-200">{status}</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">Submitted</Badge>;
   }
 };
 

@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Download } from 'lucide-react';
+import { Eye, Download, Loader } from 'lucide-react';
 import { Assessment } from '@/types/assessments-admin';
 import { getFullName } from '@/utils/helper';
 import {
@@ -29,27 +29,42 @@ const getApplicantEmail = (assessment: Assessment) => {
   return assessment.application.applicant?.email || 'No email';
 };
 
+const getTrackName = (assessment: Assessment) => {
+  return assessment.application.track?.name || 'Unknown Track';
+};
+
+const getCohortName = (assessment: Assessment) => {
+  return assessment.application.cohort?.name || 'Unknown Cohort';
+};
+
 const getStatusBadge = (status: string) => {
   switch (status) {
-    case 'rejected':
-      return <Badge className="bg-red-100 text-red-700 border-red-200">Rejected</Badge>;
+    case 'reviewed':
+      return <Badge className="bg-green-100 text-green-700 border-green-200">Reviewed</Badge>;
     case 'under-review':
       return (
         <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">Under Review</Badge>
       );
-    case 'submitted':
-      return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">Submitted</Badge>;
     default:
-      return <Badge className="bg-gray-100 text-gray-700 border-gray-200">{status}</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">Submitted</Badge>;
   }
 };
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  if (!dateString) return 'No date';
+
+  try {
+    const date = new Date(dateString);
+    return isNaN(date.getTime())
+      ? 'Invalid Date'
+      : date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+  } catch {
+    return 'Invalid Date';
+  }
 };
 
 interface AssessmentMobileProps {
@@ -58,7 +73,8 @@ interface AssessmentMobileProps {
   onSelectAssessment: (id: string, checked: boolean) => void;
   onViewAssessment: (assessment: Assessment) => void;
   onDownloadAssessment: (assessment: Assessment) => void;
-  onStatusChange: (id: string, status: 'under-review' | 'rejected', assessment: Assessment) => void;
+  onStatusChange: (id: string, status: string) => void;
+  loadingIds?: Set<string>;
 }
 
 export default function AssessmentMobile({
@@ -68,7 +84,10 @@ export default function AssessmentMobile({
   onViewAssessment,
   onDownloadAssessment,
   onStatusChange,
+  loadingIds = new Set(),
 }: AssessmentMobileProps) {
+  const isAssessmentLoading = (id: string) => loadingIds.has(id);
+
   if (assessments.length === 0) {
     return <Box className="text-center py-8 text-gray-500">No assessments found.</Box>;
   }
@@ -89,11 +108,13 @@ export default function AssessmentMobile({
                   </Box>
                   <Box className="text-xs text-gray-500">{getApplicantEmail(assessment)}</Box>
                 </Box>
-                <Box className="text-xs text-gray-600">{assessment.application.cohort.name}</Box>
               </Box>
 
               <Box className="mt-2 flex flex-wrap items-center gap-2">
-                <Box className="text-sm text-gray-700">{assessment.application.track.name}</Box>
+                <Box className="text-sm text-gray-700">{getTrackName(assessment)}</Box>
+                <Badge variant="outline" className="font-normal text-gray-900">
+                  {getCohortName(assessment)}
+                </Badge>
                 {getStatusBadge(assessment.status)}
               </Box>
 
@@ -127,17 +148,29 @@ export default function AssessmentMobile({
 
             {/* Status Update Select */}
             <Select
-              value=""
-              onValueChange={(value: 'under-review' | 'rejected') =>
-                onStatusChange(assessment._id, value, assessment)
+              value={assessment.status}
+              onValueChange={(value: 'submitted' | 'under-review' | 'reviewed') =>
+                onStatusChange(assessment._id, value)
               }
+              disabled={isAssessmentLoading(assessment._id)}
             >
-              <SelectTrigger className="flex-1 border-indigo-200 text-black focus:ring-indigo-600">
-                <SelectValue placeholder="Update status" />
+              <SelectTrigger className="flex-1 border-indigo-200 text-black focus:ring-indigo-600 disabled:opacity-50">
+                {isAssessmentLoading(assessment._id) ? (
+                  <Box className="flex items-center gap-2 justify-center">
+                    <Loader className="w-3 h-3 animate-spin" />
+                    <span className="text-xs">Updating...</span>
+                  </Box>
+                ) : (
+                  <SelectValue placeholder="Update status" />
+                )}
               </SelectTrigger>
               <SelectContent className="bg-white border border-indigo-100 text-black">
-                <SelectItem value="under-review">Mark for Review</SelectItem>
-                <SelectItem value="rejected">Reject</SelectItem>
+                <SelectItem className="focus:bg-indigo-600" value="under-review">
+                  Under Review
+                </SelectItem>
+                <SelectItem className="focus:bg-indigo-600" value="reviewed">
+                  Reviewed
+                </SelectItem>
               </SelectContent>
             </Select>
 

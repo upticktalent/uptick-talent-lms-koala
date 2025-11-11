@@ -26,7 +26,7 @@ export interface Assessment {
   };
   fileUrl: string;
   notes: string;
-  status: 'pending' | 'under-review' | 'rejected' | 'submitted';
+  status: 'under-review' | 'reviewed' | 'submitted';
   submittedAt: string;
   createdAt: string;
   updatedAt: string;
