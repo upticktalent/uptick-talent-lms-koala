@@ -1,0 +1,9 @@
+export { default as PersonalInfoSection } from './components/personalinfosection';
+export { default as ContactSection } from './components/contactsection';
+export { default as LocationSection } from './components/locationsection';
+export { default as TrackSection } from './components/tracksection';
+export { default as MotivationSection } from './components/motivation';
+export { default as FileUploadSection } from './components/fileuploadsection';
+export { default as ReferralSection } from './components/referralsection';
+export { default as SubmitButton } from './components/sumitbutton';
+export { default as SuccessModal } from './components/successmodal';

@@ -1,3 +1,4 @@
+import Box from '@/components/ui/box';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -11,8 +12,8 @@ interface ApplicantLayoutProps {
 
 export default function ApplicantLayout({ children }: ApplicantLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <Box className="min-h-screen bg-gray-50">
       {children}
-    </div>
+    </Box>
   );
 }
