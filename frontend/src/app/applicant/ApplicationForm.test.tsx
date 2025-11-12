@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import ApplicationForm from './applicationform';
+import ApplicationForm from "../applicant/applicationform";
 
 global.fetch = vi.fn();
 
@@ -35,7 +35,7 @@ describe('ApplicationForm', () => {
     const testQueryClient = createTestQueryClient();
     return render(
       <QueryClientProvider client={testQueryClient}>
-        <ApplicationForm />
+        <ApplicationForm/>
       </QueryClientProvider>
     );
   };
