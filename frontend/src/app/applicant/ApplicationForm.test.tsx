@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import ApplicationForm from "./applicationform"; 
+import ApplicationForm from './application-form';
 
 global.fetch = vi.fn();
 

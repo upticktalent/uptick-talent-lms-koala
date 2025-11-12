@@ -50,7 +50,7 @@ const submitApplication = async (formData: FormData) => {
 };
 
 export default function ApplicationForm() {
-  const queryClient = useQueryClient();
+      const queryClient = useQueryClient();
   const [showSuccess, setShowSuccess] = useState(false);
 
   const { 

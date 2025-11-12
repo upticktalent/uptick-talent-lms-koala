@@ -1,5 +1,5 @@
 import Box from '@/components/ui/box';
-import ApplicationForm from "./applicationform";
+import ApplicationForm from './application-form';
 
 export default function ApplicantPage() {
   return (
