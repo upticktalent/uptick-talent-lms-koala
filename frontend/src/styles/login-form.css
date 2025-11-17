@@ -1,8 +1,0 @@
-/* Hide browser default reveal password feature */
-input[type='password']::-ms-reveal,
-input[type='password']::-ms-clear,
-input[type='password']::-webkit-password-toggle,
-input[type='password']::-webkit-contacts-auto-fill-button {
-  display: none;
-  appearance: none;
-}
