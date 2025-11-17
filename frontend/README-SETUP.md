@@ -1,6 +1,7 @@
 # Dependencies needed for the Uptick Talent LMS Frontend
 
 ## Core Dependencies (already in package.json)
+
 - Next.js 14+ (App Router)
 - React 18+
 - TypeScript
@@ -9,6 +10,7 @@
 ## Additional Dependencies to Install
 
 ### UI & Styling
+
 ```bash
 npm install clsx tailwind-merge
 npm install @radix-ui/react-slot
@@ -16,12 +18,14 @@ npm install class-variance-authority
 ```
 
 ### State Management & Data Fetching
+
 ```bash
 npm install axios
 npm install @tanstack/react-query  # Optional: for better data fetching
 ```
 
 ### Form Handling
+
 ```bash
 npm install react-hook-form
 npm install @hookform/resolvers
@@ -29,6 +33,7 @@ npm install zod  # For validation schemas
 ```
 
 ### Icons (Optional)
+
 ```bash
 npm install lucide-react
 # or
@@ -36,6 +41,7 @@ npm install @heroicons/react
 ```
 
 ### Date Handling
+
 ```bash
 npm install date-fns
 # or
@@ -43,13 +49,16 @@ npm install dayjs
 ```
 
 ## Development Dependencies
+
 ```bash
 npm install -D @types/node
 npm install -D eslint-config-next
 ```
 
 ## Environment Variables
+
 Create a `.env.local` file with:
+
 ```
 NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```
@@ -123,23 +132,27 @@ frontend/
 ## Key Features Implemented
 
 ✅ **Authentication System**
+
 - Login/logout with JWT tokens
 - Auth context and hooks
 - Route protection (AuthGuard, RoleGuard)
 - Role-based access control
 
 ✅ **Application Flow**
+
 - Public application form
 - Application status tracking
 - Assessment system
 - Interview scheduling
 
 ✅ **LMS Dashboard**
+
 - Role-based dashboard views (Admin, Mentor, Student)
 - Track management and navigation
 - Recruitment pipeline management
 
 ✅ **Track System**
+
 - Dynamic track pages with slug routing
 - Stream (announcements)
 - Classroom (materials & assignments)
@@ -147,11 +160,13 @@ frontend/
 - Grades (progress tracking)
 
 ✅ **Admin Panel**
+
 - System-wide student management
 - Track administration
 - Application oversight
 
 ✅ **API Integration**
+
 - Centralized API client with interceptors
 - Service layer for all backend calls
 - Error handling utilities
