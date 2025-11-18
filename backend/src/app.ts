@@ -9,7 +9,7 @@ import { mapMongooseError } from "./utils/mongooseErrorHandler";
 const app = express();
 
 const corsOptions = {
-  origin: "*",
+  origin: "http://localhost:3000",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
 };
 
