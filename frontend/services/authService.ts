@@ -29,7 +29,7 @@ export const authService = {
   },
 
   getCurrentUser: async () => {
-    return apiClient.get('/auth/me');
+    return apiClient.get('/auth/profile');
   },
 
   refreshToken: async () => {

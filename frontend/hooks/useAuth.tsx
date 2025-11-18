@@ -7,8 +7,8 @@ import {
   createContext,
   ReactNode,
 } from 'react';
-import { IUser } from '../types';
-import { authService } from '../services/authService';
+import { IUser } from '@/types';
+import { authService } from '@/services/authService';
 
 interface AuthContextType {
   user: IUser | null;
