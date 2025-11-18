@@ -66,7 +66,7 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
                   <div className="text-gray-500 capitalize">{user.role}</div>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="link" size="sm" onClick={handleLogout}>
                 Logout
               </Button>
             </>

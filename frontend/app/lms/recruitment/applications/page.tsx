@@ -227,11 +227,15 @@ export default function ApplicationsPage() {
                         href={`/lms/recruitment/applications/${application._id}`}
                         className="w-full sm:w-auto"
                       >
+<<<<<<< HEAD
                         <Button
                           variant="outline"
                           size="sm"
                           className="w-full sm:w-auto"
                         >
+=======
+                        <Button variant='secondary' size='sm'>
+>>>>>>> f009632f4612de641935e20fbc2873f81ca413b8
                           View Details
                         </Button>
                       </Link>

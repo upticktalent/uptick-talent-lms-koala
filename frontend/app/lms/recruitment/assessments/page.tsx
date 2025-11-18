@@ -162,7 +162,7 @@ export default function AssessmentsPage() {
                       <Link
                         href={`/lms/recruitment/assessments/${assessment._id}`}
                       >
-                        <Button variant='outline' size='sm'>
+                        <Button variant='secondary' size='sm'>
                           {assessment.status === 'submitted' ? 'Grade' : 'View'}
                         </Button>
                       </Link>

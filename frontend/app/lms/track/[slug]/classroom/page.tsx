@@ -151,7 +151,7 @@ export default function TrackClassroomPage() {
         </div>
         {(isAdmin || isMentor) && (
           <div className='flex gap-2'>
-            <Button variant='outline'>Upload Material</Button>
+            <Button variant='secondary'>Upload Material</Button>
             <Button>Create Assignment</Button>
           </div>
         )}
@@ -202,7 +202,7 @@ export default function TrackClassroomPage() {
                           <span className='text-xs text-gray-500'>
                             Uploaded {formatDate(material.uploadedAt)}
                           </span>
-                          <Button size='sm' variant='outline'>
+                          <Button size='sm' variant='secondary'>
                             {material.type === 'link' ? 'Visit' : 'Download'}
                           </Button>
                         </div>
@@ -267,7 +267,7 @@ export default function TrackClassroomPage() {
                         submissions
                       </div>
                       <div className='flex gap-2'>
-                        <Button size='sm' variant='outline'>
+                        <Button size='sm' variant='secondary'>
                           View Details
                         </Button>
                         {(isAdmin || isMentor) && (

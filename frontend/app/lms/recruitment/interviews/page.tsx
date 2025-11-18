@@ -235,7 +235,7 @@ export default function InterviewsPage() {
                       <Link
                         href={`/lms/recruitment/interviews/${interview._id}`}
                       >
-                        <Button variant='outline' size='sm'>
+                        <Button variant='secondary' size='sm'>
                           {interview.status === 'scheduled' ? 'Update' : 'View'}
                         </Button>
                       </Link>

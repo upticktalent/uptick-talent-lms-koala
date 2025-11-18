@@ -1,4 +1,7 @@
-export function formatDate(date: string | Date, format: 'short' | 'long' | 'time' = 'short'): string {
+export function formatDate(
+  date: string | Date,
+  format: 'short' | 'long' | 'time' = 'short'
+): string {
   const d = new Date(date);
 
   if (format === 'time') {
@@ -49,7 +52,7 @@ export function timeAgo(date: string | Date): string {
 export function isToday(date: string | Date): boolean {
   const today = new Date();
   const checkDate = new Date(date);
-  
+
   return (
     today.getFullYear() === checkDate.getFullYear() &&
     today.getMonth() === checkDate.getMonth() &&

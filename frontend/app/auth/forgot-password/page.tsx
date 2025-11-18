@@ -4,7 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { authService } from '@/services/authService';
 import { handleApiError } from '@/utils/handleApiError';
 
@@ -32,16 +38,17 @@ export default function ForgotPasswordPage() {
   if (success) {
     return (
       <Card>
-        <CardContent className="pt-6">
-          <div className="text-center">
-            <div className="text-green-600 text-lg font-medium mb-2">
+        <CardContent className='pt-6'>
+          <div className='text-center'>
+            <div className='text-green-600 text-lg font-medium mb-2'>
               Reset Link Sent!
             </div>
-            <p className="text-gray-600 mb-4">
-              If an account with that email exists, we&apos;ve sent you a password reset link.
+            <p className='text-gray-600 mb-4'>
+              If an account with that email exists, we&apos;ve sent you a
+              password reset link.
             </p>
-            <Link href="/auth/login">
-              <Button variant="outline">Back to Login</Button>
+            <Link href='/auth/login'>
+              <Button variant='secondary'>Back to Login</Button>
             </Link>
           </div>
         </CardContent>
@@ -54,38 +61,45 @@ export default function ForgotPasswordPage() {
       <CardHeader>
         <CardTitle>Reset Password</CardTitle>
         <CardDescription>
-          Enter your email address and we&apos;ll send you a link to reset your password
+          Enter your email address and we&apos;ll send you a link to reset your
+          password
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className='space-y-4'>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
               {error}
             </div>
           )}
-          
+
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor='email'
+              className='block text-sm font-medium text-gray-700 mb-1'
+            >
               Email Address
             </label>
             <Input
-              id="email"
-              type="email"
+              id='email'
+              type='email'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="Enter your email address"
+              placeholder='Enter your email address'
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type='submit' className='w-full' disabled={loading}>
             {loading ? 'Sending...' : 'Send Reset Link'}
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
-          <Link href="/auth/login" className="text-sm text-blue-600 hover:text-blue-500">
+        <div className='mt-6 text-center'>
+          <Link
+            href='/auth/login'
+            className='text-sm text-blue-600 hover:text-blue-500'
+          >
             Back to Login
           </Link>
         </div>

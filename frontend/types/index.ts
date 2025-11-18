@@ -20,7 +20,14 @@ export interface IApplicant {
   education: string;
   experience: string;
   motivation: string;
-  status: 'pending' | 'shortlisted' | 'assessment_submitted' | 'under_review' | 'interview_scheduled' | 'accepted' | 'rejected';
+  status:
+    | 'pending'
+    | 'shortlisted'
+    | 'assessment_submitted'
+    | 'under_review'
+    | 'interview_scheduled'
+    | 'accepted'
+    | 'rejected';
   preferredTrack?: string;
   resumeUrl?: string;
   portfolioUrl?: string;
