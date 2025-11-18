@@ -33,7 +33,7 @@ const getDatabaseUri = () => {
 };
 
 const getAllowedOrigins = () => {
-  return env.ALLOWED_ORIGINS;
+  return env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim());
 };
 
 export const getters = {

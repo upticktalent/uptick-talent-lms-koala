@@ -1,5 +1,5 @@
 import express, { ErrorRequestHandler } from "express";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import { getters } from "./config";
 import { loadServices } from "./loader";
 import { mapMongooseError } from "./utils/mongooseErrorHandler";
@@ -8,11 +8,15 @@ import { mapMongooseError } from "./utils/mongooseErrorHandler";
 
 const app = express();
 
-const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production" ? getters.getAllowedOrigins() : "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  credentials: true,
+const corsOptions: CorsOptions = {
+  origin: function (origin, callback) {
+    const allowed = getters.getAllowedOrigins();
+    if (!origin || allowed.includes(origin)) {
+      callback(null, origin);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
 };
 
 app.use(cors(corsOptions));
