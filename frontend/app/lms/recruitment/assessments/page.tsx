@@ -1,171 +1,286 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { useFetch } from '@/hooks/useFetch';
-import { assessmentService } from '@/services/assessmentService';
-import { RoleGuard } from '@/middleware/roleGuard';
-import { formatDate } from '@/utils/formatDate';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useFetch } from "@/hooks/useFetch";
+import { assessmentService } from "@/services/assessmentService";
+import { RoleGuard } from "@/middleware/roleGuard";
+import { formatDate } from "@/utils/formatDate";
+import Link from "next/link";
+import { LoaderCircle } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination"; // Adjust import path as needed
 
 export default function AssessmentsPage() {
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(5);
+
   const {
     data: assessments,
     loading,
     error,
   } = useFetch(() => assessmentService.getAssessments());
 
+  const statuses = [
+    { value: "all", label: "All Assessments" },
+    { value: "pending", label: "Pending" },
+    { value: "submitted", label: "Awaiting Grade" },
+    { value: "graded", label: "Graded" },
+  ];
+
+  const filteredAssessments =
+    assessments?.assessments?.filter((assessment: any) => {
+      const matchesStatus =
+        statusFilter === "all" || assessment.status === statusFilter;
+      const matchesSearch =
+        !searchTerm ||
+        `${assessment.application.applicant.firstName} ${assessment.application.applicant.lastName}`
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        assessment.application.applicant.email
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        assessment.application.track.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
+      return matchesStatus && matchesSearch;
+    }) || [];
+
+  // Pagination logic
+  const totalItems = filteredAssessments.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedAssessments = filteredAssessments.slice(
+    startIndex,
+    startIndex + pageSize
+  );
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'submitted':
-        return 'bg-blue-100 text-blue-800';
-      case 'graded':
-        return 'bg-green-100 text-green-800';
+      case "pending":
+        return "bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]";
+      case "submitted":
+        return "bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]";
+      case "graded":
+        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]";
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
   };
 
   if (loading) {
     return (
-      <div className='flex justify-center items-center min-h-64'>
-        <div className='text-gray-600'>Loading assessments...</div>
+      <div className="flex justify-center items-center min-h-64">
+        <LoaderCircle className="text-indigo-600 animate-spin w-8 h-8" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className='text-center text-red-600'>
+      <div className="text-center text-red-600 p-4">
         Failed to load assessments: {error}
       </div>
     );
   }
 
   return (
-    <RoleGuard allowedRoles={['admin', 'mentor']}>
-      <div className='space-y-6'>
+    <RoleGuard allowedRoles={["admin", "mentor"]}>
+      <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Assessments</h1>
-          <p className='text-gray-600'>
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            Assessments
+          </h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">
             Monitor and grade applicant assessments
           </p>
         </div>
 
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <Input
+              type="text"
+              placeholder="Search by applicant name, email, or track..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1); // Reset to first page when searching
+              }}
+              className="w-full"
+            />
+          </div>
+          <div className="w-full sm:w-48 lg:w-64">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1); // Reset to first page when filtering
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+            >
+              {statuses.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {/* Stats */}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-          <Card>
-            <CardContent className='pt-6'>
-              <div className='text-2xl font-bold text-yellow-600'>
-                {assessments?.filter((a: any) => a.status === 'pending')
-                  .length || 0}
-              </div>
-              <p className='text-xs text-muted-foreground'>Pending</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='pt-6'>
-              <div className='text-2xl font-bold text-blue-600'>
-                {assessments?.filter((a: any) => a.status === 'submitted')
-                  .length || 0}
-              </div>
-              <p className='text-xs text-muted-foreground'>Awaiting Grade</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='pt-6'>
-              <div className='text-2xl font-bold text-green-600'>
-                {assessments?.filter((a: any) => a.status === 'graded')
-                  .length || 0}
-              </div>
-              <p className='text-xs text-muted-foreground'>Graded</p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {statuses.slice(1).map((status) => {
+            const count =
+              assessments?.assessments?.filter(
+                (assessment: any) => assessment.status === status.value
+              ).length || 0;
+            return (
+              <Card key={status.value} className="overflow-hidden">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                    {count}
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">
+                    {status.label}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Assessments List */}
-        <div className='space-y-4'>
-          {!assessments || assessments.length === 0 ? (
+        <div className="space-y-4">
+          {!paginatedAssessments || paginatedAssessments.length === 0 ? (
             <Card>
-              <CardContent className='pt-6 text-center text-gray-500'>
-                No assessments available.
+              <CardContent className="p-6 sm:p-8 text-center text-gray-500">
+                <p className="text-sm sm:text-base">
+                  No assessments found matching your criteria.
+                </p>
               </CardContent>
             </Card>
           ) : (
-            assessments.map((assessment: any) => (
-              <Card key={assessment._id}>
-                <CardContent className='pt-6'>
-                  <div className='flex items-center justify-between'>
-                    <div className='flex-1'>
-                      <div className='flex items-center gap-4'>
-                        <div>
-                          <h3 className='font-semibold text-gray-900'>
-                            Assessment #{assessment._id.slice(-6)}
-                          </h3>
-                          <p className='text-sm text-gray-600'>
-                            Applicant: {assessment.applicantId}
-                          </p>
-                        </div>
+            paginatedAssessments.map((assessment: any) => (
+              <Card key={assessment._id} className="overflow-hidden">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col gap-4">
+                    {/* Top Section: Applicant Info & Status */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-lg capitalize">
+                          {assessment.application.applicant.firstName}{" "}
+                          {assessment.application.applicant.lastName}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1 truncate">
+                          {assessment.application.applicant.email}
+                        </p>
+                      </div>
+                      <div className="shrink-0">
                         <span
-                          className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
+                          className={`px-3 py-1 text-xs rounded-full ${getStatusColor(
                             assessment.status
                           )}`}
                         >
                           {assessment.status.toUpperCase()}
                         </span>
                       </div>
+                    </div>
 
-                      <div className='mt-3 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600'>
-                        <div>
-                          <span className='font-medium'>Questions:</span>
-                          <span className='ml-1'>
-                            {assessment.questions?.length || 0}
-                          </span>
+                    {/* Middle Section: Assessment Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">Track</div>
+                        <div className="capitalize">
+                          {assessment.application.track.name}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">Cohort</div>
+                        <div className="capitalize">
+                          {assessment.application.cohort.name}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">
+                          Submitted
                         </div>
                         <div>
-                          <span className='font-medium'>Score:</span>
-                          <span className='ml-1'>
-                            {assessment.score !== undefined
-                              ? `${assessment.score}%`
-                              : 'Not graded'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className='font-medium'>Submitted:</span>
-                          <span className='ml-1'>
-                            {assessment.submittedAt
-                              ? formatDate(assessment.submittedAt)
-                              : 'Not submitted'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className='font-medium'>Graded:</span>
-                          <span className='ml-1'>
-                            {assessment.gradedAt
-                              ? formatDate(assessment.gradedAt)
-                              : 'Not graded'}
-                          </span>
+                          {assessment.submittedAt
+                            ? formatDate(assessment.submittedAt)
+                            : "Not submitted"}
                         </div>
                       </div>
                     </div>
 
-                    <div className='flex gap-2'>
-                      <Link
-                        href={`/lms/recruitment/assessments/${assessment._id}`}
-                      >
-                        <Button variant='secondary' size='sm'>
-                          {assessment.status === 'submitted' ? 'Grade' : 'View'}
-                        </Button>
-                      </Link>
+                    {/* Notes Preview */}
+                    {assessment.notes && (
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="font-medium text-sm text-gray-900 mb-1">
+                          Notes
+                        </div>
+                        <p className="text-xs text-gray-600 line-clamp-2">
+                          {assessment.notes}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Bottom Section: Actions */}
+                    <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center pt-3 border-t">
+                      <div className="flex-1">
+                        {assessment.status === "submitted" && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              // onClick={() =>
+                              //   handleReviewAssessment(assessment._id)
+                              // }
+                            >
+                              Review Assessment
+                            </Button>
+                          </div>
+                        )}
+                        {assessment.status !== "submitted" && (
+                          <div className="text-sm text-gray-500">
+                            {assessment.status === "pending"
+                              ? "Awaiting submission"
+                              : assessment.status === "graded"
+                              ? "Assessment graded"
+                              : "Ready for review"}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/lms/recruitment/assessments/${assessment._id}`}
+                        >
+                          <Button
+                            variant={
+                              assessment.status === "submitted"
+                                ? "primary"
+                                : "outline"
+                            }
+                            size="sm"
+                          >
+                            {assessment.status === "submitted"
+                              ? "Grade Now"
+                              : "View Details"}
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -173,6 +288,16 @@ export default function AssessmentsPage() {
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        {filteredAssessments.length > 0 && (
+          <Pagination
+            page={currentPage}
+            pageSize={pageSize}
+            total={totalItems}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
     </RoleGuard>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
+import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -12,7 +13,11 @@ interface AuthGuardProps {
 
 export function AuthGuard({
   children,
-  fallback = <div>Loading...</div>,
+  fallback = (
+    <div className="flex items-center justify-center h-screen">
+      <LoaderCircle className="text-indigo-600 animate-spin w-8 h-8" />
+    </div>
+  ),
   redirectTo = "/auth/login",
 }: AuthGuardProps) {
   const { isAuthenticated, loading } = useAuth();

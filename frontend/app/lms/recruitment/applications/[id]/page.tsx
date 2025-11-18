@@ -14,6 +14,8 @@ import {
   ExternalLink,
   LoaderCircle,
   Mail,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 
 export default function ApplicationDetail() {
@@ -49,6 +51,28 @@ export default function ApplicationDetail() {
     }
     window.open(application.cvUrl, "_blank");
   };
+
+  //   const handleShortlist = async () => {
+  //     try {
+  //       await applicantService.updateApplicationStatus(id, "shortlisted");
+  //       toast.success("Application shortlisted");
+  //       refetch(); // Refresh the application data
+  //     } catch (err) {
+  //       toast.error("Failed to shortlist application");
+  //       console.error(err);
+  //     }
+  //   };
+
+  //   const handleReject = async () => {
+  //     try {
+  //       await applicantService.updateApplicationStatus(id, "rejected");
+  //       toast.success("Application rejected");
+  //       refetch(); // Refresh the application data
+  //     } catch (err) {
+  //       toast.error("Failed to reject application");
+  //       console.error(err);
+  //     }
+  //   };
 
   if (loading) {
     return (
@@ -119,6 +143,8 @@ export default function ApplicationDetail() {
     reviewedAt,
   } = application;
 
+  const isPending = status === "pending";
+
   return (
     <div className="min-h-screen  bg-gray-50/30">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
@@ -147,6 +173,36 @@ export default function ApplicationDetail() {
         </div>
 
         <div className="grid gap-4 sm:gap-6">
+          {/* Quick Actions Card */}
+          {isPending && (
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg text-blue-900">
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    // onClick={handleShortlist}
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 flex-1"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Shortlist Application
+                  </Button>
+                  <Button
+                    // onClick={handleReject}
+                    variant="danger"
+                    className="flex items-center gap-2 flex-1"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Reject Application
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Applicant Information */}
           <Card>
             <CardHeader className="pb-3 sm:pb-4">
@@ -281,11 +337,13 @@ export default function ApplicationDetail() {
             </CardContent>
           </Card>
 
+          {/* Actions Card */}
           <Card>
             <CardHeader className="pb-3 sm:pb-4">
-              <CardTitle className="text-lg sm:text-xl">Actions</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">
+                Document Actions
+              </CardTitle>
             </CardHeader>
-
             <CardContent>
               <div className="flex flex-row flex-wrap gap-3 justify-center sm:justify-start">
                 {cvUrl && (

@@ -2,13 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { applicantService } from "@/services/applicantService";
@@ -17,18 +11,19 @@ import { formatDate } from "@/utils/formatDate";
 import { RoleGuard } from "@/middleware/roleGuard";
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function ApplicationsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(5);
 
   const {
     data: applications,
     loading,
     error,
   } = useFetch(() => applicantService.getApplications());
-
-  console.log(applications);
 
   const statuses = [
     { value: "all", label: "All Applications" },
@@ -55,25 +50,37 @@ export default function ApplicationsPage() {
       return matchesStatus && matchesSearch;
     }) || [];
 
+  // Pagination logic
+  const totalItems = filteredApplications.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedApplications = filteredApplications.slice(
+    startIndex,
+    startIndex + pageSize
+  );
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]";
       case "shortlisted":
-        return "bg-blue-100 text-blue-800";
+        return "bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]";
       case "assessment_submitted":
-        return "bg-blue-100 text-blue-800";
+        return "bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]";
       case "under_review":
-        return "bg-purple-100 text-purple-800";
+        return "bg-[hsl(var(--accent))]/10 text-[hsl(var(--accent-foreground))]";
       case "interview_scheduled":
-        return "bg-purple-100 text-purple-800";
+        return "bg-[hsl(var(--accent))]/10 text-[hsl(var(--accent-foreground))]";
       case "accepted":
-        return "bg-green-100 text-green-800";
+        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
       case "rejected":
-        return "bg-red-100 text-red-800";
+        return "bg-[hsl(var(--danger))]/10 text-[hsl(var(--danger))]";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]";
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
   };
 
   if (loading) {
@@ -114,14 +121,20 @@ export default function ApplicationsPage() {
               type="text"
               placeholder="Search by name or email..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full"
             />
           </div>
           <div className="w-full sm:w-48 lg:w-64">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1); // Reset to first page when filtering
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
             >
               {statuses.map((status) => (
@@ -157,7 +170,7 @@ export default function ApplicationsPage() {
 
         {/* Applications List */}
         <div className="space-y-4">
-          {filteredApplications.length === 0 ? (
+          {paginatedApplications.length === 0 ? (
             <Card>
               <CardContent className="p-6 sm:p-8 text-center text-gray-500">
                 <p className="text-sm sm:text-base">
@@ -166,76 +179,84 @@ export default function ApplicationsPage() {
               </CardContent>
             </Card>
           ) : (
-            filteredApplications.map((application: any) => (
+            paginatedApplications.map((application: any) => (
               <Card key={application._id} className="overflow-hidden">
                 <CardContent className="p-4 sm:p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 text-base sm:text-lg capitalize truncate">
-                            {application.applicant.firstName}{" "}
-                            {application.applicant.lastName}
-                          </h3>
-                          <p className="text-sm text-gray-600 truncate mt-1">
-                            {application.applicant.email}
-                          </p>
-                        </div>
-                        <div className="flex-shrink-0">
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
-                              application.status
-                            )}`}
-                          >
-                            {application.status
-                              .replace(/_/g, " ")
-                              .toUpperCase()}
-                          </span>
-                        </div>
+                  <div className="flex flex-col gap-4">
+                    {/* Top Section: Basic Info & Status */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 text-lg capitalize">
+                          {application.applicant.firstName}{" "}
+                          {application.applicant.lastName}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1 truncate">
+                          {application.applicant.email}
+                        </p>
                       </div>
-
-                      <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 text-sm text-gray-600">
-                        <div className="flex flex-col sm:flex-row">
-                          <span className="font-medium text-xs sm:text-sm">
-                            Preferred Track:
-                          </span>
-                          <span className="ml-0 sm:ml-1 capitalize text-xs sm:text-sm truncate">
-                            {application.track.name}
-                          </span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row">
-                          <span className="font-medium text-xs sm:text-sm">
-                            Applied:
-                          </span>
-                          <span className="ml-0 sm:ml-1 text-xs sm:text-sm">
-                            {formatDate(application.createdAt)}
-                          </span>
-                        </div>
-                        <div className="flex flex-col sm:flex-row">
-                          <span className="font-medium text-xs sm:text-sm">
-                            Last Updated:
-                          </span>
-                          <span className="ml-0 sm:ml-1 text-xs sm:text-sm">
-                            {formatDate(application.updatedAt)}
-                          </span>
-                        </div>
+                      <div className="shrink-0">
+                        <span
+                          className={`px-3 py-1 text-xs rounded-full ${getStatusColor(
+                            application.status
+                          )}`}
+                        >
+                          {application.status.replace(/_/g, " ").toUpperCase()}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex justify-end sm:justify-start pt-2 sm:pt-0">
+                    {/* Middle Section: Application Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">Track</div>
+                        <div className="capitalize">
+                          {application.track.name}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">Applied</div>
+                        <div>{formatDate(application.createdAt)}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">
+                          Last Updated
+                        </div>
+                        <div>{formatDate(application.updatedAt)}</div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Section: Actions */}
+                    <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center pt-3 border-t">
+                      <div className="flex-1">
+                        {application.status === "pending" ? (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              // onClick={() => handleShortlist(application._id)}
+                            >
+                              Shortlist
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              // onClick={() => handleReject(application._id)}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-gray-500">
+                            Application {application.status.replace("_", " ")}
+                          </div>
+                        )}
+                      </div>
+
                       <Link
                         href={`/lms/recruitment/applications/${application._id}`}
-                        className="w-full sm:w-auto"
                       >
-<<<<<<< HEAD
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full sm:w-auto"
-                        >
-=======
-                        <Button variant='secondary' size='sm'>
->>>>>>> f009632f4612de641935e20fbc2873f81ca413b8
+                        <Button variant="outline" size="sm">
                           View Details
                         </Button>
                       </Link>
@@ -246,6 +267,16 @@ export default function ApplicationsPage() {
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        {filteredApplications.length > 0 && (
+          <Pagination
+            page={currentPage}
+            pageSize={pageSize}
+            total={totalItems}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
     </RoleGuard>
   );

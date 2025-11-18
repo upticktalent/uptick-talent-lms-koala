@@ -1,18 +1,13 @@
-import apiClient from './apiClient';
-import { IAssessment } from '@/types';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import apiClient from "./apiClient";
 
 export const assessmentService = {
-  // Get assessment for applicant
-  getAssessment: async (applicantId: string) => {
-    return apiClient.get(`/assessments/applicant/${applicantId}`);
-  },
-
   // Submit assessment
   submitAssessment: async (assessmentData: {
     applicantId: string;
     answers: Record<string, any>;
   }) => {
-    return apiClient.post('/assessments/submit', assessmentData);
+    return apiClient.post("/assessments/submit", assessmentData);
   },
 
   // Get all assessments (admin)
@@ -21,7 +16,7 @@ export const assessmentService = {
     page?: number;
     limit?: number;
   }) => {
-    return apiClient.get('/assessments', { params });
+    return apiClient.get("/assessments", { params });
   },
 
   // Grade assessment (admin)

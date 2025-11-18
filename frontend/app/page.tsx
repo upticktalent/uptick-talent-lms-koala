@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { LoaderCircle } from "lucide-react";
 
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();
@@ -20,7 +21,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-gray-600">Redirecting…</div>
+      <div className="text-gray-600">
+        <LoaderCircle className="text-indigo-600 animate-spin w-8 h-8" />
+      </div>
     </div>
   );
 }
