@@ -18,6 +18,7 @@ import {
   BookOpen,
   GitBranch,
   Briefcase,
+  MicVocal,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -69,7 +70,7 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
     {
       name: "Streams",
       href: "/lms/streams",
-      icon: GitBranch,
+      icon: MicVocal,
       show: true,
     },
     {
@@ -77,12 +78,6 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
       href: "/lms/emails",
       icon: Mail,
       show: canManageRecruitment,
-    },
-    {
-      name: "Settings",
-      href: "/lms/settings",
-      icon: Settings,
-      show: true,
     },
   ];
 

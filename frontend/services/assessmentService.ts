@@ -35,4 +35,11 @@ export const assessmentService = {
   getAssessmentById: async (assessmentId: string) => {
     return apiClient.get(`/assessments/${assessmentId}`);
   },
+
+  // Update assessment status (admin)
+  updateAssessmentStatus: async (assessmentId: string, status: string) => {
+    return apiClient.put(`/assessments/${assessmentId}/review`, {
+      status,
+    });
+  },
 };

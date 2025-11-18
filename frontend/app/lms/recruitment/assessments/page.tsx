@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,25 +11,27 @@ import { RoleGuard } from "@/middleware/roleGuard";
 import { formatDate } from "@/utils/formatDate";
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
-import { Pagination } from "@/components/ui/pagination"; // Adjust import path as needed
+import { Pagination } from "@/components/ui/pagination";
+import { toast } from "sonner";
 
 export default function AssessmentsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(5);
+  const [isPending, startTransition] = useTransition();
 
   const {
     data: assessments,
     loading,
     error,
+    refetch,
   } = useFetch(() => assessmentService.getAssessments());
 
   const statuses = [
     { value: "all", label: "All Assessments" },
-    { value: "pending", label: "Pending" },
-    { value: "submitted", label: "Awaiting Grade" },
-    { value: "graded", label: "Graded" },
+    { value: "reviewed", label: "Reviewed" },
+    { value: "submitted", label: "Submitted" },
   ];
 
   const filteredAssessments =
@@ -53,7 +55,6 @@ export default function AssessmentsPage() {
 
   // Pagination logic
   const totalItems = filteredAssessments.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedAssessments = filteredAssessments.slice(
     startIndex,
@@ -70,6 +71,38 @@ export default function AssessmentsPage() {
         return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
       default:
         return "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]";
+    }
+  };
+
+  const handleReviewAssessment = (assessmentId: string) => {
+    try {
+      startTransition(async () => {
+        await assessmentService.updateAssessmentStatus(
+          assessmentId,
+          "under-review"
+        );
+        toast.success("Assessment reviewed successfully");
+        refetch();
+      });
+    } catch (error) {
+      toast.error("Failed to review assessment");
+      console.error("Failed to review assessment:", error);
+    }
+  };
+
+  const handleRejectAssessment = (assessmentId: string) => {
+    try {
+      startTransition(async () => {
+        await assessmentService.updateAssessmentStatus(
+          assessmentId,
+          "rejected"
+        );
+        toast.success("Applicantion rejected");
+        refetch();
+      });
+    } catch (error) {
+      toast.error("Failed to reject applicantion");
+      console.error("Failed to reject applicant:", error);
     }
   };
 
@@ -115,7 +148,7 @@ export default function AssessmentsPage() {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setCurrentPage(1); // Reset to first page when searching
+                setCurrentPage(1);
               }}
               className="w-full"
             />
@@ -243,22 +276,28 @@ export default function AssessmentsPage() {
                             <Button
                               variant="primary"
                               size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
-                              // onClick={() =>
-                              //   handleReviewAssessment(assessment._id)
-                              // }
+                              className="text-white cursor-pointer rounded-full"
+                              onClick={() =>
+                                handleReviewAssessment(assessment._id)
+                              }
                             >
-                              Review Assessment
+                              {"Review" + (isPending ? "ing..." : "")}
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              className="text-white cursor-pointer rounded-full"
+                              onClick={() =>
+                                handleRejectAssessment(assessment._id)
+                              }
+                            >
+                              {isPending ? "Rejecting..." : "Reject"}
                             </Button>
                           </div>
                         )}
                         {assessment.status !== "submitted" && (
                           <div className="text-sm text-gray-500">
-                            {assessment.status === "pending"
-                              ? "Awaiting submission"
-                              : assessment.status === "graded"
-                              ? "Assessment graded"
-                              : "Ready for review"}
+                            Assessment review completed
                           </div>
                         )}
                       </div>
@@ -268,16 +307,11 @@ export default function AssessmentsPage() {
                           href={`/lms/recruitment/assessments/${assessment._id}`}
                         >
                           <Button
-                            variant={
-                              assessment.status === "submitted"
-                                ? "primary"
-                                : "outline"
-                            }
+                            variant={"outline"}
                             size="sm"
+                            className="cursor-pointer"
                           >
-                            {assessment.status === "submitted"
-                              ? "Grade Now"
-                              : "View Details"}
+                            View Details
                           </Button>
                         </Link>
                       </div>

@@ -52,27 +52,27 @@ export default function ApplicationDetail() {
     window.open(application.cvUrl, "_blank");
   };
 
-  //   const handleShortlist = async () => {
-  //     try {
-  //       await applicantService.updateApplicationStatus(id, "shortlisted");
-  //       toast.success("Application shortlisted");
-  //       refetch(); // Refresh the application data
-  //     } catch (err) {
-  //       toast.error("Failed to shortlist application");
-  //       console.error(err);
-  //     }
-  //   };
+  const handleShortlist = async () => {
+    try {
+      await applicantService.updateApplicationStatus(id, "shortlisted");
+      toast.success("Application shortlisted");
+      refetch();
+    } catch (err) {
+      toast.error("Failed to shortlist application");
+      console.error(err);
+    }
+  };
 
-  //   const handleReject = async () => {
-  //     try {
-  //       await applicantService.updateApplicationStatus(id, "rejected");
-  //       toast.success("Application rejected");
-  //       refetch(); // Refresh the application data
-  //     } catch (err) {
-  //       toast.error("Failed to reject application");
-  //       console.error(err);
-  //     }
-  //   };
+  const handleReject = async () => {
+    try {
+      await applicantService.updateApplicationStatus(id, "rejected");
+      toast.success("Application rejected");
+      refetch();
+    } catch (err) {
+      toast.error("Failed to reject application");
+      console.error(err);
+    }
+  };
 
   if (loading) {
     return (
@@ -184,14 +184,14 @@ export default function ApplicationDetail() {
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
-                    // onClick={handleShortlist}
+                    onClick={handleShortlist}
                     className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 flex-1"
                   >
                     <CheckCircle className="h-4 w-4" />
                     Shortlist Application
                   </Button>
                   <Button
-                    // onClick={handleReject}
+                    onClick={handleReject}
                     variant="danger"
                     className="flex items-center gap-2 flex-1"
                   >

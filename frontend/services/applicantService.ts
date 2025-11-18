@@ -27,7 +27,7 @@ export const applicantService = {
 
   // Update application status (admin)
   updateApplicationStatus: async (applicantId: string, status: string) => {
-    return apiClient.patch(`/recruitment/applications/${applicantId}/status`, {
+    return apiClient.patch(`/applications/${applicantId}/review`, {
       status,
     });
   },

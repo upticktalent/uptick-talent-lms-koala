@@ -62,12 +62,6 @@ export default function AssessmentDetail() {
     }
   };
 
-  const handleStartGrading = () => {
-    // Navigate to grading page or open grading modal
-    toast.info("Starting assessment grading...");
-    // router.push(`/lms/recruitment/assessments/${id}/grade`);
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-64">
@@ -176,35 +170,6 @@ export default function AssessmentDetail() {
         </div>
 
         <div className="grid gap-4 sm:gap-6">
-          {/* Quick Actions Card */}
-          {isSubmitted && (
-            <Card className="border-blue-200 bg-blue-50/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-blue-900">
-                  Grading Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    onClick={handleStartGrading}
-                    className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 flex-1"
-                  >
-                    <Star className="h-4 w-4" />
-                    Start Grading
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2 flex-1"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download All Files
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Applicant Information */}
           <Card>
             <CardHeader className="pb-3 sm:pb-4">

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,26 +12,27 @@ import { RoleGuard } from "@/middleware/roleGuard";
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
+import { toast } from "sonner";
 
 export default function ApplicationsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(5);
+  const [isPending, startTransition] = useTransition();
 
   const {
     data: applications,
     loading,
     error,
+    refetch,
   } = useFetch(() => applicantService.getApplications());
 
   const statuses = [
     { value: "all", label: "All Applications" },
     { value: "pending", label: "Pending Review" },
     { value: "shortlisted", label: "Shortlisted" },
-    { value: "assessment_submitted", label: "Assessment Submitted" },
-    { value: "under_review", label: "Under Review" },
-    { value: "interview_scheduled", label: "Interview Scheduled" },
+    { value: "under-review", label: "Under Review" },
     { value: "accepted", label: "Accepted" },
     { value: "rejected", label: "Rejected" },
   ];
@@ -76,6 +77,35 @@ export default function ApplicationsPage() {
         return "bg-[hsl(var(--danger))]/10 text-[hsl(var(--danger))]";
       default:
         return "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]";
+    }
+  };
+
+  const handleShortlist = async (applicantId: string) => {
+    try {
+      startTransition(async () => {
+        await applicantService.updateApplicationStatus(
+          applicantId,
+          "shortlisted"
+        );
+        toast.success("Applicant shortlisted successfully");
+        refetch();
+      });
+    } catch (err) {
+      toast.error("Failed to shortlist applicant");
+      console.error("Failed to shortlist applicant:", err);
+    }
+  };
+
+  const handleReject = async (applicantId: string) => {
+    try {
+      startTransition(async () => {
+        await applicantService.updateApplicationStatus(applicantId, "rejected");
+        toast.success("Applicant rejected successfully");
+        refetch();
+      });
+    } catch (err) {
+      toast.error("Failed to reject applicant");
+      console.error("Failed to reject applicant:", err);
     }
   };
 
@@ -231,19 +261,19 @@ export default function ApplicationsPage() {
                         {application.status === "pending" ? (
                           <div className="flex gap-2">
                             <Button
-                              variant="primary"
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                              // onClick={() => handleShortlist(application._id)}
+                              className="text-white cursor-pointer rounded-full"
+                              onClick={() => handleShortlist(application._id)}
                             >
-                              Shortlist
+                              {isPending ? "Shortlisting..." : "Shortlist"}
                             </Button>
                             <Button
                               variant="danger"
                               size="sm"
-                              // onClick={() => handleReject(application._id)}
+                              className="text-white cursor-pointer rounded-full"
+                              onClick={() => handleReject(application._id)}
                             >
-                              Reject
+                              {isPending ? "Rejecting..." : "Reject"}
                             </Button>
                           </div>
                         ) : (
