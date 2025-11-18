@@ -9,8 +9,10 @@ import { mapMongooseError } from "./utils/mongooseErrorHandler";
 const app = express();
 
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin:
+    process.env.NODE_ENV === "production" ? getters.getAllowedOrigins() : "*",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
@@ -27,7 +29,7 @@ app.use((_req, res) => {
     message: "Route not found",
   });
 });
-
+console.log(process.env.NODE_ENV);
 // Global error handler - must be last
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error("🔥 Error:", err.stack || err.message || err);
