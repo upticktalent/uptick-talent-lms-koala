@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios';
+import { AxiosError } from "axios";
 
 export function handleApiError(error: unknown): string {
   if (error instanceof AxiosError) {
@@ -6,7 +6,7 @@ export function handleApiError(error: unknown): string {
     if (error.response?.data?.error) {
       return error.response.data.error;
     }
-    
+
     if (error.response?.data?.message) {
       return error.response.data.message;
     }
@@ -14,25 +14,25 @@ export function handleApiError(error: unknown): string {
     // Handle HTTP status codes
     switch (error.response?.status) {
       case 400:
-        return 'Bad request. Please check your input.';
+        return "Bad request. Please check your input.";
       case 401:
-        return 'Unauthorized. Please log in again.';
+        return "Unauthorized. Please log in again.";
       case 403:
-        return 'Forbidden. You do not have permission to perform this action.';
+        return "Forbidden. You do not have permission to perform this action.";
       case 404:
-        return 'Resource not found.';
+        return "Resource not found.";
       case 409:
-        return 'Conflict. The resource already exists.';
+        return "Conflict. The resource already exists.";
       case 422:
-        return 'Validation error. Please check your input.';
+        return "Validation error. Please check your input.";
       case 429:
-        return 'Too many requests. Please try again later.';
+        return "Too many requests. Please try again later.";
       case 500:
-        return 'Internal server error. Please try again later.';
+        return "Internal server error. Please try again later.";
       case 503:
-        return 'Service unavailable. Please try again later.';
+        return "Service unavailable. Please try again later.";
       default:
-        return error.message || 'An unexpected error occurred.';
+        return error.message || "An unexpected error occurred.";
     }
   }
 
@@ -40,7 +40,7 @@ export function handleApiError(error: unknown): string {
     return error.message;
   }
 
-  return 'An unexpected error occurred.';
+  return "An unexpected error occurred.";
 }
 
 export function getErrorMessage(error: unknown): string {
@@ -63,7 +63,11 @@ export function isServerError(error: unknown): boolean {
 
 export function isClientError(error: unknown): boolean {
   if (error instanceof AxiosError) {
-    return !!error.response && error.response.status >= 400 && error.response.status < 500;
+    return (
+      !!error.response &&
+      error.response.status >= 400 &&
+      error.response.status < 500
+    );
   }
   return false;
 }

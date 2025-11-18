@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useUser } from '@/hooks/useUser';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useUser } from "@/hooks/useUser";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface RoleGuardProps {
   children: React.ReactNode;
@@ -11,11 +11,11 @@ interface RoleGuardProps {
   redirectTo?: string;
 }
 
-export function RoleGuard({ 
-  children, 
-  allowedRoles, 
-  fallback = <div>Access Denied</div>, 
-  redirectTo = '/auth/login' 
+export function RoleGuard({
+  children,
+  allowedRoles,
+  fallback = <div>Access Denied</div>,
+  redirectTo = "/auth/login",
 }: RoleGuardProps) {
   const { user, loading, isAuthenticated } = useUser();
   const router = useRouter();
@@ -28,7 +28,7 @@ export function RoleGuard({
       }
 
       if (user && !allowedRoles.includes(user.role)) {
-        router.push('/unauthorized');
+        router.push("/unauthorized");
         return;
       }
     }
