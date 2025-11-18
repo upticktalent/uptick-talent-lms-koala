@@ -9,8 +9,7 @@ import { mapMongooseError } from "./utils/mongooseErrorHandler";
 const app = express();
 
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production" ? getters.getAllowedOrigins() : "*",
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,
 };
