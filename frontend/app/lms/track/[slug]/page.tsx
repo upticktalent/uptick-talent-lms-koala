@@ -41,7 +41,7 @@ export default function TrackPage() {
           The requested track could not be found.
         </p>
         <Link href='/lms/tracks'>
-          <Button variant='outline'>Back to Tracks</Button>
+          <Button variant='link'>Back to Tracks</Button>
         </Link>
       </div>
     );

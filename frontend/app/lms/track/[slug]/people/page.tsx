@@ -172,7 +172,7 @@ export default function TrackPeoplePage() {
         </div>
         {isAdmin && (
           <div className='flex gap-2'>
-            <Button variant='outline'>Assign Mentor</Button>
+            <Button variant='secondary'>Assign Mentor</Button>
             <Button>Add Student</Button>
           </div>
         )}
@@ -242,7 +242,7 @@ export default function TrackPeoplePage() {
                         </div>
                       </div>
                       {(isAdmin || isMentor) && (
-                        <Button variant='outline' size='sm'>
+                        <Button variant='secondary' size='sm'>
                           Contact
                         </Button>
                       )}
@@ -316,7 +316,7 @@ export default function TrackPeoplePage() {
                       </div>
                       {(isAdmin || isMentor) && (
                         <div className='flex gap-1'>
-                          <Button variant='outline' size='sm'>
+                          <Button variant='secondary' size='sm'>
                             View Profile
                           </Button>
                         </div>

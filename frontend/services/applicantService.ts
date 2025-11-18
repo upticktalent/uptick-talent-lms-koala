@@ -30,7 +30,9 @@ export const applicantService = {
 
   // Shortlist applicant (admin)
   shortlistApplicant: async (applicantId: string) => {
-    return apiClient.patch(`/recruitment/applications/${applicantId}/shortlist`);
+    return apiClient.patch(
+      `/recruitment/applications/${applicantId}/shortlist`
+    );
   },
 
   // Get single application (admin)

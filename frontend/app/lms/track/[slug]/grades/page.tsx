@@ -14,6 +14,18 @@ import { useFetch } from '@/hooks/useFetch';
 import { useUser } from '@/hooks/useUser';
 import { formatDate } from '@/utils/formatDate';
 
+interface ImockGrades {
+  _id: string;
+  assignmentName: string;
+  type: string;
+  score: number;
+  maxScore: number;
+  feedback: string;
+  gradedBy: string;
+  gradedAt: string;
+  dueDate: string;
+}
+
 export default function TrackGradesPage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -172,10 +184,10 @@ export default function TrackGradesPage() {
               <CardContent className='pt-6'>
                 <div className='text-2xl font-bold text-blue-600'>
                   {Math.round(
-                    mockGrades.reduce(
+                    (mockGrades as ImockGrades[]).reduce(
                       (acc, g) => acc + (g.score / g.maxScore) * 100,
                       0
-                    ) / mockGrades.length
+                    ) / (mockGrades as ImockGrades[]).length
                   )}
                   %
                 </div>
@@ -195,8 +207,15 @@ export default function TrackGradesPage() {
             <Card>
               <CardContent className='pt-6'>
                 <div className='text-2xl font-bold text-purple-600'>
-                  {mockGrades.reduce((acc, g) => acc + g.score, 0)} /{' '}
-                  {mockGrades.reduce((acc, g) => acc + g.maxScore, 0)}
+                  {(mockGrades as ImockGrades[]).reduce(
+                    (acc, g) => acc + g.score,
+                    0
+                  )}{' '}
+                  /{' '}
+                  {(mockGrades as ImockGrades[]).reduce(
+                    (acc, g) => acc + g.maxScore,
+                    0
+                  )}
                 </div>
                 <p className='text-xs text-muted-foreground'>Total Points</p>
               </CardContent>
@@ -208,7 +227,7 @@ export default function TrackGradesPage() {
             <h2 className='text-xl font-semibold text-gray-900'>
               Assignment Grades
             </h2>
-            {mockGrades.map((grade) => (
+            {(mockGrades as ImockGrades[]).map((grade) => (
               <Card key={grade._id}>
                 <CardHeader>
                   <div className='flex items-start justify-between'>
@@ -365,10 +384,10 @@ export default function TrackGradesPage() {
                   </div>
 
                   <div className='flex gap-2 mt-4 pt-4 border-t'>
-                    <Button variant='outline' size='sm'>
+                    <Button variant='secondary' size='sm'>
                       View Details
                     </Button>
-                    <Button variant='outline' size='sm'>
+                    <Button variant='secondary' size='sm'>
                       Send Feedback
                     </Button>
                   </div>

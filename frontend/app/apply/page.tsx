@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { applicantService } from '@/services/applicantService';
 import { handleApiError } from '@/utils/handleApiError';
 import { ApplicationForm } from '@/types';
@@ -35,10 +41,14 @@ export default function ApplyPage() {
     { value: 'design', label: 'UI/UX Design' },
   ];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 
@@ -67,39 +77,47 @@ export default function ApplyPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className='space-y-6'>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
               {error}
             </div>
           )}
 
           {/* Personal Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Personal Information</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className='space-y-4'>
+            <h3 className='text-lg font-medium text-gray-900'>
+              Personal Information
+            </h3>
+
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor='firstName'
+                  className='block text-sm font-medium text-gray-700 mb-1'
+                >
                   First Name *
                 </label>
                 <Input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
+                  id='firstName'
+                  name='firstName'
+                  type='text'
                   value={formData.firstName}
                   onChange={handleChange}
                   required
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor='lastName'
+                  className='block text-sm font-medium text-gray-700 mb-1'
+                >
                   Last Name *
                 </label>
                 <Input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
+                  id='lastName'
+                  name='lastName'
+                  type='text'
                   value={formData.lastName}
                   onChange={handleChange}
                   required
@@ -108,13 +126,16 @@ export default function ApplyPage() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor='email'
+                className='block text-sm font-medium text-gray-700 mb-1'
+              >
                 Email Address *
               </label>
               <Input
-                id="email"
-                name="email"
-                type="email"
+                id='email'
+                name='email'
+                type='email'
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -122,13 +143,16 @@ export default function ApplyPage() {
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor='phone'
+                className='block text-sm font-medium text-gray-700 mb-1'
+              >
                 Phone Number *
               </label>
               <Input
-                id="phone"
-                name="phone"
-                type="tel"
+                id='phone'
+                name='phone'
+                type='tel'
                 value={formData.phone}
                 onChange={handleChange}
                 required
@@ -136,14 +160,17 @@ export default function ApplyPage() {
             </div>
 
             <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor='address'
+                className='block text-sm font-medium text-gray-700 mb-1'
+              >
                 Address *
               </label>
               <textarea
-                id="address"
-                name="address"
+                id='address'
+                name='address'
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                 value={formData.address}
                 onChange={handleChange}
                 required
@@ -152,60 +179,71 @@ export default function ApplyPage() {
           </div>
 
           {/* Education & Experience */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Background</h3>
-            
+          <div className='space-y-4'>
+            <h3 className='text-lg font-medium text-gray-900'>Background</h3>
+
             <div>
-              <label htmlFor="education" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor='education'
+                className='block text-sm font-medium text-gray-700 mb-1'
+              >
                 Educational Background *
               </label>
               <textarea
-                id="education"
-                name="education"
+                id='education'
+                name='education'
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                 value={formData.education}
                 onChange={handleChange}
-                placeholder="Tell us about your educational background..."
+                placeholder='Tell us about your educational background...'
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor='experience'
+                className='block text-sm font-medium text-gray-700 mb-1'
+              >
                 Relevant Experience *
               </label>
               <textarea
-                id="experience"
-                name="experience"
+                id='experience'
+                name='experience'
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                 value={formData.experience}
                 onChange={handleChange}
-                placeholder="Describe any relevant work experience, projects, or skills..."
+                placeholder='Describe any relevant work experience, projects, or skills...'
                 required
               />
             </div>
           </div>
 
           {/* Track Selection */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Program Preference</h3>
-            
+          <div className='space-y-4'>
+            <h3 className='text-lg font-medium text-gray-900'>
+              Program Preference
+            </h3>
+
             <div>
-              <label htmlFor="preferredTrack" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor='preferredTrack'
+                className='block text-sm font-medium text-gray-700 mb-1'
+              >
                 Preferred Track *
               </label>
               <select
-                id="preferredTrack"
-                name="preferredTrack"
+                id='preferredTrack'
+                name='preferredTrack'
                 value={formData.preferredTrack}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                 required
               >
-                <option value="">Select a track</option>
-                {tracks.map(track => (
+                <option value=''>Select a track</option>
+                {tracks.map((track) => (
                   <option key={track.value} value={track.value}>
                     {track.label}
                   </option>
@@ -214,37 +252,43 @@ export default function ApplyPage() {
             </div>
 
             <div>
-              <label htmlFor="motivation" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor='motivation'
+                className='block text-sm font-medium text-gray-700 mb-1'
+              >
                 Why do you want to join Uptick Talent? *
               </label>
               <textarea
-                id="motivation"
-                name="motivation"
+                id='motivation'
+                name='motivation'
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                 value={formData.motivation}
                 onChange={handleChange}
-                placeholder="Tell us about your motivation and goals..."
+                placeholder='Tell us about your motivation and goals...'
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="portfolio" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor='portfolio'
+                className='block text-sm font-medium text-gray-700 mb-1'
+              >
                 Portfolio/LinkedIn URL (Optional)
               </label>
               <Input
-                id="portfolio"
-                name="portfolio"
-                type="url"
+                id='portfolio'
+                name='portfolio'
+                type='url'
                 value={formData.portfolio}
                 onChange={handleChange}
-                placeholder="https://..."
+                placeholder='https://...'
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type='submit' className='w-full' disabled={loading}>
             {loading ? 'Submitting Application...' : 'Submit Application'}
           </Button>
         </form>

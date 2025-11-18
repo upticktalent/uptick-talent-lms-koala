@@ -10,10 +10,10 @@ interface AuthGuardProps {
   redirectTo?: string;
 }
 
-export function AuthGuard({ 
-  children, 
-  fallback = <div>Loading...</div>, 
-  redirectTo = '/auth/login' 
+export function AuthGuard({
+  children,
+  fallback = <div>Loading...</div>,
+  redirectTo = '/auth/login',
 }: AuthGuardProps) {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();

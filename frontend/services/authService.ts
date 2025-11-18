@@ -4,7 +4,9 @@ export const authService = {
   login: async (email: string, password: string) => {
     return apiClient.post('/auth/login', { email, password });
   },
-
+  test: async () => {
+    return apiClient.get('/health');
+  },
   register: async (userData: {
     firstName: string;
     lastName: string;

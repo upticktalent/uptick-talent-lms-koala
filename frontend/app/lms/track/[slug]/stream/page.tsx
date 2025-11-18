@@ -169,10 +169,10 @@ export default function TrackStreamPage() {
                 {/* Action buttons for admins/mentors */}
                 {(isAdmin || isMentor) && (
                   <div className='flex gap-2 mt-4 pt-4 border-t'>
-                    <Button variant='outline' size='sm'>
+                    <Button variant='secondary' size='sm'>
                       Edit
                     </Button>
-                    <Button variant='outline' size='sm'>
+                    <Button variant='secondary' size='sm'>
                       Delete
                     </Button>
                   </div>

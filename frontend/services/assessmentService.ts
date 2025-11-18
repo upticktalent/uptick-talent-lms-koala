@@ -25,7 +25,11 @@ export const assessmentService = {
   },
 
   // Grade assessment (admin)
-  gradeAssessment: async (assessmentId: string, grade: number, feedback?: string) => {
+  gradeAssessment: async (
+    assessmentId: string,
+    grade: number,
+    feedback?: string
+  ) => {
     return apiClient.patch(`/assessments/${assessmentId}/grade`, {
       grade,
       feedback,

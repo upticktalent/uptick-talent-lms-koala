@@ -202,7 +202,7 @@ export default function ApplicationsPage() {
                       <Link
                         href={`/lms/recruitment/applications/${application._id}`}
                       >
-                        <Button variant='outline' size='sm'>
+                        <Button variant='secondary' size='sm'>
                           View Details
                         </Button>
                       </Link>

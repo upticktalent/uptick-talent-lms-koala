@@ -48,18 +48,18 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <div className={cn('flex h-full w-64 flex-col bg-gray-50', className)}>
-      <div className="flex flex-col flex-1 min-h-0">
-        <div className="flex items-center h-16 px-4 bg-white shadow-sm">
-          <h1 className="text-lg font-semibold text-gray-900">Uptick Talent</h1>
+      <div className='flex flex-col flex-1 min-h-0'>
+        <div className='flex items-center h-16 px-4 bg-white shadow-sm'>
+          <h1 className='text-lg font-semibold text-gray-900'>Uptick Talent</h1>
         </div>
-        <nav className="flex-1 px-2 py-4 space-y-1">
+        <nav className='flex-1 px-2 py-4 space-y-1'>
           {navigation.map((item) => {
             if (!item.show) return null;
 
             if (item.children) {
               return (
                 <div key={item.name}>
-                  <div className="px-3 py-2 text-sm font-medium text-gray-600">
+                  <div className='px-3 py-2 text-sm font-medium text-gray-600'>
                     {item.name}
                   </div>
                   {item.children.map((child) => (

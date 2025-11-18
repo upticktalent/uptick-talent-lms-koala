@@ -23,13 +23,16 @@ export const interviewService = {
   },
 
   // Update interview (admin)
-  updateInterview: async (interviewId: string, data: {
-    interviewDate?: string;
-    interviewTime?: string;
-    status?: string;
-    feedback?: string;
-    result?: string;
-  }) => {
+  updateInterview: async (
+    interviewId: string,
+    data: {
+      interviewDate?: string;
+      interviewTime?: string;
+      status?: string;
+      feedback?: string;
+      result?: string;
+    }
+  ) => {
     return apiClient.patch(`/recruitment/interviews/${interviewId}`, data);
   },
 

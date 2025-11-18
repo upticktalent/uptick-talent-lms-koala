@@ -6,7 +6,7 @@ export function handleApiError(error: unknown): string {
     if (error.response?.data?.error) {
       return error.response.data.error;
     }
-    
+
     if (error.response?.data?.message) {
       return error.response.data.message;
     }
@@ -63,7 +63,11 @@ export function isServerError(error: unknown): boolean {
 
 export function isClientError(error: unknown): boolean {
   if (error instanceof AxiosError) {
-    return !!error.response && error.response.status >= 400 && error.response.status < 500;
+    return (
+      !!error.response &&
+      error.response.status >= 400 &&
+      error.response.status < 500
+    );
   }
   return false;
 }

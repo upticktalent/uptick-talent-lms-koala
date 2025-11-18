@@ -11,11 +11,11 @@ interface RoleGuardProps {
   redirectTo?: string;
 }
 
-export function RoleGuard({ 
-  children, 
-  allowedRoles, 
-  fallback = <div>Access Denied</div>, 
-  redirectTo = '/auth/login' 
+export function RoleGuard({
+  children,
+  allowedRoles,
+  fallback = <div>Access Denied</div>,
+  redirectTo = '/auth/login',
 }: RoleGuardProps) {
   const { user, loading, isAuthenticated } = useUser();
   const router = useRouter();

@@ -21,7 +21,7 @@ export function useFetch<T = any>(
       setError(null);
       const response = await fetchFunction();
       const result: ApiResponse<T> = response.data;
-      
+
       if (result.success) {
         setData(result.data || null);
       } else {

@@ -1,8 +1,14 @@
 'use client';
 
-import { useState, useEffect, useContext, createContext, ReactNode } from 'react';
-import { IUser } from '@/types';
-import { authService } from '@/services/authService';
+import {
+  useState,
+  useEffect,
+  useContext,
+  createContext,
+  ReactNode,
+} from 'react';
+import { IUser } from '../types';
+import { authService } from '../services/authService';
 
 interface AuthContextType {
   user: IUser | null;
@@ -40,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password);
     const { token, user: userData } = response.data.data;
-    
+
     localStorage.setItem('token', token);
     setUser(userData);
   };
@@ -67,11 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hasRole,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
