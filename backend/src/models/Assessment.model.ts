@@ -6,7 +6,7 @@ export interface IAssessment extends Document {
   fileUrl?: string;
   linkUrl?: string;
   notes?: string; // Optional notes from applicant
-  status: "submitted" | "under-review" | "reviewed";
+  status: "submitted" | "reviewed";
   reviewedBy?: mongoose.Types.ObjectId;
   reviewedAt?: Date;
   reviewNotes?: string;
@@ -50,8 +50,8 @@ const AssessmentSchema: Schema = new Schema(
     status: {
       type: String,
       enum: {
-        values: ["submitted", "under-review", "reviewed"],
-        message: "Status must be submitted, under-review, or reviewed",
+        values: ["submitted", "reviewed"],
+        message: "Status must be submitted or reviewed",
       },
       default: "submitted",
     },
