@@ -7,6 +7,7 @@ export interface ICohort extends Document {
   description: string;
   startDate: Date;
   endDate: Date;
+  applicationDeadline: Date;
   maxStudents: number;
   currentStudents: number;
   tracks: mongoose.Types.ObjectId[];
@@ -43,6 +44,10 @@ const CohortSchema = new Schema(
       type: Date,
       required: [true, "End date is required"],
     },
+    applicationDeadline: {
+      type: Date,
+      required: [true, "Application deadline is required"],
+    },
     maxStudents: {
       type: Number,
       required: [true, "Maximum students is required"],
@@ -78,10 +83,15 @@ const CohortSchema = new Schema(
   },
 );
 
-// Validation to ensure end date is after start date
+// Validation to ensure dates are logical
 CohortSchema.pre("save", function (next) {
   if (this.endDate <= this.startDate) {
     next(new Error("End date must be after start date"));
+    return;
+  }
+  if (this.applicationDeadline >= this.startDate) {
+    next(new Error("Application deadline must be before start date"));
+    return;
   }
   next();
 });
