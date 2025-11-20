@@ -14,7 +14,7 @@ export const trackService = {
 
   // Get track by slug
   getTrackBySlug: async (slug: string) => {
-    return apiClient.get(`/tracks/slug/${slug}`);
+    return apiClient.get(`/tracks/${slug}`);
   },
 
   // Get track by trackId (e.g., "frontend-development")
@@ -24,7 +24,7 @@ export const trackService = {
 
   // Create track (admin)
   createTrack: async (trackData: Partial<ITrack>) => {
-    return apiClient.post('/tracks', trackData);
+    return apiClient.post('/tracks/create', trackData);
   },
 
   // Update track (admin)

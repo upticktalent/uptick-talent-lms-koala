@@ -13,24 +13,24 @@ const raleway = Raleway({
 });
 
 const inter = Inter({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  display: 'swap',
-  variable: '--font-inter',
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: 'Uptick Talent LMS',
+  title: "Uptick Talent LMS",
   description:
-    'Modern Learning Management System - Empowering talent through technology',
+    "Modern Learning Management System - Empowering talent through technology",
   keywords:
-    'LMS, Learning Management System, Uptick Talent, Education, Training',
-  authors: [{ name: 'Uptick Talent' }],
+    "LMS, Learning Management System, Uptick Talent, Education, Training",
+  authors: [{ name: "Uptick Talent" }],
 };
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
-  themeColor: '#477BFF',
+  themeColor: "#477BFF",
 };
 
 export default function RootLayout({

@@ -1,15 +1,10 @@
-import apiClient from './apiClient';
-import { IApplicant } from '@/types';
+import apiClient from "./apiClient";
+import { IApplicant } from "@/types";
 
 export const applicantService = {
   // Submit application
   submitApplication: async (applicationData: Partial<IApplicant>) => {
-    return apiClient.post('/applications', applicationData);
-  },
-
-  // Get applicant status
-  getApplicationStatus: async (applicantId: string) => {
-    return apiClient.get(`/applications/${applicantId}/status`);
+    return apiClient.post("/applications", applicationData);
   },
 
   // Get all applications (admin)
@@ -18,23 +13,25 @@ export const applicantService = {
     page?: number;
     limit?: number;
   }) => {
-    return apiClient.get('/applications', { params });
+    return apiClient.get("/applications", { params });
   },
 
   // Update application status (admin)
   updateApplicationStatus: async (applicantId: string, status: string) => {
-    return apiClient.patch(`/applications/${applicantId}/status`, {
+    return apiClient.patch(`/applications/${applicantId}/review`, {
       status,
     });
   },
 
   // Shortlist applicant (admin)
   shortlistApplicant: async (applicantId: string) => {
-    return apiClient.patch(`/applications/${applicantId}/shortlist`);
+    return apiClient.patch(
+      `/recruitment/applications/${applicantId}/shortlist`
+    );
   },
 
   // Get single application (admin)
   getApplication: async (applicantId: string) => {
-    return apiClient.get(`/applications/${applicantId}`);
+    return apiClient.get(`/recruitment/applications/${applicantId}`);
   },
 };

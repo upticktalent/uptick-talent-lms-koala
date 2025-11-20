@@ -1,178 +1,366 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
+import { useState, useTransition } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useFetch } from "@/hooks/useFetch";
+import { assessmentService } from "@/services/assessmentService";
+import { RoleGuard } from "@/middleware/roleGuard";
+import { formatDate } from "@/utils/formatDate";
+import Link from "next/link";
+import { Search, FileCheck, Send, MoreHorizontal } from "lucide-react";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
+import { toast } from "sonner";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { useFetch } from '@/hooks/useFetch';
-import { assessmentService } from '@/services/assessmentService';
-import { RoleGuard } from '@/middleware/roleGuard';
-import { formatDate } from '@/utils/formatDate';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function AssessmentsPage() {
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(5);
+  const [isPending, startTransition] = useTransition();
+
   const {
     data: assessments,
     loading,
     error,
+    refetch,
   } = useFetch(() => assessmentService.getAssessments());
+
+  const statuses = [
+    { value: "all", label: "All Assessments" },
+    { value: "reviewed", label: "Reviewed" },
+    { value: "submitted", label: "Submitted" },
+  ];
+
+  const filteredAssessments =
+    assessments?.assessments?.filter((assessment: any) => {
+      const matchesStatus =
+        statusFilter === "all" || assessment.status === statusFilter;
+      const matchesSearch =
+        !searchTerm ||
+        `${assessment.application.applicant.firstName} ${assessment.application.applicant.lastName}`
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        assessment.application.applicant.email
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        assessment.application.track.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
+      return matchesStatus && matchesSearch;
+    }) || [];
+
+  // Pagination logic
+  const totalItems = filteredAssessments.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedAssessments = filteredAssessments.slice(
+    startIndex,
+    startIndex + pageSize
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'submitted':
-        return 'bg-blue-100 text-blue-800';
-      case 'graded':
-        return 'bg-green-100 text-green-800';
+      case "pending":
+        return "bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]";
+      case "submitted":
+        return "bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]";
+      case "graded":
+        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]";
     }
   };
 
+  const handleReviewAssessment = (assessmentId: string) => {
+    try {
+      startTransition(async () => {
+        await assessmentService.updateAssessmentStatus(
+          assessmentId,
+          "under-review"
+        );
+        toast.success("Assessment reviewed successfully");
+        refetch();
+      });
+    } catch (error) {
+      toast.error("Failed to review assessment");
+      console.error("Failed to review assessment:", error);
+    }
+  };
+
+  const handleRejectAssessment = (assessmentId: string) => {
+    try {
+      startTransition(async () => {
+        await assessmentService.updateAssessmentStatus(
+          assessmentId,
+          "rejected"
+        );
+        toast.success("Applicantion rejected");
+        refetch();
+      });
+    } catch (error) {
+      toast.error("Failed to reject applicantion");
+      console.error("Failed to reject applicant:", error);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
   if (loading) {
-    return (
-      <div className='flex justify-center items-center min-h-64'>
-        <div className='text-gray-600'>Loading assessments...</div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
     return (
-      <div className='text-center text-red-600'>
+      <div className="text-center text-red-600 p-4">
         Failed to load assessments: {error}
       </div>
     );
   }
 
   return (
-    <RoleGuard allowedRoles={['admin', 'mentor']}>
-      <div className='space-y-6'>
+    <RoleGuard allowedRoles={["admin", "mentor"]}>
+      <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Assessments</h1>
-          <p className='text-gray-600'>
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            Assessments
+          </h1>
+          <p className="text-gray-600 mt-2 text-sm sm:text-base">
             Monitor and grade applicant assessments
           </p>
         </div>
 
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[hsl(var(--muted-foreground))]" />
+            <Input
+              type="text"
+              placeholder="Search by applicant name, email, or track..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-10"
+            />
+          </div>
+          <div className="w-full sm:w-48 lg:w-64">
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statuses.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Stats */}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-          <Card>
-            <CardContent className='pt-6'>
-              <div className='text-2xl font-bold text-yellow-600'>
-                {assessments?.filter((a: any) => a.status === 'pending')
-                  .length || 0}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {statuses.slice(1).map((status) => {
+            const count =
+              assessments?.assessments?.filter(
+                (assessment: any) => assessment.status === status.value
+              ).length || 0;
+            
+            // Define icon and color for each status
+            const getStatusConfig = (value: string) => {
+              switch (value) {
+                case "reviewed":
+                  return {
+                    icon: FileCheck,
+                    iconBgColor: "bg-green-100",
+                    iconColor: "text-green-600",
+                    textColor: "text-green-600",
+                  };
+                case "submitted":
+                  return {
+                    icon: Send,
+                    iconBgColor: "bg-blue-100",
+                    iconColor: "text-blue-600",
+                    textColor: "text-blue-600",
+                  };
+                default:
+                  return {
+                    icon: FileCheck,
+                    iconBgColor: "bg-gray-100",
+                    iconColor: "text-gray-600",
+                    textColor: "text-gray-600",
+                  };
+              }
+            };
+
+            const config = getStatusConfig(status.value);
+            const Icon = config.icon;
+
+            return (
+              <div
+                key={status.value}
+                className={`rounded-xl border border-slate-200 bg-white p-6 transition-all duration-200 hover:shadow-md cursor-pointer`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
+                      {status.label}
+                    </p>
+                    <div className={`text-4xl font-bold ${config.textColor}`}>
+                      {count}
+                    </div>
+                  </div>
+                  <div className={`p-3 rounded-lg ${config.iconColor} ${config.iconBgColor}`}>
+                    <Icon className="h-7 w-7" />
+                  </div>
+                </div>
               </div>
-              <p className='text-xs text-muted-foreground'>Pending</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='pt-6'>
-              <div className='text-2xl font-bold text-blue-600'>
-                {assessments?.filter((a: any) => a.status === 'submitted')
-                  .length || 0}
-              </div>
-              <p className='text-xs text-muted-foreground'>Awaiting Grade</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className='pt-6'>
-              <div className='text-2xl font-bold text-green-600'>
-                {assessments?.filter((a: any) => a.status === 'graded')
-                  .length || 0}
-              </div>
-              <p className='text-xs text-muted-foreground'>Graded</p>
-            </CardContent>
-          </Card>
+            );
+          })}
         </div>
 
         {/* Assessments List */}
-        <div className='space-y-4'>
-          {!assessments || assessments.length === 0 ? (
-            <Card>
-              <CardContent className='pt-6 text-center text-gray-500'>
-                No assessments available.
-              </CardContent>
-            </Card>
+        <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
+          {!paginatedAssessments || paginatedAssessments.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <p>No assessments found matching your criteria.</p>
+            </div>
           ) : (
-            assessments.map((assessment: any) => (
-              <Card key={assessment._id}>
-                <CardContent className='pt-6'>
-                  <div className='flex items-center justify-between'>
-                    <div className='flex-1'>
-                      <div className='flex items-center gap-4'>
-                        <div>
-                          <h3 className='font-semibold text-gray-900'>
-                            Assessment #{assessment._id.slice(-6)}
-                          </h3>
-                          <p className='text-sm text-gray-600'>
-                            Applicant: {assessment.applicantId}
-                          </p>
+            <Table>
+              <TableHeader className="bg-gray-50/50">
+                <TableRow>
+                  <TableHead className="py-4 font-semibold text-gray-900">Applicant</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">Track</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">Cohort</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">Status</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">Submitted</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedAssessments.map((assessment: any) => (
+                  <TableRow key={assessment._id} className="hover:bg-gray-50/50 transition-colors">
+                    <TableCell className="py-4">
+                      <div>
+                        <div className="font-semibold text-gray-900 capitalize">
+                          {assessment.application.applicant.firstName} {assessment.application.applicant.lastName}
                         </div>
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
-                            assessment.status
-                          )}`}
-                        >
-                          {assessment.status.toUpperCase()}
-                        </span>
-                      </div>
-
-                      <div className='mt-3 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600'>
-                        <div>
-                          <span className='font-medium'>Questions:</span>
-                          <span className='ml-1'>
-                            {assessment.questions?.length || 0}
-                          </span>
-                        </div>
-                        <div>
-                          <span className='font-medium'>Score:</span>
-                          <span className='ml-1'>
-                            {assessment.score !== undefined
-                              ? `${assessment.score}%`
-                              : 'Not graded'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className='font-medium'>Submitted:</span>
-                          <span className='ml-1'>
-                            {assessment.submittedAt
-                              ? formatDate(assessment.submittedAt)
-                              : 'Not submitted'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className='font-medium'>Graded:</span>
-                          <span className='ml-1'>
-                            {assessment.gradedAt
-                              ? formatDate(assessment.gradedAt)
-                              : 'Not graded'}
-                          </span>
+                        <div className="text-sm text-gray-500">
+                          {assessment.application.applicant.email}
                         </div>
                       </div>
-                    </div>
-
-                    <div className='flex gap-2'>
-                      <Link
-                        href={`/lms/recruitment/assessments/${assessment._id}`}
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="capitalize font-medium text-gray-700">{assessment.application.track.name}</div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="capitalize font-medium text-gray-700">{assessment.application.cohort.name}</div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <span
+                        className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+                          assessment.status
+                        )}`}
                       >
-                        <Button variant='secondary' size='sm'>
-                          {assessment.status === 'submitted' ? 'Grade' : 'View'}
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                        {assessment.status.toUpperCase()}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="text-sm text-gray-500">
+                        {assessment.submittedAt ? formatDate(assessment.submittedAt) : "Not submitted"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px] bg-white">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <Link href={`/lms/recruitment/assessments/${assessment._id}`} className="w-full cursor-pointer">
+                            <DropdownMenuItem className="cursor-pointer">
+                              View Details
+                            </DropdownMenuItem>
+                          </Link>
+                          {assessment.status === "submitted" && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => handleReviewAssessment(assessment._id)}
+                                disabled={isPending}
+                                className="cursor-pointer"
+                              >
+                                Review
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleRejectAssessment(assessment._id)}
+                                disabled={isPending}
+                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                              >
+                                Reject
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
+
+        {/* Pagination */}
+        {filteredAssessments.length > 0 && (
+          <Pagination
+            page={currentPage}
+            pageSize={pageSize}
+            total={totalItems}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
     </RoleGuard>
   );

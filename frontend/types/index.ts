@@ -101,6 +101,10 @@ export interface ICohort {
   isActive: boolean;
   tracks: ITrack[];
   students: IUser[];
+  cohortNumber: string | number;
+  maxStudents: number;
+  currentStudents: number;
+  status: string;
   createdAt: string;
   updatedAt: string;
 }
