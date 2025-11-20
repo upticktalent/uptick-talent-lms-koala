@@ -12,11 +12,11 @@ import {
   ArrowLeft,
   Copy,
   ExternalLink,
-  LoaderCircle,
   Mail,
   CheckCircle,
   XCircle,
 } from "lucide-react";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 
 export default function ApplicationDetail() {
   const params = useParams();
@@ -75,13 +75,7 @@ export default function ApplicationDetail() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="text-gray-600">
-          <LoaderCircle className="text-indigo-600 animate-spin" />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
@@ -192,7 +186,7 @@ export default function ApplicationDetail() {
                   </Button>
                   <Button
                     onClick={handleReject}
-                    variant="danger"
+                    variant="destructive"
                     className="flex items-center gap-2 flex-1"
                   >
                     <XCircle className="h-4 w-4" />

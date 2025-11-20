@@ -8,7 +8,7 @@ export const lmsService = {
 
   // Cohorts
   getCohorts: async () => {
-    return apiClient.get('/lms/cohorts');
+    return apiClient.get('/cohorts');
   },
 
   getActiveCohort: async () => {
@@ -17,11 +17,15 @@ export const lmsService = {
 
   createCohort: async (cohortData: {
     name: string;
-    description?: string;
+    cohortNumber: number;
+    tracks: string[];
     startDate: string;
     endDate: string;
+    isActive: boolean;
+    maxStudents: number;
+    description?: string;
   }) => {
-    return apiClient.post('/lms/cohorts', cohortData);
+    return apiClient.post('/cohorts/create', cohortData);
   },
 
   setActiveCohort: async (cohortId: string) => {

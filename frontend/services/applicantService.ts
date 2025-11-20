@@ -7,11 +7,6 @@ export const applicantService = {
     return apiClient.post("/applications", applicationData);
   },
 
-  // Get applicant status
-  getApplicationStatus: async (applicantId: string) => {
-    return apiClient.get(`/applications/${applicantId}/status`);
-  },
-
   // Get all applications (admin)
   getApplications: async (params?: {
     status?: string;
@@ -30,12 +25,5 @@ export const applicantService = {
     return apiClient.patch(`/applications/${applicantId}/review`, {
       status,
     });
-  },
-
-  // Shortlist applicant (admin)
-  shortlistApplicant: async (applicantId: string) => {
-    return apiClient.patch(
-      `/recruitment/applications/${applicantId}/shortlist`
-    );
   },
 };

@@ -9,68 +9,56 @@ import { useUser } from "@/hooks/useUser";
 import {
   LayoutDashboard,
   Users,
-  FileText,
-  ClipboardList,
-  Calendar,
-  Mail,
   Settings,
   ChevronRight,
+  X,
   BookOpen,
-  Megaphone,
+  Layers,
+  UserCheck,
+  GraduationCap,
+  MonitorPlay
 } from "lucide-react";
-import { X } from "lucide-react";
 
-interface SidebarProps {
+interface AdminSidebarProps {
   className?: string;
   open?: boolean;
   onClose?: () => void;
 }
 
-export function Sidebar({ className, open = false, onClose }: SidebarProps) {
+export function AdminSidebar({ className, open = false, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
-  const { user, canManageRecruitment } = useUser();
+  const { user } = useUser();
 
   const navigation = [
     {
       name: "Dashboard",
-      href: "/lms/dashboard",
+      href: "/admin/dashboard",
       icon: LayoutDashboard,
       show: true,
     },
     {
-      name: "Recruitment",
-      href: "/lms/recruitment",
-      icon: Users,
-      show: canManageRecruitment,
-      children: [
-        {
-          name: "Applications",
-          href: "/lms/recruitment/applications",
-          icon: FileText,
-        },
-        {
-          name: "Assessments",
-          href: "/lms/recruitment/assessments",
-          icon: ClipboardList,
-        },
-        {
-          name: "Interviews",
-          href: "/lms/recruitment/interviews",
-          icon: Calendar,
-        },
-      ],
-    },
-    {
-      name: "Tracks",
-      href: "/lms/tracks",
-      icon: BookOpen,
+      name: "LMS",
+      href: "/lms/dashboard",
+      icon: MonitorPlay,
       show: true,
     },
     {
-      name: "Emails",
-      href: "/lms/emails",
-      icon: Mail,
-      show: canManageRecruitment,
+      name: "Cohorts",
+      href: "/admin/cohorts",
+      icon: Layers,
+      show: true,
+    },
+    {
+      name: "Mentors",
+      href: "/admin/mentors",
+      icon: UserCheck,
+      show: true,
+    },
+    {
+      name: "Students",
+      href: "/admin/students",
+      icon: GraduationCap,
+      show: true,
     },
   ];
 
@@ -86,14 +74,10 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
   }, [open, onClose]);
 
   const isActivePath = (href: string) => {
-    if (href === "/lms/dashboard") {
+    if (href === "/admin/dashboard") {
       return pathname === href;
     }
     return pathname.startsWith(href);
-  };
-
-  const isActiveChild = (childHref: string) => {
-    return pathname === childHref;
   };
 
   return (
@@ -107,14 +91,14 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
       >
         <div className="flex flex-col flex-1 min-h-0">
           {/* Header */}
-          <div className="flex items-center h-16 mt-2">
+          <div className="flex items-center h-16 px-4">
             <div className="flex items-start">
               <div className="relative">
                 <Image
                   src="/uptick-logo.png"
                   alt="Uptick Talent"
-                  width={100}
-                  height={100}
+                  width={120}
+                  height={120}
                   className="object-contain"
                 />
               </div>
@@ -128,50 +112,6 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
 
               const Icon = item.icon;
               const isActive = isActivePath(item.href);
-              const hasChildren = item.children && item.children.length > 0;
-
-              if (hasChildren) {
-                return (
-                  <div key={item.name} className="space-y-1">
-                    <div className="flex items-center px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] uppercase  tracking-wider">
-                      <Icon className="h-4 w-4 mr-3" />
-                      {item.name}
-                    </div>
-                    <div className="space-y-1">
-                      {item.children!.map((child) => {
-                        const ChildIcon = child.icon;
-                        const isChildActive = isActiveChild(child.href);
-
-                        return (
-                          <Link
-                            key={child.href}
-                            href={child.href}
-                            className={cn(
-                              "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ml-2",
-                              isChildActive
-                                ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                                : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] "
-                            )}
-                          >
-                            <ChildIcon
-                              className={cn(
-                                "h-4 w-4 mr-3 transition-colors",
-                                isChildActive
-                                  ? "text-blue-600"
-                                  : "text-gray-400"
-                              )}
-                            />
-                            {child.name}
-                            {isChildActive && (
-                              <ChevronRight className="h-3 w-3 ml-auto text-blue-600" />
-                            )}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              }
 
               return (
                 <Link
@@ -181,7 +121,7 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
                     "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
                     isActive
                       ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] "
+                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
                   )}
                 >
                   <Icon
@@ -247,14 +187,14 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
           )}
         >
           {/* Mobile header */}
-          <div className="flex items-center justify-between h-16 mt-2 border-b border-[hsl(var(--border))]">
+          <div className="flex items-center justify-between px-4 h-16 border-b border-[hsl(var(--border))]">
             <div className="flex items-start">
               <div className="relative">
                 <Image
                   src="/uptick-logo.png"
                   alt="Uptick Talent"
-                  width={100}
-                  height={100}
+                  width={120}
+                  height={120}
                   className="object-contain"
                 />
               </div>
@@ -275,51 +215,6 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
 
               const Icon = item.icon;
               const isActive = isActivePath(item.href);
-              const hasChildren = item.children && item.children.length > 0;
-
-              if (hasChildren) {
-                return (
-                  <div key={item.name} className="space-y-1">
-                    <div className="flex items-center px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] uppercase text-xs tracking-wider">
-                      <Icon className="h-4 w-4 mr-3" />
-                      {item.name}
-                    </div>
-                    <div className="space-y-1">
-                      {item.children!.map((child) => {
-                        const ChildIcon = child.icon;
-                        const isChildActive = isActiveChild(child.href);
-
-                        return (
-                          <Link
-                            key={child.href}
-                            href={child.href}
-                            onClick={() => onClose && onClose()}
-                            className={cn(
-                              "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ml-2",
-                              isChildActive
-                                ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                                : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
-                            )}
-                          >
-                            <ChildIcon
-                              className={cn(
-                                "h-4 w-4 mr-3",
-                                isChildActive
-                                  ? "text-blue-600"
-                                  : "text-gray-400"
-                              )}
-                            />
-                            {child.name}
-                            {isChildActive && (
-                              <ChevronRight className="h-3 w-3 ml-auto text-blue-600" />
-                            )}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              }
 
               return (
                 <Link

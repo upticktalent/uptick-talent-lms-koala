@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { useRouter } from "next/navigation";
 
 interface NavbarProps {
   title?: string;
@@ -21,6 +22,8 @@ interface NavbarProps {
 export function Navbar({ title, onOpenSidebar }: NavbarProps) {
   const { user, fullName, initials } = useUser();
   const { logout } = useAuth();
+
+  const router = useRouter();
 
   const handleLogout = async () => {
     try {
@@ -37,7 +40,7 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Mobile Menu Button */}
           <button
-            className="inline-flex items-center justify-center p-2 rounded-md text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors md:hidden"
+            className="inline-flex items-center justify-center p-2 rounded-md text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors md:hidden cursor-pointer"
             onClick={() => onOpenSidebar?.()}
             aria-label="Open sidebar"
           >
@@ -58,7 +61,7 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Notifications Icon - Hidden on mobile */}
           <button
-            className="hidden sm:flex items-center justify-center p-2 rounded-md text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors relative"
+            className="hidden sm:flex items-center justify-center p-2 rounded-md text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors relative cursor-pointer"
             aria-label="Notifications"
           >
             <Bell className="h-4 w-4" />
@@ -68,7 +71,7 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-lg hover:bg-[hsl(var(--muted))] transition-colors group">
+                <button className="flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-lg hover:bg-[hsl(var(--muted))] transition-colors group cursor-pointer">
                   {/* Avatar - Hidden on very small screens */}
                   <div className="hidden xs:flex items-center justify-center w-8 h-8 bg-linear-to-br from-blue-500 to-purple-600 text-white rounded-full text-sm font-medium shadow-sm">
                     {initials}
@@ -96,7 +99,10 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+                <DropdownMenuItem
+                  className="flex items-center gap-2 cursor-pointer"
+                  onClick={() => router.push("/lms/profile")}
+                >
                   <User className="h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>

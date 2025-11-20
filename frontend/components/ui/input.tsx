@@ -7,7 +7,6 @@ export interface InputProps
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
     const style: React.CSSProperties = {
-      backgroundColor: "var(--color-input)",
       borderColor: "var(--color-border)",
       color: "var(--color-foreground)",
     };
@@ -18,10 +17,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         style={style}
         className={cn(
           // Theme-aware Input Styles
-          "flex h-12 w-full rounded-lg border px-4 py-3 text-base transition-all duration-200",
-          "bg-input border-border text-foreground",
+          "flex h-12 w-full rounded-lg border-2 px-4 py-3 text-base transition-all duration-200",
+          "bg-white border-border text-foreground",
           "placeholder:text-muted-foreground",
-          "focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none",
+          "focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none",
           "file:border-0 file:bg-transparent file:text-base file:font-medium file:text-foreground",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "hover:border-primary/50",

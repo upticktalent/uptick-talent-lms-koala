@@ -12,12 +12,12 @@ import {
   ArrowLeft,
   Copy,
   ExternalLink,
-  LoaderCircle,
   Mail,
   Download,
   FileText,
   Star,
 } from "lucide-react";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 
 export default function AssessmentDetail() {
   const params = useParams();
@@ -63,13 +63,7 @@ export default function AssessmentDetail() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="text-gray-600">
-          <LoaderCircle className="text-indigo-600 animate-spin" />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {

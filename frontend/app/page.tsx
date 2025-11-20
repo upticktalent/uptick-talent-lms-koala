@@ -4,15 +4,22 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { LoaderCircle } from "lucide-react";
+import { useUser } from "@/hooks/useUser";
 
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();
+  const {isAdmin} = useUser()
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
       if (isAuthenticated) {
-        router.replace("/lms/dashboard");
+        if (isAdmin) {
+           router.replace("/admin/dashboard");
+        } else {
+           router.replace("/lms/dashboard");
+        }
+       
       } else {
         router.replace("/auth/login");
       }

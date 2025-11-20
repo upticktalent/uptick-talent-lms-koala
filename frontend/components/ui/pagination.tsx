@@ -1,103 +1,128 @@
-"use client";
+import * as React from "react"
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MoreHorizontalIcon,
+} from "lucide-react"
 
-import { cn } from "@/utils/cn";
+import { cn } from "@/utils/cn"
+import { Button, buttonVariants } from "./button"
 
-interface PaginationProps {
-  page: number;
-  pageSize: number;
-  total: number;
-  onPageChange: (newPage: number) => void;
+function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
+  return (
+    <nav
+      role="navigation"
+      aria-label="pagination"
+      data-slot="pagination"
+      className={cn("mx-auto flex w-full justify-center", className)}
+      {...props}
+    />
+  )
 }
 
-export function Pagination({
-  page,
-  pageSize,
-  total,
-  onPageChange,
-}: PaginationProps) {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  if (totalPages === 1) return null;
-
-  const siblings = 1;
-  const left = Math.max(1, page - siblings);
-  const right = Math.min(totalPages, page + siblings);
-
-  const pages: (number | string)[] = [];
-  if (left > 1) pages.push(1, ...(left > 2 ? ["..."] : []));
-  for (let i = left; i <= right; i++) pages.push(i);
-  if (right < totalPages)
-    pages.push(...(right < totalPages - 1 ? ["..."] : []), totalPages);
-
-  const buttonClass =
-    "px-2 sm:px-3 py-1 sm:py-2 rounded-md border transition-colors border-[hsl(var(--border))] text-sm sm:text-base";
-  const activeClass =
-    "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] border-[hsl(var(--primary))]";
-  const inactiveClass =
-    "text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))]";
-  const disabledClass =
-    "opacity-50 pointer-events-none text-[hsl(var(--muted-foreground))]";
-
+function PaginationContent({
+  className,
+  ...props
+}: React.ComponentProps<"ul">) {
   return (
-    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-      {/* Page Info - Top on mobile, left on desktop */}
-      <div className="text-sm text-[hsl(var(--muted-foreground))] order-2 sm:order-1">
-        Page {page} of {totalPages} — {total} items
-      </div>
+    <ul
+      data-slot="pagination-content"
+      className={cn("flex flex-row items-center gap-1", className)}
+      {...props}
+    />
+  )
+}
 
-      {/* Pagination Controls - Top on mobile, right on desktop */}
-      <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2">
-        <button
-          onClick={() => onPageChange(page - 1)}
-          disabled={page === 1}
-          className={cn(
-            buttonClass,
-            "min-w-[60px] sm:min-w-[70px]",
-            page === 1 ? disabledClass : inactiveClass
-          )}
-        >
-          <span className="sm:hidden">←</span>
-          <span className="hidden sm:inline">Prev</span>
-        </button>
+function PaginationItem({ ...props }: React.ComponentProps<"li">) {
+  return <li data-slot="pagination-item" {...props} />
+}
 
-        {/* Hide page numbers on very small screens */}
-        <div className="hidden xs:flex items-center gap-1 sm:gap-2">
-          {pages.map((p, i) =>
-            typeof p === "string" ? (
-              <span
-                key={i}
-                className="px-1 sm:px-2 text-[hsl(var(--muted-foreground))] text-sm"
-              >
-                {p}
-              </span>
-            ) : (
-              <button
-                key={p}
-                onClick={() => onPageChange(p)}
-                className={cn(
-                  buttonClass,
-                  "min-w-[32px] sm:min-w-[40px]",
-                  p === page ? activeClass : inactiveClass
-                )}
-              >
-                {p}
-              </button>
-            )
-          )}
-        </div>
+type PaginationLinkProps = {
+  isActive?: boolean
+} & Pick<React.ComponentProps<typeof Button>, "size"> &
+  React.ComponentProps<"button">
 
-        <button
-          onClick={() => onPageChange(page + 1)}
-          disabled={page === totalPages}
-          className={cn(
-            buttonClass,
-            "min-w-[60px] sm:min-w-[70px]",
-            page === totalPages ? disabledClass : inactiveClass
-          )}
-        >
-          <span className="sm:hidden">→</span>
-          <span className="hidden sm:inline">Next</span>
-        </button>
-      </div>
-    </div>
-  );
+function PaginationLink({
+  className,
+  isActive,
+  size = "icon",
+  ...props
+}: PaginationLinkProps) {
+  return (
+    <button
+      type="button"
+      aria-current={isActive ? "page" : undefined}
+      data-slot="pagination-link"
+      data-active={isActive}
+      className={cn(
+        buttonVariants({
+          variant: isActive ? "outline" : "ghost",
+          size,
+        }),
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function PaginationPrevious({
+  className,
+  ...props
+}: React.ComponentProps<typeof PaginationLink>) {
+  return (
+    <PaginationLink
+      aria-label="Go to previous page"
+      size="default"
+      className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
+      {...props}
+    >
+      <ChevronLeftIcon />
+      <span className="hidden sm:block">Previous</span>
+    </PaginationLink>
+  )
+}
+
+function PaginationNext({
+  className,
+  ...props
+}: React.ComponentProps<typeof PaginationLink>) {
+  return (
+    <PaginationLink
+      aria-label="Go to next page"
+      size="default"
+      className={cn("gap-1 px-2.5 sm:pr-2.5", className)}
+      {...props}
+    >
+      <span className="hidden sm:block">Next</span>
+      <ChevronRightIcon />
+    </PaginationLink>
+  )
+}
+
+function PaginationEllipsis({
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
+  return (
+    <span
+      aria-hidden
+      data-slot="pagination-ellipsis"
+      className={cn("flex size-9 items-center justify-center", className)}
+      {...props}
+    >
+      <MoreHorizontalIcon className="size-4" />
+      <span className="sr-only">More pages</span>
+    </span>
+  )
+}
+
+export {
+  Pagination,
+  PaginationContent,
+  PaginationLink,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
 }
