@@ -17,7 +17,7 @@ import {
   FileText,
   Star,
 } from "lucide-react";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 
 export default function AssessmentDetail() {
   const params = useParams();
@@ -63,7 +63,11 @@ export default function AssessmentDetail() {
   };
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-screen p-4 sm:p-6 flex items-center justify-center">
+        <Loader />
+      </div>
+    );
   }
 
   if (error) {

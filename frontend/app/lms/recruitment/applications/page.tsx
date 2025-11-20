@@ -11,7 +11,7 @@ import { formatDate } from "@/utils/formatDate";
 import { RoleGuard } from "@/middleware/roleGuard";
 import Link from "next/link";
 import { Search, Clock, CheckCircle, UserCheck, XCircle, AlertCircle, MoreHorizontal } from "lucide-react";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
 import { toast } from "sonner";
 import {
@@ -54,7 +54,7 @@ export default function ApplicationsPage() {
 
   const statuses = [
     { value: "all", label: "All Applications" },
-    { value: "pending", label: "Pending Review" },
+    { value: "pending", label: "Pending" },
     { value: "shortlisted", label: "Shortlisted" },
     { value: "under-review", label: "Under Review" },
     { value: "accepted", label: "Accepted" },
@@ -137,9 +137,7 @@ export default function ApplicationsPage() {
     setCurrentPage(newPage);
   };
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  if (loading) return <Loader />;
 
   if (error) {
     return (
@@ -213,44 +211,38 @@ export default function ApplicationsPage() {
                 case "pending":
                   return {
                     icon: Clock,
-                    iconBgColor: "bg-amber-100",
-                    iconColor: "text-amber-600",
-                    textColor: "text-amber-600",
+                    bgColor: "bg-amber-50",
+                    color: "text-amber-500",
                   };
                 case "shortlisted":
                   return {
                     icon: UserCheck,
-                    iconBgColor: "bg-blue-100",
-                    iconColor: "text-blue-600",
-                    textColor: "text-blue-600",
+                    bgColor: "bg-blue-50",
+                    color: "text-blue-500",
                   };
                 case "under-review":
                   return {
                     icon: AlertCircle,
-                    iconBgColor: "bg-purple-100",
-                    iconColor: "text-purple-600",
-                    textColor: "text-purple-600",
+                    bgColor: "bg-purple-50",
+                    color: "text-purple-500",
                   };
                 case "accepted":
                   return {
                     icon: CheckCircle,
-                    iconBgColor: "bg-green-100",
-                    iconColor: "text-green-600",
-                    textColor: "text-green-600",
+                    bgColor: "bg-green-50",
+                    color: "text-green-500",
                   };
                 case "rejected":
                   return {
                     icon: XCircle,
-                    iconBgColor: "bg-red-100",
-                    iconColor: "text-red-600",
-                    textColor: "text-red-600",
+                    bgColor: "bg-red-50",
+                    color: "text-red-500",
                   };
                 default:
                   return {
                     icon: Clock,
-                    iconBgColor: "bg-gray-100",
-                    iconColor: "text-gray-600",
-                    textColor: "text-gray-600",
+                    bgColor: "bg-gray-50",
+                    color: "text-gray-500",
                   };
               }
             };
@@ -261,17 +253,18 @@ export default function ApplicationsPage() {
             return (
               <div
                 key={status.value}
-                className={`rounded-xl border border-slate-200 bg-white p-5 transition-all duration-200 hover:shadow-md cursor-pointer`}
+                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-muted-foreground mb-2">
-                      {status.label}
-                    </p>
-                    <div className={`text-3xl font-bold ${config.textColor}`}>
-                      {count}
-                    </div>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-500 mb-1">
+                    {status.label}
+                  </p>
+                  <h3 className="text-3xl font-bold text-slate-900">
+                    {count}
+                  </h3>
+                </div>
+                <div className={`p-3 rounded-full ${config.bgColor}`}>
+                  <Icon className={`w-6 h-6 ${config.color}`} />
                 </div>
               </div>
             );

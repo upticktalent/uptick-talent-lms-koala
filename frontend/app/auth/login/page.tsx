@@ -54,12 +54,8 @@ export default function LoginPage() {
         <h1 className="text-4xl font-bold text-[hsl(var(--primary))] mb-4">
           Welcome!
         </h1>
-        <p className="text-[hsl(var(--muted-foreground))] text-sm leading-relaxed">
-          Access your courses, submit assignments, track your
-          <br />
-          progress, and stay on top of your learning goals all in
-          <br />
-          one place.
+        <p className="text-[hsl(var(--muted-foreground))] text-sm leading-relaxed max-w-xs mx-auto">
+          Access your courses, submit assignments, track your progress, and stay on top of your learning goals all in one place.
         </p>
       </div>
 

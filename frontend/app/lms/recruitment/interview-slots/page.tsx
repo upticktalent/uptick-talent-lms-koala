@@ -1,15 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { interviewSlotService } from '@/services/interviewSlotService';
 import { trackService } from '@/services/trackService';
 import { userService } from '@/services/userService';
@@ -17,13 +9,40 @@ import { formatDate, formatTime } from '@/utils/formatDate';
 import { RoleGuard } from '@/middleware/roleGuard';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Users, Plus } from 'lucide-react';
+import { Calendar, Clock, Users, Plus, MoreHorizontal } from 'lucide-react';
 import Loader from '@/components/Loader';
+import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 export default function InterviewSlotsPage() {
   const [dateFilter, setDateFilter] = useState('');
   const [interviewerFilter, setInterviewerFilter] = useState('all');
   const [trackFilter, setTrackFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(5);
 
   const [slots, setSlots] = useState<any[]>([]);
   const [tracks, setTracks] = useState<any[]>([]);
@@ -91,6 +110,7 @@ export default function InterviewSlotsPage() {
 
   useEffect(() => {
     fetchSlots();
+    setCurrentPage(1);
   }, [dateFilter, interviewerFilter, trackFilter]);
 
   const refetch = () => {
@@ -124,6 +144,15 @@ export default function InterviewSlotsPage() {
     return 'Available';
   };
 
+  // Pagination logic
+  const totalItems = slots.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedSlots = slots.slice(startIndex, startIndex + pageSize);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
   if (loading) {
     return <Loader text='Loading interview slots...' />;
   }
@@ -140,7 +169,7 @@ export default function InterviewSlotsPage() {
     <RoleGuard allowedRoles={['admin', 'mentor']}>
       <div className='space-y-6'>
         {/* Header */}
-        <div className='flex justify-between items-center'>
+        <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
           <div>
             <h1 className='text-2xl font-bold text-gray-900'>
               Interview Slots
@@ -149,9 +178,9 @@ export default function InterviewSlotsPage() {
               Manage mentor availability and interview scheduling
             </p>
           </div>
-          <div className='flex gap-3'>
-            <Link href='/lms/recruitment/interview-slots/create'>
-              <Button>
+          <div className='flex gap-3 w-full md:w-auto'>
+            <Link href='/lms/recruitment/interview-slots/create' className='w-full md:w-auto'>
+              <Button className='w-full md:w-auto'>
                 <Plus className='w-4 h-4 mr-2' />
                 Create Slots
               </Button>
@@ -217,49 +246,56 @@ export default function InterviewSlotsPage() {
         </div>
 
         {/* Filters */}
-        <div className='flex gap-4 flex-wrap'>
-          <div className='w-48'>
-            <input
+        <div className='flex flex-col md:flex-row gap-4'>
+          <div className='w-full md:w-48'>
+            <Input
               type='date'
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+              className='w-full'
               placeholder='Filter by date'
             />
           </div>
 
-          <div className='w-48'>
-            <select
+          <div className='w-full md:w-48'>
+            <Select
               value={interviewerFilter}
-              onChange={(e) => setInterviewerFilter(e.target.value)}
-              className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+              onValueChange={(value) => setInterviewerFilter(value)}
             >
-              <option value='all'>All Interviewers</option>
-              <option value='me'>My Slots</option>
-              {Array.isArray(interviewers) &&
-                interviewers.map((interviewer) => (
-                  <option key={interviewer._id} value={interviewer._id}>
-                    {interviewer.firstName} {interviewer.lastName} (
-                    {interviewer.role})
-                  </option>
-                ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by interviewer" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Interviewers</SelectItem>
+                <SelectItem value="me">My Slots</SelectItem>
+                {Array.isArray(interviewers) &&
+                  interviewers.map((interviewer) => (
+                    <SelectItem key={interviewer._id} value={interviewer._id}>
+                      {interviewer.firstName} {interviewer.lastName} ({interviewer.role})
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className='w-48'>
-            <select
+          <div className='w-full md:w-48'>
+            <Select
               value={trackFilter}
-              onChange={(e) => setTrackFilter(e.target.value)}
-              className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+              onValueChange={(value) => setTrackFilter(value)}
             >
-              <option value='all'>All Tracks</option>
-              {Array.isArray(tracks) &&
-                tracks.map((track) => (
-                  <option key={track._id} value={track._id}>
-                    {track.name}
-                  </option>
-                ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filter by track" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tracks</SelectItem>
+                {Array.isArray(tracks) &&
+                  tracks.map((track) => (
+                    <SelectItem key={track._id} value={track._id}>
+                      {track.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {(dateFilter ||
@@ -272,6 +308,7 @@ export default function InterviewSlotsPage() {
                 setInterviewerFilter('all');
                 setTrackFilter('all');
               }}
+              className="w-full md:w-auto"
             >
               Clear Filters
             </Button>
@@ -279,129 +316,177 @@ export default function InterviewSlotsPage() {
         </div>
 
         {/* Slots List */}
-        <div className='space-y-4'>
-          {slots.length === 0 ? (
-            <Card>
-              <CardContent className='pt-6 text-center text-gray-500'>
-                <Calendar className='w-12 h-12 mx-auto mb-4 text-gray-300' />
-                <h3 className='text-lg font-medium text-gray-900 mb-2'>
-                  No interview slots found
-                </h3>
-                <p className='text-gray-500 mb-4'>
-                  Create your first interview slots to start scheduling
-                  interviews.
-                </p>
-                <Link href='/lms/recruitment/interview-slots/create'>
-                  <Button>
-                    <Plus className='w-4 h-4 mr-2' />
-                    Create Slots
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+        <div className="space-y-4">
+          {paginatedSlots.length === 0 ? (
+            <div className="bg-white rounded-xl border-2 border-slate-200 p-8 text-center text-gray-500">
+              <Calendar className='w-12 h-12 mx-auto mb-4 text-gray-300' />
+              <h3 className='text-lg font-medium text-gray-900 mb-2'>
+                No interview slots found
+              </h3>
+              <p className='text-gray-500 mb-4'>
+                Create your first interview slots to start scheduling
+                interviews.
+              </p>
+              <Link href='/lms/recruitment/interview-slots/create'>
+                <Button>
+                  <Plus className='w-4 h-4 mr-2' />
+                  Create Slots
+                </Button>
+              </Link>
+            </div>
           ) : (
-            slots.map((slot: any) => (
-              <Card key={slot._id}>
-                <CardContent className='pt-6'>
-                  <div className='flex items-center justify-between'>
-                    <div className='flex-1'>
-                      <div className='flex items-center gap-4 mb-3'>
+            <>
+              {/* Mobile Card View */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {paginatedSlots.map((slot: any) => (
+                  <Card key={slot._id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className='font-semibold text-gray-900'>
-                            {formatDate(slot.date)} -{' '}
-                            {formatTime(slot.startTime)} to{' '}
-                            {formatTime(slot.endTime)}
-                          </h3>
-                          <p className='text-sm text-gray-600'>
-                            Interviewer: {slot.interviewer?.firstName}{' '}
-                            {slot.interviewer?.lastName} (
-                            {slot.interviewer?.role})
-                          </p>
-                          {slot.tracks && slot.tracks.length > 0 && (
-                            <p className='text-sm text-blue-600'>
-                              Tracks:{' '}
-                              {slot.tracks
-                                .map((track: any) => track.name)
-                                .join(', ')}
-                            </p>
-                          )}
+                          <div className="font-semibold text-gray-900">
+                            {formatDate(slot.date)}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                          </div>
                         </div>
-                        <div className='flex gap-2'>
+                        <Badge className={getAvailabilityColor(slot)}>
+                          {getAvailabilityText(slot)}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm text-gray-600 mb-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Interviewer:</span>
+                          <span className="font-medium text-right">
+                            {slot.interviewer?.firstName} {slot.interviewer?.lastName}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Tracks:</span>
+                          <span className="font-medium text-blue-600 text-right">
+                            {slot.tracks && slot.tracks.length > 0 
+                              ? slot.tracks.map((track: any) => track.name).join(', ')
+                              : 'All Tracks'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Capacity:</span>
+                          <span className="font-medium">
+                            {slot.bookedCount} / {slot.maxInterviews}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Link href={`/lms/recruitment/interview-slots/${slot._id}`} className="flex-1">
+                          <Button variant="secondary" size="sm" className="w-full">
+                            View
+                          </Button>
+                        </Link>
+                        <Link href={`/lms/recruitment/interview-slots/${slot._id}/edit`} className="flex-1">
+                          <Button variant="secondary" size="sm" className="w-full">
+                            Edit
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-gray-50/50">
+                    <TableRow>
+                      <TableHead className="py-4 font-semibold text-gray-900">Date & Time</TableHead>
+                      <TableHead className="py-4 font-semibold text-gray-900">Interviewer</TableHead>
+                      <TableHead className="py-4 font-semibold text-gray-900">Tracks</TableHead>
+                      <TableHead className="py-4 font-semibold text-gray-900">Capacity</TableHead>
+                      <TableHead className="py-4 font-semibold text-gray-900">Status</TableHead>
+                      <TableHead className="py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedSlots.map((slot: any) => (
+                      <TableRow key={slot._id} className="hover:bg-gray-50/50 transition-colors">
+                        <TableCell className="py-4">
+                          <div>
+                            <div className="font-semibold text-gray-900">
+                              {formatDate(slot.date)}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="text-sm text-gray-700">
+                            {slot.interviewer?.firstName} {slot.interviewer?.lastName}
+                          </div>
+                          <div className="text-xs text-gray-500 capitalize">
+                            {slot.interviewer?.role}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="text-sm text-blue-600">
+                            {slot.tracks && slot.tracks.length > 0 
+                              ? slot.tracks.map((track: any) => track.name).join(', ')
+                              : 'All Tracks'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="text-sm text-gray-700">
+                            {slot.bookedCount} / {slot.maxInterviews}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
                           <Badge className={getAvailabilityColor(slot)}>
                             {getAvailabilityText(slot)}
                           </Badge>
-                          {slot.interviewType && (
-                            <Badge variant='outline'>
-                              {slot.interviewType}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600'>
-                        <div>
-                          <span className='font-medium'>Capacity:</span>
-                          <div className='ml-1'>
-                            {slot.bookedCount} / {slot.maxInterviews} interviews
-                          </div>
-                        </div>
-                        <div>
-                          <span className='font-medium'>Duration:</span>
-                          <div className='ml-1'>
-                            {Math.floor(
-                              (new Date(
-                                `1970-01-01T${slot.endTime}`
-                              ).getTime() -
-                                new Date(
-                                  `1970-01-01T${slot.startTime}`
-                                ).getTime()) /
-                                (1000 * 60)
-                            )}{' '}
-                            minutes
-                          </div>
-                        </div>
-                        <div>
-                          <span className='font-medium'>Location:</span>
-                          <div className='ml-1'>
-                            {slot.location || 'Online'}
-                          </div>
-                        </div>
-                      </div>
-
-                      {slot.notes && (
-                        <div className='mt-3 p-3 bg-gray-50 rounded-md'>
-                          <span className='text-sm font-medium text-gray-700'>
-                            Notes:
-                          </span>
-                          <p className='text-sm text-gray-600 mt-1'>
-                            {slot.notes}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className='flex gap-2'>
-                      <Link
-                        href={`/lms/recruitment/interview-slots/${slot._id}`}
-                      >
-                        <Button variant='secondary' size='sm'>
-                          View Details
-                        </Button>
-                      </Link>
-                      <Link
-                        href={`/lms/recruitment/interview-slots/${slot._id}/edit`}
-                      >
-                        <Button variant='secondary' size='sm'>
-                          Edit
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                        </TableCell>
+                        <TableCell className="py-4 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[160px] bg-white">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <Link href={`/lms/recruitment/interview-slots/${slot._id}`} className="w-full cursor-pointer">
+                                <DropdownMenuItem className="cursor-pointer">
+                                  View Details
+                                </DropdownMenuItem>
+                              </Link>
+                              <Link href={`/lms/recruitment/interview-slots/${slot._id}/edit`} className="w-full cursor-pointer">
+                                <DropdownMenuItem className="cursor-pointer">
+                                  Edit
+                                </DropdownMenuItem>
+                              </Link>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </div>
+
+        {/* Pagination */}
+        {slots.length > 0 && (
+          <Pagination
+            page={currentPage}
+            pageSize={pageSize}
+            total={totalItems}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
     </RoleGuard>
   );

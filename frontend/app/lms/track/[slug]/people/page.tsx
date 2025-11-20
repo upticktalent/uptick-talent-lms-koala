@@ -3,14 +3,14 @@
 import { useParams } from "next/navigation";
 import { trackService } from "@/services/trackService";
 import { useFetch } from "@/hooks/useFetch";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 
 export default function PeoplePage() {
   const params = useParams();
   const slug = params.slug as string;
   const { data: track, loading } = useFetch(() => trackService.getTrackBySlug(slug));
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) return <Loader />;
   if (!track) return null;
 
   return (

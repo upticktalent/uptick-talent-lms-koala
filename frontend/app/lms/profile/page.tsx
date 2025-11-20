@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import Skeleton from "@/components/ui/skeleton";
 import { formatDateTime, formatDate } from "@/utils/formatDate";
 import { Mail, Phone, MapPin, User, Calendar, Shield, Key } from "lucide-react";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 
 function Initials({
   firstName,
@@ -38,7 +38,7 @@ export default function ProfilePage() {
   } = useFetch(() => authService.getCurrentUser());
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <Loader />;
   }
 
   return (

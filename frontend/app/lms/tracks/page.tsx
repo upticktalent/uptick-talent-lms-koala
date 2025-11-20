@@ -46,6 +46,7 @@ import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 
 // Stat Card Component
 const StatCard = ({
@@ -126,7 +127,7 @@ export default function TracksPage() {
       toast.success("Track created successfully");
       setIsCreateDialogOpen(false);
       setNewTrack({ name: "", trackId: "", description: "", isActive: true });
-      refetch(); // Refresh list
+      refetch();
     } catch (error) {
       toast.error("Failed to create track");
       console.error(error);
@@ -136,7 +137,7 @@ export default function TracksPage() {
   };
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <Loader />;
   }
 
   if (error) {
@@ -272,7 +273,7 @@ export default function TracksPage() {
           <TableBody>
             {filteredTracks.length > 0 ? (
               filteredTracks.map((track: any) => (
-                <TableRow key={track._id} className="hover:bg-gray-50" onClick={() => router.push(`/lms/track/${track._id}/stream`)}>
+                <TableRow key={track._id} className="hover:bg-gray-50" onClick={() => router.push(`/lms/track/${track.trackId}/stream`)}>
                   <TableCell>
                     <div className="flex items-center gap-3">
          
@@ -319,7 +320,7 @@ export default function TracksPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <Link href={`/lms/track/${track._id}`}>
+                        <Link href={`/lms/track/${track.trackId}`}>
                           <DropdownMenuItem className="cursor-pointer">
                             View Details
                           </DropdownMenuItem>

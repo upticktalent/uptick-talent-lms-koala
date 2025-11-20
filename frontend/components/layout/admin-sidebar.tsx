@@ -16,7 +16,8 @@ import {
   Layers,
   UserCheck,
   GraduationCap,
-  MonitorPlay
+  MonitorPlay,
+  BookOpenCheck
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -60,6 +61,12 @@ export function AdminSidebar({ className, open = false, onClose }: AdminSidebarP
       icon: GraduationCap,
       show: true,
     },
+     {
+      name: "Tracks",
+      href: "/admin/tracks",
+      icon: BookOpenCheck,
+      show: true,
+    },
   ];
 
   useEffect(() => {
@@ -91,14 +98,14 @@ export function AdminSidebar({ className, open = false, onClose }: AdminSidebarP
       >
         <div className="flex flex-col flex-1 min-h-0">
           {/* Header */}
-          <div className="flex items-center h-16 px-4">
+          <div className="flex items-center h-16 mt-2">
             <div className="flex items-start">
               <div className="relative">
                 <Image
                   src="/uptick-logo.png"
                   alt="Uptick Talent"
-                  width={120}
-                  height={120}
+                  width={100}
+                  height={100}
                   className="object-contain"
                 />
               </div>
@@ -187,14 +194,14 @@ export function AdminSidebar({ className, open = false, onClose }: AdminSidebarP
           )}
         >
           {/* Mobile header */}
-          <div className="flex items-center justify-between px-4 h-16 border-b border-[hsl(var(--border))]">
+          <div className="flex items-center justify-between mt-2 h-16 border-b border-[hsl(var(--border))]">
             <div className="flex items-start">
               <div className="relative">
                 <Image
                   src="/uptick-logo.png"
                   alt="Uptick Talent"
-                  width={120}
-                  height={120}
+                  width={100}
+                  height={100}
                   className="object-contain"
                 />
               </div>

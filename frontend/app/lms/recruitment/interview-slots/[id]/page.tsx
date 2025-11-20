@@ -15,9 +15,32 @@ import { interviewSlotService } from '@/services/interviewSlotService';
 import { useFetch } from '@/hooks/useFetch';
 import { formatDate, formatTime } from '@/utils/formatDate';
 import { RoleGuard } from '@/middleware/roleGuard';
-import { ArrowLeft, Calendar, Clock, Users, Edit, Trash2 } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Clock, 
+  Users, 
+  Edit, 
+  Trash2, 
+  MoreHorizontal, 
+  CheckCircle2, 
+  XCircle,
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+  FileText
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { Separator } from '@/components/ui/separator';
+import Loader from '@/components/Loader';
 
 export default function InterviewSlotDetailPage() {
   const params = useParams<{ id: string }>();
@@ -30,11 +53,11 @@ export default function InterviewSlotDetailPage() {
   const slot = data?.slot;
 
   const getAvailabilityColor = (slot: any) => {
-    if (!slot.isAvailable) return 'bg-gray-100 text-gray-800';
+    if (!slot.isAvailable) return 'bg-slate-100 text-slate-700 border-slate-200';
     if (slot.bookedCount >= slot.maxInterviews)
-      return 'bg-red-100 text-red-800';
-    if (slot.bookedCount > 0) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-green-100 text-green-800';
+      return 'bg-red-50 text-red-700 border-red-200';
+    if (slot.bookedCount > 0) return 'bg-amber-50 text-amber-700 border-amber-200';
+    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
   };
 
   const getAvailabilityText = (slot: any) => {
@@ -87,16 +110,23 @@ export default function InterviewSlotDetailPage() {
 
   if (loading) {
     return (
-      <div className='flex justify-center items-center min-h-64'>
-        <div className='text-gray-600'>Loading interview slot details...</div>
-      </div>
+      <Loader/>
     );
   }
 
   if (error || !slot) {
     return (
-      <div className='text-center text-red-600'>
-        Interview slot not found or failed to load
+      <div className='flex flex-col items-center justify-center min-h-[60vh] gap-4'>
+        <div className="bg-red-50 p-4 rounded-full">
+          <XCircle className="w-8 h-8 text-red-500" />
+        </div>
+        <div className='text-center'>
+          <h3 className="text-lg font-semibold text-gray-900">Slot Not Found</h3>
+          <p className="text-muted-foreground">The interview slot you are looking for does not exist or failed to load.</p>
+        </div>
+        <Link href="/lms/recruitment/interview-slots">
+          <Button variant="outline">Return to Slots</Button>
+        </Link>
       </div>
     );
   }
@@ -109,273 +139,245 @@ export default function InterviewSlotDetailPage() {
 
   return (
     <RoleGuard allowedRoles={['admin', 'mentor']}>
-      <div className='max-w-4xl mx-auto space-y-6'>
-        {/* Header */}
-        <div className='flex items-center gap-4'>
-          <Link href='/lms/recruitment/interview-slots'>
-            <Button variant='secondary' size='sm'>
-              <ArrowLeft className='w-4 h-4 mr-2' />
+      <div className='max-w-5xl mx-auto space-y-8 pb-10'>
+        {/* Header Section */}
+        <div className='flex flex-col md:flex-row md:items-start justify-between gap-4'>
+          <div className="space-y-1">
+            <Link href='/lms/recruitment/interview-slots' className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-2">
+              <ArrowLeft className='w-4 h-4 mr-1' />
               Back to Slots
-            </Button>
-          </Link>
-          <div className='flex-1'>
-            <h1 className='text-2xl font-bold text-gray-900'>
-              Interview Slot Details
-            </h1>
-            <p className='text-gray-600'>
-              {formatDate(slot.date)} - {formatTime(slot.startTime)} to{' '}
-              {formatTime(slot.endTime)}
-            </p>
+            </Link>
+            <div className="flex items-center gap-3">
+              <h1 className='text-2xl font-bold text-gray-900 tracking-tight'>
+                Interview Slot Details
+              </h1>
+              <Badge variant="outline" className={`${getAvailabilityColor(slot)} border`}>
+                {getAvailabilityText(slot)}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <Calendar className="w-4 h-4" />
+              <span>{formatDate(slot.date)}</span>
+              <span className="text-slate-300">•</span>
+              <Clock className="w-4 h-4" />
+              <span>{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>
+            </div>
           </div>
-          <div className='flex gap-2'>
-            <Badge className={getAvailabilityColor(slot)}>
-              {getAvailabilityText(slot)}
-            </Badge>
-            {slot.interviewType && (
-              <Badge variant='outline'>{slot.interviewType}</Badge>
-            )}
+
+          <div className='flex items-center gap-2'>
+            <Link href={`/lms/recruitment/interview-slots/${params.id}/edit`}>
+              <Button variant='outline' size="sm">
+                <Edit className='w-4 h-4 mr-2' />
+                Edit
+              </Button>
+            </Link>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleToggleStatus}>
+                  {slot.isAvailable ? 'Disable Slot' : 'Enable Slot'}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleDelete} 
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                  disabled={isDeleting || slot.bookedCount > 0}
+                >
+                  Delete Slot
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-          {/* Slot Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2'>
-                <Calendar className='w-5 h-5' />
-                Slot Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              <div>
-                <label className='text-sm font-medium text-gray-700'>
-                  Date
-                </label>
-                <p className='text-sm text-gray-900'>{formatDate(slot.date)}</p>
-              </div>
-
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <label className='text-sm font-medium text-gray-700'>
-                    Start Time
-                  </label>
-                  <p className='text-sm text-gray-900'>
-                    {formatTime(slot.startTime)}
-                  </p>
-                </div>
-                <div>
-                  <label className='text-sm font-medium text-gray-700'>
-                    End Time
-                  </label>
-                  <p className='text-sm text-gray-900'>
-                    {formatTime(slot.endTime)}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label className='text-sm font-medium text-gray-700'>
-                  Duration
-                </label>
-                <p className='text-sm text-gray-900'>
-                  {slotDurationMinutes} minutes
-                </p>
-              </div>
-
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <label className='text-sm font-medium text-gray-700'>
-                    Capacity
-                  </label>
-                  <p className='text-sm text-gray-900'>
-                    {slot.bookedCount} / {slot.maxInterviews} interviews
-                  </p>
-                </div>
-                <div>
-                  <label className='text-sm font-medium text-gray-700'>
-                    Status
-                  </label>
-                  <p className='text-sm text-gray-900'>
-                    {slot.isAvailable ? 'Available' : 'Unavailable'}
-                  </p>
-                </div>
-              </div>
-
-              {slot.tracks && slot.tracks.length > 0 && (
-                <div>
-                  <label className='text-sm font-medium text-gray-700'>
-                    Available for Tracks
-                  </label>
-                  <p className='text-sm text-gray-900'>
-                    {slot.tracks.map((track: any) => track.name).join(', ')}
-                  </p>
-                </div>
-              )}
-
-              {slot.interviewType && (
-                <div>
-                  <label className='text-sm font-medium text-gray-700'>
-                    Interview Type
-                  </label>
-                  <p className='text-sm text-gray-900 capitalize'>
-                    {slot.interviewType}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <label className='text-sm font-medium text-gray-700'>
-                  Created
-                </label>
-                <p className='text-sm text-gray-900'>
-                  {formatDate(slot.createdAt)}
-                </p>
-              </div>
-
-              {slot.updatedAt !== slot.createdAt && (
-                <div>
-                  <label className='text-sm font-medium text-gray-700'>
-                    Last Updated
-                  </label>
-                  <p className='text-sm text-gray-900'>
-                    {formatDate(slot.updatedAt)}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Interviewer Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className='flex items-center gap-2'>
-                <Users className='w-5 h-5' />
-                Interviewer Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='p-4 bg-gray-50 rounded-md'>
-                <p className='font-medium text-gray-900'>
-                  {slot.interviewer?.firstName} {slot.interviewer?.lastName}
-                </p>
-                <p className='text-sm text-gray-600'>
-                  {slot.interviewer?.email}
-                </p>
-                <p className='text-sm text-gray-600 capitalize'>
-                  Role: {slot.interviewer?.role}
-                </p>
-                {slot.interviewer?.phoneNumber && (
-                  <p className='text-sm text-gray-600'>
-                    {slot.interviewer.phoneNumber}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notes */}
-          {slot.notes && (
-            <div className='lg:col-span-2'>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Notes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className='p-3 bg-gray-50 rounded-md'>
-                    <p className='text-sm text-gray-900'>{slot.notes}</p>
+        <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
+          {/* Main Content Column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Slot Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-semibold">Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Duration</p>
+                    <p className="font-medium">{slotDurationMinutes} minutes</p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Capacity</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{slot.bookedCount} / {slot.maxInterviews}</span>
+                      <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary transition-all" 
+                          style={{ width: `${(slot.bookedCount / slot.maxInterviews) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Interview Type</p>
+                    <p className="font-medium capitalize">{slot.interviewType || 'Standard'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Status</p>
+                    <div className="flex items-center gap-2">
+                      {slot.isAvailable ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-slate-400" />
+                      )}
+                      <span className="font-medium">{slot.isAvailable ? 'Active' : 'Inactive'}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Booked Interviews */}
-          {slot.interviews && slot.interviews.length > 0 && (
-            <div className='lg:col-span-2'>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Booked Interviews</CardTitle>
-                  <CardDescription>
-                    Interviews scheduled for this slot
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className='space-y-3'>
+            {/* Booked Interviews */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-semibold">Scheduled Interviews</CardTitle>
+                  <CardDescription>Candidates booked for this time slot</CardDescription>
+                </div>
+                <Badge variant="secondary">{slot.interviews?.length || 0} Booked</Badge>
+              </CardHeader>
+              <CardContent>
+                {slot.interviews && slot.interviews.length > 0 ? (
+                  <div className="space-y-4">
                     {slot.interviews.map((interview: any) => (
                       <div
                         key={interview._id}
-                        className='flex items-center justify-between p-3 border rounded-md'
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors"
                       >
-                        <div>
-                          <p className='font-medium text-gray-900'>
-                            {interview.applicationId?.firstName}{' '}
-                            {interview.applicationId?.lastName}
-                          </p>
-                          <p className='text-sm text-gray-600'>
-                            {interview.applicationId?.email}
-                          </p>
-                          <p className='text-sm text-gray-500'>
-                            Status:{' '}
-                            <span className='capitalize'>
-                              {interview.status}
-                            </span>
-                          </p>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-white border flex items-center justify-center text-slate-500 font-medium">
+                            {interview.applicationId?.firstName?.[0]}{interview.applicationId?.lastName?.[0]}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {interview.applicationId?.firstName} {interview.applicationId?.lastName}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {interview.applicationId?.email}
+                            </p>
+                          </div>
                         </div>
-                        <div className='flex gap-2'>
-                          <Link
-                            href={`/lms/recruitment/interviews/${interview._id}`}
-                          >
-                            <Button variant='secondary' size='sm'>
-                              View Interview
-                            </Button>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="capitalize bg-white">
+                            {interview.status}
+                          </Badge>
+                          <Link href={`/lms/recruitment/interviews/${interview._id}`}>
+                            <Button variant="ghost" size="sm">View</Button>
                           </Link>
                         </div>
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground bg-slate-50 rounded-lg border border-dashed">
+                    <Users className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                    <p>No interviews scheduled yet</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar Column */}
+          <div className="space-y-6">
+            {/* Interviewer Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  Interviewer
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 pb-4 border-b">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-lg">
+                    {slot.interviewer?.firstName?.[0]}{slot.interviewer?.lastName?.[0]}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {slot.interviewer?.firstName} {slot.interviewer?.lastName}
+                    </p>
+                    <p className="text-sm text-muted-foreground capitalize">
+                      {slot.interviewer?.role}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Mail className="w-4 h-4" />
+                    <span className="text-gray-700 truncate">{slot.interviewer?.email}</span>
+                  </div>
+                  {slot.interviewer?.phoneNumber && (
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <Phone className="w-4 h-4" />
+                      <span className="text-gray-700">{slot.interviewer.phoneNumber}</span>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tracks Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-muted-foreground" />
+                  Target Tracks
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {slot.tracks && slot.tracks.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {slot.tracks.map((track: any) => (
+                      <Badge key={track._id} variant="secondary" className="font-normal">
+                        {track.name}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No specific tracks assigned</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Notes Card */}
+            {slot.notes && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    Notes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm text-gray-600 bg-amber-50/50 p-3 rounded-md border border-amber-100">
+                    {slot.notes}
+                  </div>
                 </CardContent>
               </Card>
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Actions</CardTitle>
-            <CardDescription>Manage this interview slot</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='flex gap-3'>
-              <Link href={`/lms/recruitment/interview-slots/${params.id}/edit`}>
-                <Button variant='secondary'>
-                  <Edit className='w-4 h-4 mr-2' />
-                  Edit Slot
-                </Button>
-              </Link>
-
-              <Button variant='secondary' onClick={handleToggleStatus}>
-                {slot.isAvailable ? 'Disable' : 'Enable'} Slot
-              </Button>
-
-              <Button
-                variant='danger'
-                onClick={handleDelete}
-                disabled={isDeleting || slot.bookedCount > 0}
-              >
-                <Trash2 className='w-4 h-4 mr-2' />
-                {isDeleting ? 'Deleting...' : 'Delete Slot'}
-              </Button>
-            </div>
-
-            {slot.bookedCount > 0 && (
-              <p className='text-sm text-gray-500 mt-2'>
-                Cannot delete slot with booked interviews. Cancel interviews
-                first.
-              </p>
             )}
-          </CardContent>
-        </Card>
+
+            {/* Metadata */}
+            <div className="text-xs text-muted-foreground space-y-1 px-1">
+              <p>Created: {formatDate(slot.createdAt)}</p>
+              {slot.updatedAt !== slot.createdAt && (
+                <p>Updated: {formatDate(slot.updatedAt)}</p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </RoleGuard>
   );

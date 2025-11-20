@@ -26,12 +26,12 @@ export const applicantService = {
   // Shortlist applicant (admin)
   shortlistApplicant: async (applicantId: string) => {
     return apiClient.patch(
-      `/recruitment/applications/${applicantId}/shortlist`
+      `/applications/${applicantId}/shortlist`
     );
   },
 
   // Get single application (admin)
   getApplication: async (applicantId: string) => {
-    return apiClient.get(`/recruitment/applications/${applicantId}`);
+    return apiClient.get(`/applications/${applicantId}`);
   },
 };

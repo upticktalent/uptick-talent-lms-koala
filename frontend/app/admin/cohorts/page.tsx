@@ -36,7 +36,7 @@ import { trackService } from "@/services/trackService";
 import { formatDate } from "@/utils/formatDate";
 import { toast } from "sonner";
 import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 
 export default function CohortsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -209,7 +209,7 @@ export default function CohortsPage() {
   };
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <Loader />;
   }
   
   if (error) {
@@ -489,9 +489,9 @@ export default function CohortsPage() {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="hidden lg:block bg-white rounded-xl border border-slate-200 overflow-hidden overflow-x-auto">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[800px]">
             <TableHeader className="bg-gray-50/50">
               <TableRow>
                 <TableHead className="py-4 font-semibold text-gray-900 w-[250px]">Cohort Name</TableHead>
@@ -599,7 +599,7 @@ export default function CohortsPage() {
         </div>
       )}
 
-      {/* Edit Cohort Dialog - FIXED: Better data handling */}
+      {/* Edit Cohort Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto mx-4">
           <DialogHeader>
