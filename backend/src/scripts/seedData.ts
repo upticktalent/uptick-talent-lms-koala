@@ -4,6 +4,8 @@ import { Cohort } from "../models/Cohort.model";
 import { User } from "../models/User.model";
 import { Application } from "../models/Application.model";
 import { Assessment } from "../models/Assessment.model";
+import { Interview } from "../models/Interview.model";
+import { InterviewSlot } from "../models/InterviewSlot.model";
 import { hashPassword } from "../utils/auth";
 import { seedEmailTemplates } from "./seedEmailTemplates";
 
@@ -17,6 +19,8 @@ const seedDatabase = async () => {
 
     // Clear existing data
     console.log("🧹 Clearing existing data...");
+    await Interview.deleteMany({});
+    await InterviewSlot.deleteMany({});
     await Assessment.deleteMany({});
     await Application.deleteMany({});
     await Track.deleteMany({});
@@ -342,12 +346,12 @@ const seedDatabase = async () => {
         track: track?._id,
         cohort: cohort?._id,
         cvUrl: `https://res.cloudinary.com/sample/raw/upload/v1699123456/cvs/${applicant.firstName.toLowerCase()}-${applicant.lastName.toLowerCase()}-cv.pdf`,
-        status:
-          Math.random() > 0.3
-            ? Math.random() > 0.5
-              ? "shortlisted"
-              : "pending"
-            : "rejected",
+        status: (() => {
+          const rand = Math.random();
+          if (rand < 0.4) return "shortlisted"; // 40% shortlisted
+          if (rand < 0.7) return "under-review"; // 30% under-review
+          return "pending"; // 30% pending
+        })(),
         submittedAt: new Date(
           Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
         ), // Random date within last 30 days
@@ -360,18 +364,20 @@ const seedDatabase = async () => {
       `✅ Created ${createdApplicants.length} applicant users with applications`,
     );
 
-    // Create sample assessments for shortlisted applicants
-    const shortlistedApplications = createdApplications.filter(
-      (app) => app.status === "shortlisted",
+    // Create sample assessments for shortlisted and under-review applicants
+    const eligibleForAssessment = createdApplications.filter(
+      (app) => app.status === "shortlisted" || app.status === "under-review",
     );
+
+    console.log(
+      `Found ${eligibleForAssessment.length} applications eligible for assessments`,
+    );
+
     let assessmentCount = 0;
     let applicantCount = 0;
-    for (const application of shortlistedApplications) {
-      // Only create assessments for some shortlisted applications (simulate real scenario)
-      console.log(application, "<application>");
-      console.log(shortlistedApplications, "<shortlistedApplications>");
-
-      if (Math.random() > 0.4) {
+    for (const application of eligibleForAssessment) {
+      // Create assessments for most eligible applications (70% chance)
+      if (Math.random() > 0.3) {
         const isFileSubmission = Math.random() > 0.5;
         const assessmentData: any = {
           application: application._id,
@@ -397,7 +403,7 @@ const seedDatabase = async () => {
         }
 
         // Random status and review data
-        const statuses = ["submitted", "under-review", "reviewed"];
+        const statuses = ["submitted", "reviewed"];
         const status = statuses[Math.floor(Math.random() * statuses.length)];
         assessmentData.status = status;
         assessmentData.submittedAt = new Date(
@@ -430,11 +436,214 @@ const seedDatabase = async () => {
         const assessment = new Assessment(assessmentData);
         await assessment.save();
         assessmentCount++;
-        applicantCount++;
+        console.log(
+          `Created assessment ${assessmentCount} for application ${application._id} (${status})`,
+        );
       }
+      applicantCount++;
     }
 
     console.log(`✅ Created ${assessmentCount} sample assessments`);
+
+    // Create interview slots for mentors (limited to 20 total)
+    console.log("📅 Creating interview slots...");
+    const interviewSlots = [];
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const meetingLinks = [
+      "https://zoom.us/j/123456789",
+      "https://meet.google.com/abc-def-ghi",
+      "https://teams.microsoft.com/l/meetup-join/xyz",
+      "https://us02web.zoom.us/j/987654321",
+    ];
+
+    const timeSlots = [
+      { start: "09:00", end: "10:00", max: 1 },
+      { start: "11:00", end: "12:00", max: 1 },
+      { start: "14:00", end: "15:00", max: 1 },
+      { start: "16:00", end: "17:00", max: 1 },
+    ];
+
+    let slotsCreated = 0;
+    const maxSlots = 20;
+
+    // Create slots for each mentor until we reach 20 total
+    for (const mentor of createdMentors) {
+      if (slotsCreated >= maxSlots) break;
+
+      // Create 4 slots per mentor (spread across next 2 weeks)
+      for (let day = 1; day <= 8 && slotsCreated < maxSlots; day += 2) {
+        const slotDate = new Date(nextWeek);
+        slotDate.setDate(nextWeek.getDate() + day);
+
+        // Skip weekends
+        if (slotDate.getDay() === 0 || slotDate.getDay() === 6) continue;
+
+        const timeSlot = timeSlots[slotsCreated % timeSlots.length];
+
+        // Randomly assign 1-2 tracks to each slot from mentor's assigned tracks or all tracks
+        const availableTracks = createdTracks.map((track) => track._id);
+        const numTracks = Math.floor(Math.random() * 2) + 1; // 1 to 2 tracks
+        const slotTracks = [];
+        const shuffledTracks = [...availableTracks].sort(
+          () => Math.random() - 0.5,
+        );
+
+        for (let i = 0; i < numTracks && i < shuffledTracks.length; i++) {
+          slotTracks.push(shuffledTracks[i]);
+        }
+
+        const slotData = {
+          interviewer: mentor._id,
+          tracks: slotTracks, // Required field - tracks this slot is available for
+          date: slotDate,
+          startTime: timeSlot.start,
+          endTime: timeSlot.end,
+          duration: 60,
+          maxInterviews: timeSlot.max,
+          isAvailable: true,
+          bookedCount: 0,
+          location:
+            Math.random() > 0.7 ? "Office - Conference Room A" : "Online",
+          meetingLink:
+            meetingLinks[Math.floor(Math.random() * meetingLinks.length)],
+          notes:
+            Math.random() > 0.8
+              ? "Please join 5 minutes early for technical setup"
+              : undefined,
+        };
+
+        interviewSlots.push(slotData);
+        slotsCreated++;
+      }
+    }
+
+    const createdSlots = await InterviewSlot.insertMany(interviewSlots);
+    console.log(`✅ Created ${createdSlots.length} interview slots`);
+
+    // Create sample interviews for applications
+    console.log("🗣️ Creating sample interviews...");
+
+    // Get applications that can have interviews (shortlisted and under-review)
+    const eligibleApplications = createdApplications.filter(
+      (app) => app.status === "under-review" || app.status === "shortlisted",
+    );
+
+    console.log(
+      `Found ${eligibleApplications.length} eligible applications for interviews`,
+    );
+    console.log(`Available slots: ${createdSlots.length}`);
+
+    const createdInterviews = [];
+    let interviewCount = 0;
+
+    for (const application of eligibleApplications) {
+      // Create interviews for most eligible applications (80% chance)
+      if (Math.random() > 0.2) {
+        console.log(
+          `Attempting to create interview for application ${application._id}`,
+        );
+
+        // Find available slots that support this application's track
+        const availableSlots = createdSlots.filter(
+          (slot) =>
+            slot.isAvailable &&
+            slot.bookedCount < slot.maxInterviews &&
+            slot.date > today &&
+            slot.tracks.some(
+              (trackId) => trackId.toString() === application.track.toString(),
+            ),
+        );
+
+        console.log(
+          `Found ${availableSlots.length} available slots for track ${application.track}`,
+        );
+
+        if (availableSlots.length > 0) {
+          // Pick a random available slot
+          const selectedSlot =
+            availableSlots[Math.floor(Math.random() * availableSlots.length)];
+          console.log(`Selected slot: ${selectedSlot._id}`);
+
+          // Create scheduled date from slot
+          const scheduledDate = new Date(selectedSlot.date);
+          const [hours, minutes] = selectedSlot.startTime
+            .split(":")
+            .map(Number);
+          scheduledDate.setHours(hours, minutes, 0, 0);
+
+          // Determine interview status
+          const statuses = ["scheduled", "interviewed", "cancelled"];
+          const weights = [0.6, 0.3, 0.1]; // 60% scheduled, 30% interviewed, 10% cancelled
+          let status = statuses[0];
+          const rand = Math.random();
+          if (rand < weights[2]) {
+            status = statuses[2];
+          } else if (rand < weights[1] + weights[2]) {
+            status = statuses[1];
+          }
+
+          const interviewData: any = {
+            application: application._id,
+            interviewer: selectedSlot.interviewer,
+            scheduledDate,
+            duration: selectedSlot.duration,
+            meetingLink: selectedSlot.meetingLink,
+            location: selectedSlot.location,
+            status,
+            scheduledBy: application.applicant,
+            createdBy: selectedSlot.interviewer,
+          };
+
+          // Add interview notes and feedback for interviewed/cancelled
+          if (status === "interviewed") {
+            interviewData.notes =
+              "Good technical knowledge. Strong problem-solving skills. Communicates clearly.";
+            interviewData.rating = Math.floor(Math.random() * 3) + 7; // Rating 7-10
+            interviewData.feedback =
+              "Candidate demonstrated solid understanding of core concepts. Recommended for acceptance.";
+
+            // Update application status based on interview result
+            if (interviewData.rating >= 8) {
+              application.status = "accepted";
+              // Promote applicant to student role when accepted
+              await User.findByIdAndUpdate(
+                application.applicant,
+                { role: "student" },
+                { new: true },
+              );
+            } else {
+              application.status = "rejected";
+            }
+            await application.save();
+          } else if (status === "cancelled") {
+            interviewData.notes =
+              "Cancelled due to scheduling conflict. Will reschedule.";
+          }
+
+          const interview = new Interview(interviewData);
+          await interview.save();
+          createdInterviews.push(interview);
+
+          // Update slot booking count
+          await InterviewSlot.findByIdAndUpdate(selectedSlot._id, {
+            $inc: { bookedCount: 1 },
+            isAvailable:
+              selectedSlot.bookedCount + 1 < selectedSlot.maxInterviews,
+          });
+
+          interviewCount++;
+          console.log(`Created interview ${interviewCount}: ${interview._id}`);
+        } else {
+          console.log(
+            `No available slots found for application ${application._id} with track ${application.track}`,
+          );
+        }
+      }
+    }
+
+    console.log(`✅ Created ${interviewCount} sample interviews`);
 
     // Seed email templates
     console.log("🌱 Seeding email templates...");
@@ -449,6 +658,8 @@ const seedDatabase = async () => {
     console.log(`   • ${createdApplicants.length} applicant users created`);
     console.log(`   • ${createdApplications.length} applications created`);
     console.log(`   • ${assessmentCount} assessments created`);
+    console.log(`   • ${createdSlots.length} interview slots created`);
+    console.log(`   • ${interviewCount} interviews scheduled`);
     console.log("📧 Default email templates have been created");
 
     console.log("\n📝 Default Credentials:");
@@ -522,6 +733,9 @@ const seedDatabase = async () => {
     console.log("\n🚀 System Features Available:");
     console.log("• Complete application system with file uploads");
     console.log("• Assessment submission with file/URL + notes");
+    console.log("• Interview scheduling system (Calendly-style)");
+    console.log("• Interview slot management for mentors");
+    console.log("• ICS calendar integration with email attachments");
     console.log("• Email template management with Brevo integration");
     console.log("• Role-based access control (Admin, Mentor, Applicant)");
     console.log("• Application status management and tracking");

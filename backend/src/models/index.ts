@@ -3,6 +3,8 @@ import { Cohort } from "./Cohort.model";
 import { Track } from "./Track.model";
 import { User } from "./User.model";
 import { Assessment } from "./Assessment.model";
+import { Interview } from "./Interview.model";
+import { InterviewSlot } from "./InterviewSlot.model";
 import { EmailTemplate, IEmailTemplate } from "./EmailTemplate.model";
 import { EmailLog } from "./EmailLog.model.";
 import { IEmailLog } from "./EmailLog.model.";
@@ -14,6 +16,8 @@ export {
   Track,
   User,
   Assessment,
+  Interview,
+  InterviewSlot,
   EmailTemplate,
   EmailLog,
   EmailCampaign,

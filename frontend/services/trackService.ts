@@ -7,9 +7,19 @@ export const trackService = {
     return apiClient.get('/tracks');
   },
 
+  // Get active tracks only
+  getActiveTracks: async () => {
+    return apiClient.get('/tracks/active');
+  },
+
   // Get track by slug
   getTrackBySlug: async (slug: string) => {
     return apiClient.get(`/tracks/slug/${slug}`);
+  },
+
+  // Get track by trackId (e.g., "frontend-development")
+  getTrackByTrackId: async (trackId: string) => {
+    return apiClient.get(`/tracks/trackId/${trackId}`);
   },
 
   // Create track (admin)

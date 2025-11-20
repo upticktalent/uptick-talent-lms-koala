@@ -2,6 +2,7 @@ import health from "./health.routes";
 import auth from "./auth.routes";
 import application from "./application.routes";
 import assessment from "./assessment.routes";
+import interview from "./interview.routes";
 import cohort from "./cohort.routes";
 import track from "./track.routes";
 import user from "./user.routes";
@@ -13,6 +14,7 @@ export {
   auth,
   application,
   assessment,
+  interview,
   cohort,
   track,
   user,
@@ -25,6 +27,7 @@ export default {
   auth,
   application,
   assessment,
+  interview,
   cohort,
   track,
   user,

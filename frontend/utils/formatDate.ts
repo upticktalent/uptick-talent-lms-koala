@@ -32,6 +32,18 @@ export function formatDateTime(date: string | Date): string {
   return `${formatDate(d)} at ${formatDate(d, 'time')}`;
 }
 
+export function formatTime(time: string): string {
+  if (!time) return '';
+
+  // If time is in HH:MM format, convert to readable format
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+
+  return `${hour12}:${minutes} ${ampm}`;
+}
+
 export function timeAgo(date: string | Date): string {
   const now = new Date();
   const past = new Date(date);

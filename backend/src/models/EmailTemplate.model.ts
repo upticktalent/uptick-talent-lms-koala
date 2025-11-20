@@ -12,6 +12,8 @@ export interface IEmailTemplate extends Document {
     | "assessment_invitation"
     | "assessment_confirmation"
     | "assessment_review"
+    | "interview_scheduled_notification"
+    | "interview_scheduled_confirmation"
     | "welcome_email"
     | "custom";
   variables: string[]; // List of available variables like {{applicantName}}, {{cohortName}}, etc.
@@ -52,6 +54,8 @@ const EmailTemplateSchema: Schema = new Schema(
         "assessment_invitation",
         "assessment_confirmation",
         "assessment_review",
+        "interview_scheduled_notification",
+        "interview_scheduled_confirmation",
         "welcome_email",
         "custom",
       ],

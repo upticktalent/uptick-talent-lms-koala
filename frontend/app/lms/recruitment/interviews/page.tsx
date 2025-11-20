@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -10,56 +10,113 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { interviewService } from '@/services/interviewService';
+import { trackService } from '@/services/trackService';
 import { useFetch } from '@/hooks/useFetch';
-import { formatDate, formatDateTime } from '@/utils/formatDate';
+import { formatDate, formatDateTime, formatTime } from '@/utils/formatDate';
 import { RoleGuard } from '@/middleware/roleGuard';
 import Link from 'next/link';
+import { Calendar, Clock, Users, Plus, Filter } from 'lucide-react';
+import Loader from '@/components/Loader';
 
 export default function InterviewsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
+  const [interviewerFilter, setInterviewerFilter] = useState('all');
+  const [trackFilter, setTrackFilter] = useState('all');
 
-  const {
-    data: interviews,
-    loading,
-    error,
-    refetch,
-  } = useFetch(() => interviewService.getInterviews());
+  const [interviews, setInterviews] = useState<any[]>([]);
+  const [tracks, setTracks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchInterviews = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = {
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        interviewer:
+          interviewerFilter !== 'all' ? interviewerFilter : undefined,
+        track: trackFilter !== 'all' ? trackFilter : undefined,
+      };
+
+      const response = await interviewService.getInterviews(params);
+
+      if (response.data.success) {
+        setInterviews(response.data.data?.interviews || []);
+      } else {
+        setError(response.data.message || 'Failed to fetch interviews');
+      }
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          'Failed to fetch interviews'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch interviews on component mount and when filters change
+  useEffect(() => {
+    fetchInterviews();
+  }, [statusFilter, interviewerFilter, trackFilter]);
+
+  const fetchTracks = async () => {
+    try {
+      const response = await trackService.getActiveTracks();
+
+      if (response.data.success) {
+        // getActiveTracks returns data directly as an array
+        const tracksData = response.data.data;
+        setTracks(Array.isArray(tracksData) ? tracksData : []);
+      } else {
+        setTracks([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch tracks:', error);
+      setTracks([]);
+    }
+  };
+
+  // Fetch tracks on component mount
+  useEffect(() => {
+    fetchTracks();
+  }, []);
+
+  const refetch = () => {
+    fetchInterviews();
+  };
 
   const statuses = [
     { value: 'all', label: 'All Interviews' },
     { value: 'scheduled', label: 'Scheduled' },
-    { value: 'completed', label: 'Completed' },
+    { value: 'interviewed', label: 'Interviewed' },
     { value: 'cancelled', label: 'Cancelled' },
-    { value: 'rescheduled', label: 'Rescheduled' },
   ];
-
-  const filteredInterviews =
-    interviews?.filter(
-      (interview: any) =>
-        statusFilter === 'all' || interview.status === statusFilter
-    ) || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled':
         return 'bg-blue-100 text-blue-800';
-      case 'completed':
+      case 'interviewed':
         return 'bg-green-100 text-green-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
-      case 'rescheduled':
-        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getResultColor = (result: string) => {
-    switch (result) {
-      case 'passed':
+  const getResultColor = (status: string) => {
+    switch (status) {
+      case 'interviewed':
         return 'bg-green-100 text-green-800';
-      case 'failed':
+      case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -67,11 +124,7 @@ export default function InterviewsPage() {
   };
 
   if (loading) {
-    return (
-      <div className='flex justify-center items-center min-h-64'>
-        <div className='text-gray-600'>Loading interviews...</div>
-      </div>
-    );
+    return <Loader text='Loading interviews...' />;
   }
 
   if (error) {
@@ -88,59 +141,151 @@ export default function InterviewsPage() {
         {/* Header */}
         <div className='flex justify-between items-center'>
           <div>
-            <h1 className='text-2xl font-bold text-gray-900'>Interviews</h1>
+            <h1 className='text-2xl font-bold text-gray-900'>
+              Interview Management
+            </h1>
             <p className='text-gray-600'>
-              Schedule and manage applicant interviews
+              Schedule, manage, and review applicant interviews
             </p>
           </div>
-          <Button>Schedule Interview</Button>
+          <div className='flex gap-3'>
+            <Link href='/lms/recruitment/interviews/schedule'>
+              <Button variant='secondary'>
+                <Users className='w-4 h-4 mr-2' />
+                Public Schedule
+              </Button>
+            </Link>
+            <Link href='/lms/recruitment/interview-slots'>
+              <Button>
+                <Calendar className='w-4 h-4 mr-2' />
+                Manage Slots
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Filters */}
-        <div className='sm:w-64'>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-          >
-            {statuses.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.label}
-              </option>
-            ))}
-          </select>
+        <div className='flex gap-4 flex-wrap'>
+          <div className='w-48'>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+            >
+              {statuses.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className='w-48'>
+            <select
+              value={trackFilter}
+              onChange={(e) => setTrackFilter(e.target.value)}
+              className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+            >
+              <option value='all'>All Tracks</option>
+              {Array.isArray(tracks) &&
+                tracks.map((track) => (
+                  <option key={track._id} value={track._id}>
+                    {track.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          {(statusFilter !== 'all' || trackFilter !== 'all') && (
+            <Button
+              variant='secondary'
+              onClick={() => {
+                setStatusFilter('all');
+                setTrackFilter('all');
+                // No need to call refetch here since useEffect will handle it
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
         </div>
 
         {/* Stats */}
         <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-          {statuses.slice(1).map((status) => {
-            const count =
-              interviews?.filter(
-                (interview: any) => interview.status === status.value
-              ).length || 0;
-            return (
-              <Card key={status.value}>
-                <CardContent className='pt-6'>
-                  <div className='text-2xl font-bold'>{count}</div>
+          <Card>
+            <CardContent className='pt-6'>
+              <div className='flex items-center'>
+                <Calendar className='h-4 w-4 text-muted-foreground' />
+                <div className='ml-2'>
+                  <div className='text-2xl font-bold'>{interviews.length}</div>
                   <p className='text-xs text-muted-foreground'>
-                    {status.label}
+                    Total Interviews
                   </p>
-                </CardContent>
-              </Card>
-            );
-          })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className='pt-6'>
+              <div className='flex items-center'>
+                <Clock className='h-4 w-4 text-blue-600' />
+                <div className='ml-2'>
+                  <div className='text-2xl font-bold text-blue-600'>
+                    {
+                      interviews.filter((i: any) => i.status === 'scheduled')
+                        .length
+                    }
+                  </div>
+                  <p className='text-xs text-muted-foreground'>Scheduled</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className='pt-6'>
+              <div className='flex items-center'>
+                <Users className='h-4 w-4 text-green-600' />
+                <div className='ml-2'>
+                  <div className='text-2xl font-bold text-green-600'>
+                    {
+                      interviews.filter((i: any) => i.status === 'interviewed')
+                        .length
+                    }
+                  </div>
+                  <p className='text-xs text-muted-foreground'>Interviewed</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className='pt-6'>
+              <div className='flex items-center'>
+                <Users className='h-4 w-4 text-red-600' />
+                <div className='ml-2'>
+                  <div className='text-2xl font-bold text-red-600'>
+                    {
+                      interviews.filter((i: any) => i.status === 'cancelled')
+                        .length
+                    }
+                  </div>
+                  <p className='text-xs text-muted-foreground'>Cancelled</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Interviews List */}
         <div className='space-y-4'>
-          {filteredInterviews.length === 0 ? (
+          {interviews.length === 0 ? (
             <Card>
               <CardContent className='pt-6 text-center text-gray-500'>
                 No interviews found matching your criteria.
               </CardContent>
             </Card>
           ) : (
-            filteredInterviews.map((interview: any) => (
+            interviews.map((interview: any) => (
               <Card key={interview._id}>
                 <CardContent className='pt-6'>
                   <div className='flex items-center justify-between'>
@@ -151,25 +296,25 @@ export default function InterviewsPage() {
                             Interview #{interview._id.slice(-6)}
                           </h3>
                           <p className='text-sm text-gray-600'>
-                            Applicant: {interview.applicantId}
+                            Applicant:{' '}
+                            {interview.application?.applicant?.firstName}{' '}
+                            {interview.application?.applicant?.lastName}
+                          </p>
+                          <p className='text-sm text-gray-500'>
+                            Interviewer: {interview.interviewer?.firstName}{' '}
+                            {interview.interviewer?.lastName}
                           </p>
                         </div>
                         <div className='flex gap-2'>
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
-                              interview.status
-                            )}`}
-                          >
-                            {interview.status.toUpperCase()}
-                          </span>
-                          {interview.result && (
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${getResultColor(
-                                interview.result
-                              )}`}
-                            >
-                              {interview.result.toUpperCase()}
-                            </span>
+                          {interview.status && (
+                            <Badge className={getResultColor(interview.status)}>
+                              {interview.status.toUpperCase()}
+                            </Badge>
+                          )}
+                          {interview.rating && (
+                            <Badge variant='secondary'>
+                              ⭐ {interview.rating}
+                            </Badge>
                           )}
                         </div>
                       </div>
@@ -178,17 +323,15 @@ export default function InterviewsPage() {
                         <div>
                           <span className='font-medium'>Date & Time:</span>
                           <div className='ml-1'>
-                            {formatDateTime(
-                              `${interview.interviewDate}T${interview.interviewTime}`
-                            )}
+                            {formatDateTime(`${interview.scheduledDate}`)}
                           </div>
                         </div>
                         <div>
                           <span className='font-medium'>Interview Link:</span>
                           <div className='ml-1'>
-                            {interview.interviewLink ? (
+                            {interview.meetingLink ? (
                               <a
-                                href={interview.interviewLink}
+                                href={interview.meetingLink}
                                 target='_blank'
                                 rel='noopener noreferrer'
                                 className='text-blue-600 hover:underline'
@@ -236,9 +379,20 @@ export default function InterviewsPage() {
                         href={`/lms/recruitment/interviews/${interview._id}`}
                       >
                         <Button variant='secondary' size='sm'>
-                          {interview.status === 'scheduled' ? 'Update' : 'View'}
+                          {interview.status === 'scheduled'
+                            ? 'Manage'
+                            : 'View Details'}
                         </Button>
                       </Link>
+                      {interview.status === 'scheduled' && (
+                        <Link
+                          href={`/lms/recruitment/interviews/${interview._id}/edit`}
+                        >
+                          <Button variant='secondary' size='sm'>
+                            Edit
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </CardContent>

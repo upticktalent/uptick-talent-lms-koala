@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/theme-toggle';
+import Loader from '@/components/Loader';
 
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();
@@ -25,14 +26,7 @@ export default function Home() {
   }, [isAuthenticated, loading, router]);
 
   if (loading) {
-    return (
-      <div className='min-h-screen flex items-center justify-center bg-[#070C19]'>
-        <div className='flex items-center space-x-3'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[#477BFF]'></div>
-          <div className='text-[#A7B0BE] text-lg'>Loading Uptick Talent...</div>
-        </div>
-      </div>
-    );
+    return <Loader />;
   }
 
   if (isAuthenticated) {
