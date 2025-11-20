@@ -1,50 +1,33 @@
-"use client";
+'use client';
 
-<<<<<<< HEAD
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
-import { LoaderCircle } from "lucide-react";
-import { useUser } from "@/hooks/useUser";
-=======
+import { LoaderCircle } from 'lucide-react';
+import { useUser } from '@/hooks/useUser';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+
 import { ThemeToggle } from '@/components/theme-toggle';
 import Loader from '@/components/Loader';
->>>>>>> e9b8324af8cb2828cc9a08f44599923a76986833
 
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();
-  const {isAdmin} = useUser()
+  const { isAdmin } = useUser();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
       if (isAuthenticated) {
         if (isAdmin) {
-           router.replace("/admin/dashboard");
+          router.replace('/admin/dashboard');
         } else {
-           router.replace("/lms/dashboard");
+          router.replace('/lms/dashboard');
         }
-       
       } else {
-        router.replace("/auth/login");
+        router.replace('/auth/login');
       }
     }
   }, [isAuthenticated, loading, router]);
 
-<<<<<<< HEAD
-=======
   if (loading) {
     return <Loader />;
   }
@@ -53,12 +36,5 @@ export default function Home() {
     return null; // Will redirect in useEffect
   }
 
->>>>>>> e9b8324af8cb2828cc9a08f44599923a76986833
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-gray-600">
-        <LoaderCircle className="text-indigo-600 animate-spin w-8 h-8" />
-      </div>
-    </div>
-  );
+  return <Loader />;
 }
