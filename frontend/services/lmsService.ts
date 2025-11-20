@@ -31,6 +31,22 @@ export const lmsService = {
   setActiveCohort: async (cohortId: string) => {
     return apiClient.patch(`/lms/cohorts/${cohortId}/activate`);
   },
+  
+  
+  deleteCohort : async (cohortId: string) => {
+    return apiClient.delete(`/cohorts/${cohortId}`);
+  },
+  
+  
+  updateCohort : async (cohortId: string, cohortData: {
+    name: string;
+    tracks: string[];
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+  }) => {
+    return apiClient.put(`/cohorts/${cohortId}`, cohortData);
+  },
 
   // Students
   getStudents: async (params?: {
