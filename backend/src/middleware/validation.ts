@@ -26,7 +26,6 @@ export const validate = (
     try {
       // Validate request body
       const validatedData = schema.parse(req.body);
-
       // Replace req.body with validated and transformed data
       req.body = validatedData;
 
@@ -46,6 +45,7 @@ export const validate = (
           field: err.path.join("."),
           message: err.message,
         }));
+        console.log(errors);
 
         return res.status(400).json({
           success: false,

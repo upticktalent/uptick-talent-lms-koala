@@ -35,7 +35,6 @@ export const submitApplication = asyncHandler(
       } = req.body;
 
       const cvFile = req.file;
-
       // Validate uploaded file first
       if (!cvFile) {
         return res.status(400).json({

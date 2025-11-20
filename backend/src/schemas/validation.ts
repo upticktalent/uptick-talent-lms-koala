@@ -23,7 +23,6 @@ export const applicationSchema = z.object({
   state: z.string().min(1, "State is required").trim(),
   educationalQualification: z
     .string()
-    .min(1, "Educational qualification is required")
     .max(200, "Educational qualification cannot exceed 200 characters")
     .trim()
     .optional(),
@@ -32,17 +31,7 @@ export const applicationSchema = z.object({
     .max(20, "Maximum 20 tools allowed")
     .optional()
     .default([]),
-  trackId: z.enum([
-    "frontend-development",
-    "backend-development",
-    "fullstack-development",
-    "mobile-development",
-    "product-management",
-    "product-design",
-    "data-science",
-    "devops-engineering",
-    "blockchain-development",
-  ]),
+  trackId: z.string().trim(),
   cohortNumber: z.string().min(1, "Cohort number is required").trim(),
   referralSource: z.string().trim().optional(),
   motivation: z

@@ -1,9 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Card,
   CardContent,
@@ -13,38 +23,79 @@ import {
 } from '@/components/ui/card';
 import { applicantService } from '@/services/applicantService';
 import { handleApiError } from '@/utils/handleApiError';
-import { ApplicationForm } from '@/types';
+import { toast } from 'sonner';
+
+interface Track {
+  _id: string;
+  trackId: string;
+  name: string;
+  description: string;
+}
+
+interface Cohort {
+  _id: string;
+  cohortNumber: string;
+  name: string;
+  description: string;
+  isAcceptingApplications: boolean;
+  startDate: string;
+  endDate: string;
+}
 
 export default function ApplyPage() {
-  const [formData, setFormData] = useState<ApplicationForm>({
+  // Form state
+  const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
-    address: '',
-    education: '',
-    experience: '',
+    phoneNumber: '',
+    gender: '',
+    country: '',
+    state: '',
+    educationalQualification: '',
+    tools: [] as string[],
+    trackId: '',
+    cohortNumber: '',
+    referralSource: '',
     motivation: '',
-    preferredTrack: '',
-    portfolio: '',
   });
+
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [toolInput, setToolInput] = useState('');
+
+  // Data states
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+
+  // UI states
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState('');
 
   const router = useRouter();
 
-  const tracks = [
-    { value: 'frontend', label: 'Frontend Development' },
-    { value: 'backend', label: 'Backend Development' },
-    { value: 'fullstack', label: 'Full Stack Development' },
-    { value: 'product', label: 'Product Management' },
-    { value: 'design', label: 'UI/UX Design' },
-  ];
+  useEffect(() => {
+    loadInitialData();
+  }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+  const loadInitialData = async () => {
+    try {
+      const [tracksResponse, cohortsResponse] = await Promise.all([
+        applicantService.getTracks(),
+        applicantService.getCohorts(),
+      ]);
+
+      setTracks(tracksResponse.data.data || []);
+      setCohorts(cohortsResponse.data.data || []);
+    } catch (err) {
+      toast.error('Failed to load application data. Please refresh the page.');
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -52,247 +103,492 @@ export default function ApplyPage() {
     }));
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('CV file size must be less than 5MB');
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Please upload a PDF or Word document');
+        return;
+      }
+
+      setCvFile(file);
+    }
+  };
+
+  const addTool = () => {
+    if (toolInput.trim() && !formData.tools.includes(toolInput.trim())) {
+      setFormData((prev) => ({
+        ...prev,
+        tools: [...prev.tools, toolInput.trim()],
+      }));
+      setToolInput('');
+    }
+  };
+
+  const removeTool = (toolToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      tools: prev.tools.filter((tool) => tool !== toolToRemove),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!cvFile) {
+      toast.error('Please upload your CV');
+      return;
+    }
+
+    if (formData.tools.length === 0) {
+      toast.error('Please add at least one skill/tool');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      const response = await applicantService.submitApplication(formData);
-      const applicantId = response.data.data._id;
-      router.push(`/apply/status?id=${applicantId}`);
+      const formDataToSend = new FormData();
+
+      // Add all form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((item) => formDataToSend.append(`${key}[]`, item));
+        } else {
+          formDataToSend.append(key, value);
+        }
+      });
+
+      // Add CV file
+      formDataToSend.append('cv', cvFile);
+
+      const response = await applicantService.submitApplication(formDataToSend);
+      const applicationId = response.data.data.applicationId;
+
+      toast.success('Application submitted successfully!');
+      router.push(`/apply/success?id=${applicationId}`);
     } catch (err) {
       setError(handleApiError(err));
+      toast.error(handleApiError(err));
     } finally {
       setLoading(false);
     }
   };
 
+  if (dataLoading) {
+    return (
+      <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
+          <p className='mt-4 text-gray-600'>Loading application form...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Apply to Uptick Talent</CardTitle>
-        <CardDescription>
-          Complete the application form below to start your journey with us
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className='space-y-6'>
-          {error && (
-            <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded'>
-              {error}
-            </div>
-          )}
+    <div className='min-h-screen bg-gray-50 p-4'>
+      <div className='max-w-4xl mx-auto'>
+        <Card>
+          <CardHeader className='text-center'>
+            <CardTitle className='text-3xl font-bold text-gray-900'>
+              Apply to Uptick Talent LMS
+            </CardTitle>
+            <CardDescription className='text-lg'>
+              Complete the application form below to start your journey with us
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className='space-y-8'>
+              {error && (
+                <Alert variant='destructive'>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-          {/* Personal Information */}
-          <div className='space-y-4'>
-            <h3 className='text-lg font-medium text-gray-900'>
-              Personal Information
-            </h3>
+              {/* Personal Information */}
+              <div className='space-y-6'>
+                <div className='border-b pb-4'>
+                  <h3 className='text-xl font-semibold text-gray-900'>
+                    Personal Information
+                  </h3>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Please provide your basic personal details
+                  </p>
+                </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <div>
-                <label
-                  htmlFor='firstName'
-                  className='block text-sm font-medium text-gray-700 mb-1'
-                >
-                  First Name *
-                </label>
-                <Input
-                  id='firstName'
-                  name='firstName'
-                  type='text'
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  required
-                />
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <div className='space-y-2'>
+                    <Label htmlFor='firstName'>First Name *</Label>
+                    <Input
+                      id='firstName'
+                      name='firstName'
+                      type='text'
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      required
+                      maxLength={50}
+                    />
+                  </div>
+                  <div className='space-y-2'>
+                    <Label htmlFor='lastName'>Last Name *</Label>
+                    <Input
+                      id='lastName'
+                      name='lastName'
+                      type='text'
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      required
+                      maxLength={50}
+                    />
+                  </div>
+                </div>
+
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <div className='space-y-2'>
+                    <Label htmlFor='email'>Email Address *</Label>
+                    <Input
+                      id='email'
+                      name='email'
+                      type='email'
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div className='space-y-2'>
+                    <Label htmlFor='phoneNumber'>Phone Number *</Label>
+                    <Input
+                      id='phoneNumber'
+                      name='phoneNumber'
+                      type='tel'
+                      value={formData.phoneNumber}
+                      onChange={handleInputChange}
+                      placeholder='+234-xxx-xxx-xxxx'
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+                  <div className='space-y-2'>
+                    <Label htmlFor='gender'>Gender *</Label>
+                    <Select
+                      onValueChange={(value) =>
+                        handleSelectChange('gender', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder='Select gender' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value='male'>Male</SelectItem>
+                        <SelectItem value='female'>Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className='space-y-2'>
+                    <Label htmlFor='country'>Country *</Label>
+                    <Input
+                      id='country'
+                      name='country'
+                      type='text'
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      placeholder='Nigeria'
+                      required
+                    />
+                  </div>
+                  <div className='space-y-2'>
+                    <Label htmlFor='state'>State *</Label>
+                    <Input
+                      id='state'
+                      name='state'
+                      type='text'
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      placeholder='Lagos'
+                      required
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label
-                  htmlFor='lastName'
-                  className='block text-sm font-medium text-gray-700 mb-1'
-                >
-                  Last Name *
-                </label>
-                <Input
-                  id='lastName'
-                  name='lastName'
-                  type='text'
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  required
-                />
+
+              {/* Educational Background */}
+              <div className='space-y-6'>
+                <div className='border-b pb-4'>
+                  <h3 className='text-xl font-semibold text-gray-900'>
+                    Educational Background
+                  </h3>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Tell us about your educational qualifications
+                  </p>
+                </div>
+
+                <div className='space-y-2'>
+                  <Label htmlFor='educationalQualification'>
+                    Educational Qualification
+                  </Label>
+                  <Textarea
+                    id='educationalQualification'
+                    name='educationalQualification'
+                    value={formData.educationalQualification}
+                    onChange={handleInputChange}
+                    placeholder='e.g., BSc Computer Science, University of Lagos (2020)'
+                    rows={3}
+                    maxLength={200}
+                  />
+                  <p className='text-xs text-gray-500'>
+                    {formData.educationalQualification.length}/200 characters
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label
-                htmlFor='email'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                Email Address *
-              </label>
-              <Input
-                id='email'
-                name='email'
-                type='email'
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
+              {/* Skills and Tools */}
+              <div className='space-y-6'>
+                <div className='border-b pb-4'>
+                  <h3 className='text-xl font-semibold text-gray-900'>
+                    Skills & Tools
+                  </h3>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Add the programming languages, frameworks, and tools you're
+                    familiar with
+                  </p>
+                </div>
 
-            <div>
-              <label
-                htmlFor='phone'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                Phone Number *
-              </label>
-              <Input
-                id='phone'
-                name='phone'
-                type='tel'
-                value={formData.phone}
-                onChange={handleChange}
-                required
-              />
-            </div>
+                <div className='space-y-4'>
+                  <div className='flex gap-2'>
+                    <Input
+                      type='text'
+                      placeholder='e.g., JavaScript, React, Python'
+                      value={toolInput}
+                      onChange={(e) => setToolInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addTool();
+                        }
+                      }}
+                    />
+                    <Button type='button' onClick={addTool} variant='outline'>
+                      Add
+                    </Button>
+                  </div>
 
-            <div>
-              <label
-                htmlFor='address'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                Address *
-              </label>
-              <textarea
-                id='address'
-                name='address'
-                rows={3}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-                value={formData.address}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
+                  {formData.tools.length > 0 && (
+                    <div className='flex flex-wrap gap-2'>
+                      {formData.tools.map((tool, index) => (
+                        <span
+                          key={index}
+                          className='inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800'
+                        >
+                          {tool}
+                          <button
+                            type='button'
+                            onClick={() => removeTool(tool)}
+                            className='ml-2 text-blue-600 hover:text-blue-800'
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-          {/* Education & Experience */}
-          <div className='space-y-4'>
-            <h3 className='text-lg font-medium text-gray-900'>Background</h3>
+              {/* Program Selection */}
+              <div className='space-y-6'>
+                <div className='border-b pb-4'>
+                  <h3 className='text-xl font-semibold text-gray-900'>
+                    Program Selection
+                  </h3>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Choose your preferred track and cohort
+                  </p>
+                </div>
 
-            <div>
-              <label
-                htmlFor='education'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                Educational Background *
-              </label>
-              <textarea
-                id='education'
-                name='education'
-                rows={4}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-                value={formData.education}
-                onChange={handleChange}
-                placeholder='Tell us about your educational background...'
-                required
-              />
-            </div>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                  <div className='space-y-2'>
+                    <Label htmlFor='trackId'>Preferred Track *</Label>
+                    <Select
+                      onValueChange={(value) =>
+                        handleSelectChange('trackId', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder='Select a track' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tracks.map((track) => (
+                          <SelectItem key={track._id} value={track.trackId}>
+                            {track.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.trackId && (
+                      <p className='text-xs text-gray-600'>
+                        {
+                          tracks.find((t) => t.trackId === formData.trackId)
+                            ?.description
+                        }
+                      </p>
+                    )}
+                  </div>
 
-            <div>
-              <label
-                htmlFor='experience'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                Relevant Experience *
-              </label>
-              <textarea
-                id='experience'
-                name='experience'
-                rows={4}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-                value={formData.experience}
-                onChange={handleChange}
-                placeholder='Describe any relevant work experience, projects, or skills...'
-                required
-              />
-            </div>
-          </div>
+                  <div className='space-y-2'>
+                    <Label htmlFor='cohortNumber'>Preferred Cohort *</Label>
+                    <Select
+                      onValueChange={(value) =>
+                        handleSelectChange('cohortNumber', value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder='Select a cohort' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cohorts
+                          .filter((cohort) => cohort.isAcceptingApplications)
+                          .map((cohort) => (
+                            <SelectItem
+                              key={cohort._id}
+                              value={cohort.cohortNumber}
+                            >
+                              {cohort.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    {formData.cohortNumber && (
+                      <p className='text-xs text-gray-600'>
+                        {
+                          cohorts.find(
+                            (c) => c.cohortNumber === formData.cohortNumber
+                          )?.description
+                        }
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-          {/* Track Selection */}
-          <div className='space-y-4'>
-            <h3 className='text-lg font-medium text-gray-900'>
-              Program Preference
-            </h3>
+              {/* Additional Information */}
+              <div className='space-y-6'>
+                <div className='border-b pb-4'>
+                  <h3 className='text-xl font-semibold text-gray-900'>
+                    Additional Information
+                  </h3>
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Tell us more about yourself and upload your CV
+                  </p>
+                </div>
 
-            <div>
-              <label
-                htmlFor='preferredTrack'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                Preferred Track *
-              </label>
-              <select
-                id='preferredTrack'
-                name='preferredTrack'
-                value={formData.preferredTrack}
-                onChange={handleChange}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-                required
-              >
-                <option value=''>Select a track</option>
-                {tracks.map((track) => (
-                  <option key={track.value} value={track.value}>
-                    {track.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div className='space-y-4'>
+                  <div className='space-y-2'>
+                    <Label htmlFor='motivation'>
+                      Why do you want to join Uptick Talent? *
+                    </Label>
+                    <Textarea
+                      id='motivation'
+                      name='motivation'
+                      value={formData.motivation}
+                      onChange={handleInputChange}
+                      placeholder='Tell us about your motivation, career goals, and what you hope to achieve...'
+                      rows={4}
+                      required
+                      maxLength={1000}
+                    />
+                    <p className='text-xs text-gray-500'>
+                      {formData.motivation.length}/1000 characters
+                    </p>
+                  </div>
 
-            <div>
-              <label
-                htmlFor='motivation'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                Why do you want to join Uptick Talent? *
-              </label>
-              <textarea
-                id='motivation'
-                name='motivation'
-                rows={4}
-                className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
-                value={formData.motivation}
-                onChange={handleChange}
-                placeholder='Tell us about your motivation and goals...'
-                required
-              />
-            </div>
+                  <div className='space-y-2'>
+                    <Label htmlFor='referralSource'>
+                      How did you hear about us?
+                    </Label>
+                    <Input
+                      id='referralSource'
+                      name='referralSource'
+                      type='text'
+                      value={formData.referralSource}
+                      onChange={handleInputChange}
+                      placeholder='e.g., LinkedIn, Twitter, Friend referral, etc.'
+                      maxLength={500}
+                    />
+                  </div>
 
-            <div>
-              <label
-                htmlFor='portfolio'
-                className='block text-sm font-medium text-gray-700 mb-1'
-              >
-                Portfolio/LinkedIn URL (Optional)
-              </label>
-              <Input
-                id='portfolio'
-                name='portfolio'
-                type='url'
-                value={formData.portfolio}
-                onChange={handleChange}
-                placeholder='https://...'
-              />
-            </div>
-          </div>
+                  <div className='space-y-2'>
+                    <Label htmlFor='cv'>Upload CV/Resume *</Label>
+                    <Input
+                      id='cv'
+                      type='file'
+                      onChange={handleFileChange}
+                      accept='.pdf,.doc,.docx'
+                      required
+                      className='file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
+                    />
+                    {cvFile && (
+                      <p className='text-sm text-green-600'>
+                        Selected: {cvFile.name} (
+                        {(cvFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </p>
+                    )}
+                    <p className='text-xs text-gray-500'>
+                      Supported formats: PDF, Word documents. Max size: 5MB
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-          <Button type='submit' className='w-full' disabled={loading}>
-            {loading ? 'Submitting Application...' : 'Submit Application'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+              {/* Submit Button */}
+              <div className='pt-6'>
+                <Button
+                  type='submit'
+                  className='w-full py-3 text-lg'
+                  disabled={loading}
+                  size='lg'
+                >
+                  {loading ? (
+                    <>
+                      <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
+                      Submitting Application...
+                    </>
+                  ) : (
+                    'Submit Application'
+                  )}
+                </Button>
+                <p className='text-xs text-gray-500 text-center mt-2'>
+                  By submitting this application, you agree to our terms and
+                  conditions
+                </p>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
