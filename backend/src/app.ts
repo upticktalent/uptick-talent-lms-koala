@@ -1,5 +1,5 @@
 import express, { ErrorRequestHandler } from "express";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import { getters } from "./config";
 import { loadServices } from "./loader";
 import { mapMongooseError } from "./utils/mongooseErrorHandler";
@@ -8,14 +8,20 @@ import { mapMongooseError } from "./utils/mongooseErrorHandler";
 
 const app = express();
 
-const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production" ? getters.getAllowedOrigins() : "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  credentials: true,
+const corsOptions: CorsOptions = {
+  origin: function (origin, callback) {
+    const allowed = getters.getAllowedOrigins();
+    if (!origin || allowed.includes(origin)) {
+      console.log(origin);
+
+      callback(null, origin);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
 };
 
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -29,7 +35,7 @@ app.use((_req, res) => {
     message: "Route not found",
   });
 });
-
+console.log(process.env.NODE_ENV);
 // Global error handler - must be last
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error("🔥 Error:", err.stack || err.message || err);

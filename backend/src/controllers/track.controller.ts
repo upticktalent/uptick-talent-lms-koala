@@ -153,3 +153,31 @@ export const deleteTrack = asyncHandler(async (req: Request, res: Response) => {
     message: "Track deleted successfully",
   });
 });
+
+export const getTrackByTrackId = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { trackId } = req.params;
+
+    if (!trackId) {
+      return res.status(400).json({
+        success: false,
+        message: "Track ID is required",
+      });
+    }
+
+    const track = await Track.findOne({ trackId: trackId.toLowerCase() });
+
+    if (!track) {
+      return res.status(404).json({
+        success: false,
+        message: "Track not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Track retrieved successfully",
+      data: track,
+    });
+  },
+);

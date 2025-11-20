@@ -339,6 +339,14 @@ export const reviewAssessment = asyncHandler(
       });
     }
 
+    // Validate the status from frontend (should be under-review or rejected)
+    if (status && !["under-review", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be either 'under-review' or 'rejected'",
+      });
+    }
+
     const assessment = await Assessment.findById(id).populate("application");
 
     if (!assessment) {
@@ -348,14 +356,23 @@ export const reviewAssessment = asyncHandler(
       });
     }
 
-    // Update assessment
-    if (status) assessment.status = status;
+    // Update assessment - hardcode status as "reviewed"
+    assessment.status = "reviewed";
     if (reviewNotes) assessment.reviewNotes = reviewNotes;
     if (score !== undefined) assessment.score = score;
     if (reviewerId) assessment.reviewedBy = reviewerId;
     assessment.reviewedAt = new Date();
 
     await assessment.save();
+
+    // Update the Application status with the decision from frontend
+    if (status) {
+      await Application.findByIdAndUpdate(
+        assessment.application,
+        { status: status },
+        { new: true },
+      );
+    }
 
     // Send notification email
     await assessment.populate({
@@ -373,14 +390,17 @@ export const reviewAssessment = asyncHandler(
       applicant.email,
       `${applicant.firstName} ${applicant.lastName}`,
       trackName,
-      status || assessment.status,
+      status || "reviewed", // Use the application status for email
       score,
     );
 
     res.status(200).json({
       success: true,
       message: "Assessment reviewed successfully",
-      data: assessment,
+      data: {
+        assessment,
+        applicationStatus: status, // Return the application status that was set
+      },
     });
   },
 );

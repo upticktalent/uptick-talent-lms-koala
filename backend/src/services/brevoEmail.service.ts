@@ -2,6 +2,7 @@ import * as brevo from "@getbrevo/brevo";
 import { EmailTemplate, EmailLog, IEmailTemplate, IEmailLog } from "../models";
 import { User, Application, Cohort, Track } from "../models";
 import mongoose from "mongoose";
+import { CalendarService } from "./calendar.service";
 
 export interface EmailRecipient {
   email: string;
@@ -14,11 +15,18 @@ export interface EmailVariables {
   [key: string]: string | number | boolean;
 }
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+}
+
 export interface SendEmailOptions {
   templateType?: string;
   templateId?: string;
   recipient: EmailRecipient;
   variables?: EmailVariables;
+  attachments?: EmailAttachment[];
   metadata?: {
     cohortId?: string;
     applicationId?: string;
@@ -213,6 +221,14 @@ class BrevoEmailService {
 
       if (processedText) {
         sendSmtpEmail.textContent = processedText;
+      }
+
+      // Add attachments if provided
+      if (options.attachments && options.attachments.length > 0) {
+        sendSmtpEmail.attachment = options.attachments.map((att) => ({
+          name: att.filename,
+          content: att.content.toString("base64"),
+        }));
       }
 
       const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
@@ -543,6 +559,270 @@ class BrevoEmailService {
       },
       metadata: {
         userId,
+      },
+    });
+  }
+
+  // ==================== INTERVIEW EMAIL METHODS ====================
+
+  async sendInterviewScheduledConfirmation(
+    applicantEmail: string,
+    applicantName: string,
+    trackName: string,
+    interviewDate: Date,
+    location: string,
+    meetingLink?: string,
+    interviewerName?: string,
+    interviewerEmail?: string,
+    applicationId?: string,
+  ): Promise<void> {
+    const formattedDate = interviewDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const formattedTime = interviewDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+
+    // Generate calendar event for applicant
+    const icsContent = CalendarService.generateApplicantInterviewICS(
+      applicantName,
+      applicantEmail,
+      interviewerName || "Interviewer",
+      interviewerEmail ||
+        process.env.SENDER_EMAIL ||
+        "noreply@upticktalent.com",
+      trackName,
+      interviewDate,
+      30, // 30 minutes duration
+      location,
+      meetingLink,
+    );
+
+    const calendarAttachment = CalendarService.generateICSAttachment(
+      icsContent,
+      "interview_invite.ics",
+    );
+
+    await this.sendTemplatedEmail({
+      templateType: "interview_scheduled_confirmation",
+      recipient: {
+        email: applicantEmail,
+        name: applicantName,
+        id: applicationId,
+        type: "applicant",
+      },
+      variables: {
+        trackName,
+        interviewDate: formattedDate,
+        interviewTime: formattedTime,
+        location,
+        meetingLink: meetingLink || "",
+        interviewerName: interviewerName || "",
+      },
+      attachments: [calendarAttachment],
+      metadata: {
+        applicationId,
+      },
+    });
+  }
+
+  async sendInterviewScheduledNotification(
+    interviewerEmail: string,
+    interviewerName: string,
+    applicantName: string,
+    applicantEmail: string,
+    trackName: string,
+    interviewDate: Date,
+    location: string,
+    meetingLink?: string,
+    applicationId?: string,
+  ): Promise<void> {
+    const formattedDate = interviewDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const formattedTime = interviewDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+
+    // Generate calendar event for interviewer
+    const icsContent = CalendarService.generateInterviewerInterviewICS(
+      interviewerName,
+      interviewerEmail,
+      applicantName,
+      applicantEmail,
+      trackName,
+      interviewDate,
+      30, // 30 minutes duration
+      location,
+      meetingLink,
+    );
+
+    const calendarAttachment = CalendarService.generateICSAttachment(
+      icsContent,
+      "interview_schedule.ics",
+    );
+
+    await this.sendTemplatedEmail({
+      templateType: "interview_scheduled_notification",
+      recipient: {
+        email: interviewerEmail,
+        name: interviewerName,
+        type: "user",
+      },
+      variables: {
+        applicantName,
+        trackName,
+        interviewDate: formattedDate,
+        interviewTime: formattedTime,
+        location,
+        meetingLink: meetingLink || "",
+      },
+      attachments: [calendarAttachment],
+      metadata: {
+        applicationId,
+      },
+    });
+  }
+
+  async sendInterviewResultNotification(
+    applicantEmail: string,
+    applicantName: string,
+    trackName: string,
+    result: string,
+    feedback?: string,
+    applicationId?: string,
+  ): Promise<void> {
+    await this.sendTemplatedEmail({
+      templateType: "interview_result_notification",
+      recipient: {
+        email: applicantEmail,
+        name: applicantName,
+        id: applicationId,
+        type: "applicant",
+      },
+      variables: {
+        trackName,
+        interviewResult: result,
+        feedback: feedback || "",
+        resultStatus: result === "accepted" ? "Accepted" : "Rejected",
+      },
+      metadata: {
+        applicationId,
+      },
+    });
+  }
+
+  async sendInterviewCancellationNotification(
+    recipientEmail: string,
+    recipientName: string,
+    trackName: string,
+    interviewDate: Date,
+    reason?: string,
+    applicationId?: string,
+  ): Promise<void> {
+    const formattedDate = interviewDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const formattedTime = interviewDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+
+    await this.sendTemplatedEmail({
+      templateType: "interview_cancellation_notification",
+      recipient: {
+        email: recipientEmail,
+        name: recipientName,
+        type: "applicant",
+      },
+      variables: {
+        trackName,
+        interviewDate: formattedDate,
+        interviewTime: formattedTime,
+        reason: reason || "No reason provided",
+      },
+      metadata: {
+        applicationId,
+      },
+    });
+  }
+
+  async sendInterviewReminderNotification(
+    applicantEmail: string,
+    applicantName: string,
+    trackName: string,
+    interviewDate: Date,
+    location: string,
+    meetingLink?: string,
+    interviewerName?: string,
+    interviewerEmail?: string,
+    applicationId?: string,
+  ): Promise<void> {
+    const formattedDate = interviewDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const formattedTime = interviewDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+
+    // Generate reminder calendar event
+    const icsContent = CalendarService.generateInterviewReminderICS(
+      applicantName,
+      applicantEmail,
+      interviewerName || "Interviewer",
+      interviewerEmail ||
+        process.env.SENDER_EMAIL ||
+        "noreply@upticktalent.com",
+      trackName,
+      interviewDate,
+      30, // 30 minutes duration
+      location,
+      meetingLink,
+    );
+
+    const calendarAttachment = CalendarService.generateICSAttachment(
+      icsContent,
+      "interview_reminder.ics",
+    );
+
+    await this.sendTemplatedEmail({
+      templateType: "interview_reminder_notification",
+      recipient: {
+        email: applicantEmail,
+        name: applicantName,
+        id: applicationId,
+        type: "applicant",
+      },
+      variables: {
+        trackName,
+        interviewDate: formattedDate,
+        interviewTime: formattedTime,
+        location,
+        meetingLink: meetingLink || "",
+        interviewerName: interviewerName || "",
+      },
+      attachments: [calendarAttachment],
+      metadata: {
+        applicationId,
       },
     });
   }

@@ -14,7 +14,13 @@ export const getUsers = asyncHandler(
     const filter: any = {};
 
     if (role) {
-      filter.role = role;
+      // Handle multiple roles separated by comma
+      const roles = (role as string).split(",").map((r) => r.trim());
+      if (roles.length > 1) {
+        filter.role = { $in: roles };
+      } else {
+        filter.role = role;
+      }
     }
 
     if (isActive !== undefined) {
@@ -43,6 +49,44 @@ export const getUsers = asyncHandler(
           limit: Number(limit),
           pages: Math.ceil(total / Number(limit)),
         },
+      },
+    });
+  },
+);
+
+// Get all users without pagination (for dropdowns and selects)
+export const getAllUsers = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { role, isActive } = req.query;
+
+    // Build filter query
+    const filter: any = {};
+
+    if (role) {
+      // Handle multiple roles separated by comma
+      const roles = (role as string).split(",").map((r) => r.trim());
+      if (roles.length > 1) {
+        filter.role = { $in: roles };
+      } else {
+        filter.role = role;
+      }
+    }
+
+    if (isActive !== undefined) {
+      filter.isActive = isActive === "true";
+    }
+
+    const users = await User.find(filter)
+      .select("firstName lastName email role assignedTracks isActive")
+      .populate("assignedTracks", "name trackId")
+      .sort({ firstName: 1, lastName: 1 });
+
+    res.status(200).json({
+      success: true,
+      message: "All users retrieved successfully",
+      data: {
+        users,
+        total: users.length,
       },
     });
   },

@@ -215,7 +215,7 @@ export const assessmentSubmissionSchema = z.object({
 
 // Assessment review schema
 export const assessmentReviewSchema = z.object({
-  status: z.enum(["under-review", "reviewed"]),
+  status: z.enum(["under-review", "rejected"]),
   reviewNotes: z
     .string()
     .max(1000, "Review notes cannot exceed 1000 characters")

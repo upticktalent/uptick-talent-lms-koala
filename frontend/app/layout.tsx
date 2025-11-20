@@ -1,8 +1,16 @@
-import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { AuthProvider } from "@/hooks/useAuth";
-import { Toaster } from "sonner";
+import type { Metadata, Viewport } from 'next';
+import { Raleway, Inter } from 'next/font/google';
+import './globals.css';
+import { AuthProvider } from '@/hooks/useAuth';
+import { ThemeProvider } from '@/components/theme-provider';
+import { Toaster } from 'sonner';
+
+const raleway = Raleway({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-raleway',
+});
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,10 +39,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
-        <Toaster />
+    <html lang='en' suppressHydrationWarning>
+      <body
+        className={`${raleway.variable} ${inter.variable} font-raleway antialiased min-h-screen`}
+      >
+        <ThemeProvider
+          attribute='class'
+          defaultTheme='dark'
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          <AuthProvider>{children}</AuthProvider>
+          <Toaster position='top-right' />
+        </ThemeProvider>
       </body>
     </html>
   );

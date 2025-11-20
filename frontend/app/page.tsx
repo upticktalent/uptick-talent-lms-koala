@@ -1,10 +1,27 @@
 "use client";
 
+<<<<<<< HEAD
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { LoaderCircle } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
+=======
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { ThemeToggle } from '@/components/theme-toggle';
+import Loader from '@/components/Loader';
+>>>>>>> e9b8324af8cb2828cc9a08f44599923a76986833
 
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();
@@ -26,6 +43,17 @@ export default function Home() {
     }
   }, [isAuthenticated, loading, router]);
 
+<<<<<<< HEAD
+=======
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (isAuthenticated) {
+    return null; // Will redirect in useEffect
+  }
+
+>>>>>>> e9b8324af8cb2828cc9a08f44599923a76986833
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="text-gray-600">
