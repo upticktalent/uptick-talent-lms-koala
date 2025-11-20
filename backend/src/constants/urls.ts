@@ -58,6 +58,20 @@ export const urls = {
     details: (id: string) => `/${id}`,
     review: (id: string) => `/${id}/review`,
   },
+  interviews: {
+    entry: () => routeCreator("interviews"),
+    list: () => "/",
+    slots: {
+      create: () => "/slots",
+      mySlots: () => "/slots/my-slots",
+      available: () => "/slots/available",
+    },
+    schedule: () => "/schedule",
+    details: (id: string) => `/${id}`,
+    byApplication: (applicationId: string) => `/application/${applicationId}`,
+    review: (id: string) => `/${id}/review`,
+    cancel: (id: string) => `/${id}/cancel`,
+  },
   emailTemplates: {
     entry: () => routeCreator("email-templates"),
     list: () => "/",

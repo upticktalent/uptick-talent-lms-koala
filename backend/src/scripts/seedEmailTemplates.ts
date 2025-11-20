@@ -270,13 +270,124 @@ export const seedEmailTemplates = async () => {
         ],
         createdBy: adminId,
       },
+      {
+        name: "Interview Scheduled - Applicant Confirmation",
+        subject: "🎯 Your Interview is Scheduled - {{trackName}} Program",
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">🎯 Your Interview is Scheduled!</h2>
+            <p>Dear {{applicantName}},</p>
+            <p>Great news! Your interview for the <strong>{{trackName}}</strong> program has been scheduled.</p>
+            
+            <div style="background-color: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px;">
+              <h3 style="margin-top: 0; color: #1f2937;">📅 Interview Details</h3>
+              <ul style="list-style: none; padding: 0;">
+                <li style="margin: 10px 0;"><strong>Date:</strong> {{interviewDate}}</li>
+                <li style="margin: 10px 0;"><strong>Time:</strong> {{interviewTime}}</li>
+                <li style="margin: 10px 0;"><strong>Duration:</strong> 30 minutes</li>
+                <li style="margin: 10px 0;"><strong>Location:</strong> {{location}}</li>
+                {{#if meetingLink}}
+                <li style="margin: 10px 0;"><strong>Meeting Link:</strong> <a href="{{meetingLink}}" style="color: #2563eb;">Join Meeting</a></li>
+                {{/if}}
+                <li style="margin: 10px 0;"><strong>Interviewer:</strong> {{interviewerName}}</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #dbeafe; padding: 20px; margin: 20px 0; border-radius: 8px;">
+              <h3 style="margin-top: 0; color: #1e40af;">💡 Interview Tips</h3>
+              <ul>
+                <li>Join the meeting 5 minutes early</li>
+                <li>Test your camera and microphone beforehand</li>
+                <li>Have your CV and portfolio ready</li>
+                <li>Prepare questions about the program</li>
+                <li>Be ready to discuss your motivation and goals</li>
+              </ul>
+            </div>
+            
+            <p>We're excited to meet you and learn more about your journey. Good luck!</p>
+            <p>If you need to reschedule or have any questions, please contact us immediately.</p>
+            <p>Best regards,<br>The {{platformName}} Team</p>
+          </div>
+        `,
+        templateType: "interview_scheduled_confirmation",
+        variables: [
+          "applicantName",
+          "trackName",
+          "interviewDate",
+          "interviewTime",
+          "location",
+          "meetingLink",
+          "interviewerName",
+          "platformName",
+        ],
+        createdBy: adminId,
+      },
+      {
+        name: "Interview Scheduled - Interviewer Notification",
+        subject: "📋 New Interview Scheduled - {{trackName}} Applicant",
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #059669;">📋 New Interview Scheduled</h2>
+            <p>Hello {{interviewerName}},</p>
+            <p>A new interview has been scheduled with an applicant for the <strong>{{trackName}}</strong> program.</p>
+            
+            <div style="background-color: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px;">
+              <h3 style="margin-top: 0; color: #1f2937;">👤 Applicant Information</h3>
+              <ul style="list-style: none; padding: 0;">
+                <li style="margin: 10px 0;"><strong>Name:</strong> {{applicantName}}</li>
+                <li style="margin: 10px 0;"><strong>Program:</strong> {{trackName}}</li>
+                <li style="margin: 10px 0;"><strong>Application ID:</strong> {{applicationId}}</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #ecfdf5; padding: 20px; margin: 20px 0; border-radius: 8px;">
+              <h3 style="margin-top: 0; color: #065f46;">📅 Interview Details</h3>
+              <ul style="list-style: none; padding: 0;">
+                <li style="margin: 10px 0;"><strong>Date:</strong> {{interviewDate}}</li>
+                <li style="margin: 10px 0;"><strong>Time:</strong> {{interviewTime}}</li>
+                <li style="margin: 10px 0;"><strong>Duration:</strong> 30 minutes</li>
+                <li style="margin: 10px 0;"><strong>Location:</strong> {{location}}</li>
+                {{#if meetingLink}}
+                <li style="margin: 10px 0;"><strong>Meeting Link:</strong> <a href="{{meetingLink}}" style="color: #059669;">Join Meeting</a></li>
+                {{/if}}
+              </ul>
+            </div>
+            
+            <div style="background-color: #fef3c7; padding: 20px; margin: 20px 0; border-radius: 8px;">
+              <h3 style="margin-top: 0; color: #92400e;">📝 Interview Preparation</h3>
+              <ul>
+                <li>Review the applicant's CV and application</li>
+                <li>Prepare questions about their technical skills</li>
+                <li>Assess their motivation and fit for the program</li>
+                <li>Be ready to answer questions about the program</li>
+              </ul>
+            </div>
+            
+            <p>The calendar invite is attached to help you add this to your schedule.</p>
+            <p>Thank you for your time and contribution to our program!</p>
+            <p>Best regards,<br>The {{platformName}} Team</p>
+          </div>
+        `,
+        templateType: "interview_scheduled_notification",
+        variables: [
+          "interviewerName",
+          "applicantName",
+          "trackName",
+          "applicationId",
+          "interviewDate",
+          "interviewTime",
+          "location",
+          "meetingLink",
+          "platformName",
+        ],
+        createdBy: adminId,
+      },
     ];
-
     // Check if templates already exist
     const existingTemplates = await EmailTemplate.find({});
     if (existingTemplates.length > 0) {
       console.log("Email templates already exist, skipping seed...");
-      return;
+      await EmailTemplate.deleteMany({});
     }
 
     // Insert templates
@@ -288,7 +399,6 @@ export const seedEmailTemplates = async () => {
     console.error("Error seeding email templates:", error);
   }
 };
-
 // Function to update existing applications and users with current admin user ID
 export const updateTemplateOwnership = async (adminUserId: string) => {
   try {

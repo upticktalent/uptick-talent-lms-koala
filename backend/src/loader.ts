@@ -23,6 +23,10 @@ const servicesLoader = [
     handler: [routers.assessment],
   },
   {
+    path: joinUrls(constants.urls.interviews.entry().path),
+    handler: [routers.interview],
+  },
+  {
     path: joinUrls(constants.urls.cohorts.entry().path),
     handler: [routers.cohort],
   },

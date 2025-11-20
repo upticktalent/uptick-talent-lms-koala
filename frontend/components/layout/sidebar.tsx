@@ -27,6 +27,7 @@ export function Sidebar({ className }: SidebarProps) {
         { name: 'Applications', href: '/lms/recruitment/applications' },
         { name: 'Assessments', href: '/lms/recruitment/assessments' },
         { name: 'Interviews', href: '/lms/recruitment/interviews' },
+        { name: 'Interview Slots', href: '/lms/recruitment/interview-slots' },
       ],
     },
     {

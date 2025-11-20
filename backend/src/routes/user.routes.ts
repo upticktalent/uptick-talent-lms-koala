@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getUsers,
+  getAllUsers,
   getMentors,
   getUserDetails,
   createUser,
@@ -23,6 +24,7 @@ router.use(authenticate);
 
 // Public routes for authenticated users
 router.get("/mentors", getMentors);
+router.get("/all", getAllUsers); // For dropdowns and selects
 
 // Admin-only routes
 router.use(authorize("admin"));

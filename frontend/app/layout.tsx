@@ -3,6 +3,7 @@ import { Raleway, Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/hooks/useAuth';
 import { ThemeProvider } from '@/components/theme-provider';
+import { Toaster } from 'sonner';
 
 const raleway = Raleway({
   subsets: ['latin'],
@@ -49,6 +50,7 @@ export default function RootLayout({
           disableTransitionOnChange={false}
         >
           <AuthProvider>{children}</AuthProvider>
+          <Toaster position='top-right' />
         </ThemeProvider>
       </body>
     </html>
