@@ -4,40 +4,65 @@ import { z } from "zod";
 export const applicationSchema = z.object({
   firstName: z
     .string()
+    .trim()
     .min(1, "First name is required")
-    .max(50, "First name cannot exceed 50 characters")
-    .trim(),
+    .max(50, "First name cannot exceed 50 characters"),
   lastName: z
     .string()
+    .trim()
     .min(1, "Last name is required")
-    .max(50, "Last name cannot exceed 50 characters")
-    .trim(),
-  email: z
-    .email("Please enter a valid email address")
-    .min(1, "Email is required")
-    .toLowerCase()
-    .trim(),
-  phoneNumber: z.string().min(1, "Phone number is required").trim(),
-  gender: z.enum(["male", "female"]),
-  country: z.string().min(1, "Country is required").trim(),
-  state: z.string().min(1, "State is required").trim(),
-  educationalQualification: z
-    .string()
-    .max(200, "Educational qualification cannot exceed 200 characters")
-    .trim()
-    .optional(),
-  tools: z
-    .array(z.string().min(1, "Tool name cannot be empty").trim())
-    .max(20, "Maximum 20 tools allowed")
+    .max(50, "Last name cannot exceed 50 characters"),
+  email: z.email("Please enter a valid email address"),
+  phoneNumber: z.string().trim().min(1, "Phone number is required"),
+  gender: z.enum(["male", "female"], {
+    message: "Gender must be male or female",
+  }),
+  country: z.string().trim().min(1, "Country is required"),
+  state: z.string().trim().min(1, "State is required"),
+
+  educationalBackground: z.string().trim().optional(),
+  tools: z.array(z.string().trim()).optional().default([]),
+  trackId: z.string().trim().min(1, "Track is required"),
+  cohortNumber: z.string().trim(),
+  yearsOfExperience: z.enum(["less-than-1", "1-2", "2-3", "above-3"], {
+    message: "Years of experience must be less-than-1, 1-2, 2-3, or above-3",
+  }),
+  githubLink: z
+    .url("GitHub link must be a valid URL")
     .optional()
-    .default([]),
-  trackId: z.string().trim(),
-  cohortNumber: z.string().min(1, "Cohort number is required").trim(),
-  referralSource: z.string().trim().optional(),
-  motivation: z
+    .or(z.literal("")),
+  portfolioLink: z
+    .url("Portfolio link must be a valid URL")
+    .optional()
+    .or(z.literal("")),
+  careerGoals: z
     .string()
-    .max(1000, "Motivation cannot exceed 1000 characters")
     .trim()
+    .min(1, "Career goals are required")
+    .max(500, "Career goals cannot exceed 500 characters"),
+  weeklyCommitment: z.enum(["yes", "no"], {
+    message: "Weekly commitment must be yes or no",
+  }),
+  referralSource: z.enum(
+    [
+      "linkedin",
+      "twitter",
+      "instagram",
+      "facebook",
+      "friend-referral",
+      "google-search",
+      "job-board",
+      "university",
+      "other",
+    ],
+    {
+      message: "Invalid referral source",
+    },
+  ),
+  referralSourceOther: z
+    .string()
+    .trim()
+    .max(200, "Other referral source cannot exceed 200 characters")
     .optional(),
 });
 
@@ -147,12 +172,7 @@ export const createUserSchema = z.object({
     .min(1, "Last name is required")
     .max(50, "Last name cannot exceed 50 characters")
     .trim(),
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .email("Please enter a valid email address")
-    .toLowerCase()
-    .trim(),
+  email: z.email("Please enter a valid email address").toLowerCase().trim(),
   phoneNumber: z.string().min(1, "Phone number is required").trim(),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
   country: z.string().min(1, "Country is required").trim(),

@@ -21,6 +21,11 @@ export const applicantService = {
     return apiClient.get('/cohorts/active');
   },
 
+  // Get current active cohort (single cohort accepting applications)
+  getCurrentActiveCohort: async () => {
+    return apiClient.get('/cohorts/current-active');
+  },
+
   // Get all applications (admin)
   getApplications: async (params?: {
     status?: string;
@@ -45,5 +50,10 @@ export const applicantService = {
   // Get single application (admin)
   getApplication: async (applicantId: string) => {
     return apiClient.get(`/applications/${applicantId}`);
+  },
+
+  // Get application status by ID
+  getApplicationStatus: async (applicationId: string) => {
+    return apiClient.get(`/applications/${applicationId}`);
   },
 };

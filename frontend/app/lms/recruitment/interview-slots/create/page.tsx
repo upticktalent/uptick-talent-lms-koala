@@ -240,7 +240,7 @@ export default function CreateInterviewSlotsPage() {
         {/* Header */}
         <div className='flex items-center gap-4'>
           <Link href='/lms/recruitment/interview-slots'>
-            <Button variant='secondary' size='sm'>
+            <Button variant='outline' size='sm'>
               <ArrowLeft className='w-4 h-4 mr-2' />
               Back to Slots
             </Button>
@@ -258,13 +258,13 @@ export default function CreateInterviewSlotsPage() {
         {/* Mode Selection */}
         <div className='flex gap-4'>
           <Button
-            variant={mode === 'bulk' ? 'primary' : 'secondary'}
+            variant={mode === 'bulk' ? 'default' : 'outline'}
             onClick={() => setMode('bulk')}
           >
             Bulk
           </Button>
           <Button
-            variant={mode === 'manual' ? 'primary' : 'secondary'}
+            variant={mode === 'manual' ? 'default' : 'outline'}
             onClick={() => setMode('manual')}
           >
             Manual
@@ -516,7 +516,7 @@ export default function CreateInterviewSlotsPage() {
                       <div className='flex justify-end'>
                         <Button
                           type='button'
-                          variant='danger'
+                          variant='destructive'
                           onClick={() => removeManualSlot(index)}
                         >
                           Remove Slot
@@ -561,7 +561,7 @@ export default function CreateInterviewSlotsPage() {
                   {isLoading ? 'Creating Slots...' : 'Create Slots'}
                 </Button>
                 <Link href='/lms/recruitment/interview-slots'>
-                  <Button type='button' variant='secondary' className='px-8'>
+                  <Button type='button' variant='outline' className='px-8'>
                     Cancel
                   </Button>
                 </Link>

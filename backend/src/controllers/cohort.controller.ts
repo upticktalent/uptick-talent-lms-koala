@@ -44,9 +44,13 @@ export const getCohorts = asyncHandler(async (req: Request, res: Response) => {
 
 export const getActiveCohorts = asyncHandler(
   async (req: Request, res: Response) => {
+    const now = new Date();
+
+    // Only return active cohorts that are accepting applications and haven't passed deadline
     const cohorts = await Cohort.find({
+      status: "active",
       isAcceptingApplications: true,
-      status: { $in: ["upcoming", "active"] },
+      applicationDeadline: { $gt: now }, // Application deadline hasn't passed
     })
       .populate("tracks", "name description")
       .sort({ startDate: 1 });
@@ -61,8 +65,12 @@ export const getActiveCohorts = asyncHandler(
 
 export const getCurrentActiveCohort = asyncHandler(
   async (req: Request, res: Response) => {
+    const now = new Date();
+
     const activeCohort = await Cohort.findOne({
       status: "active",
+      isAcceptingApplications: true,
+      applicationDeadline: { $gt: now },
     }).populate("tracks", "name description");
 
     if (!activeCohort) {

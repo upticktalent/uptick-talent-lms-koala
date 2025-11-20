@@ -359,7 +359,7 @@ export default function InterviewSlotDetailPage() {
               </Button>
 
               <Button
-                variant='danger'
+                variant='destructive'
                 onClick={handleDelete}
                 disabled={isDeleting || slot.bookedCount > 0}
               >

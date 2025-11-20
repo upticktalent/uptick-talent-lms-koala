@@ -93,25 +93,28 @@ const seedDatabase = async () => {
     // Create multiple cohorts
     const cohorts = [
       {
-        name: "Cohort 2025-Q1",
+        name: "Cohort 2026-Q1",
         cohortNumber: "1",
         description:
-          "First quarter 2025 cohort - Full immersive program focusing on modern web development",
-        startDate: new Date("2025-03-01"),
-        endDate: new Date("2025-08-31"),
+          "First quarter 2026 cohort - Full immersive program focusing on modern web development",
+        startDate: new Date("2026-01-15"),
+        endDate: new Date("2026-06-30"),
+        applicationDeadline: new Date("2025-12-31"), // Future deadline
         maxStudents: 50,
         status: "active",
         tracks: createdTracks.slice(0, 5).map((track) => track._id), // First 5 tracks
         isAcceptingApplications: true,
       },
       {
-        name: "Cohort 2025-Q2",
+        name: "Cohort 2026-Q2",
         cohortNumber: "2",
         description:
-          "Second quarter 2025 cohort - Advanced technologies and specializations",
-        startDate: new Date("2025-06-01"),
-        endDate: new Date("2025-11-30"),
+          "Second quarter 2026 cohort - Advanced technologies and specializations",
+        startDate: new Date("2026-04-01"),
+        endDate: new Date("2026-09-30"),
+        applicationDeadline: new Date("2026-03-15"), // Future deadline
         maxStudents: 40,
+        status: "upcoming",
         tracks: createdTracks.slice(3, 8).map((track) => track._id), // Overlapping tracks
         isAcceptingApplications: false,
       },
@@ -121,7 +124,9 @@ const seedDatabase = async () => {
         description: "Previous cohort for reference - Already completed",
         startDate: new Date("2024-09-01"),
         endDate: new Date("2025-02-28"),
+        applicationDeadline: new Date("2024-08-15"), // Past deadline
         maxStudents: 45,
+        status: "completed",
         tracks: createdTracks.slice(0, 6).map((track) => track._id),
         isAcceptingApplications: false,
       },

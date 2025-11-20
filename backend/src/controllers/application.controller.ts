@@ -26,11 +26,20 @@ export const submitApplication = asyncHandler(
         gender,
         country,
         state,
-        educationalQualification,
+        educationalBackground,
         tools,
         trackId,
         cohortNumber,
+        yearsOfExperience,
+        githubLink,
+        portfolioLink,
+        careerGoals,
+        weeklyCommitment,
         referralSource,
+        referralSourceOther,
+
+        // Legacy fields for backward compatibility
+        educationalQualification,
         motivation,
       } = req.body;
 
@@ -75,9 +84,23 @@ export const submitApplication = asyncHandler(
         });
       }
 
-      const activeCohort = await Cohort.findOne({
-        status: "active",
-      }).populate("tracks", "name description");
+      // Ensure the cohort is the current active one and accepting applications
+      if (selectedCohort.status !== "active") {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Applications are only accepted for the current active cohort",
+        });
+      }
+
+      // Check if application deadline has passed
+      const now = new Date();
+      if (selectedCohort.applicationDeadline <= now) {
+        return res.status(400).json({
+          success: false,
+          message: "Application deadline has passed for this cohort",
+        });
+      }
 
       // Check if user already exists with this email
       let user = await User.findOne({ email: email.toLowerCase() });
@@ -86,7 +109,7 @@ export const submitApplication = asyncHandler(
         // Check if user already has an application for this cohort
         const existingApplication = await Application.findOne({
           applicant: user._id,
-          cohort: activeCohort?._id || selectedCohort._id,
+          cohort: selectedCohort._id,
         });
 
         if (existingApplication) {
@@ -141,13 +164,22 @@ export const submitApplication = asyncHandler(
         applicant: user._id,
         cohort: selectedCohort._id,
         track: selectedTrack._id,
-        educationalQualification: educationalQualification?.trim(),
+        educationalBackground: educationalBackground?.trim(),
         tools: Array.isArray(tools)
           ? tools.map((tool: string) => tool.trim()).filter(Boolean)
           : [],
         cvUrl,
         status: "pending",
+        yearsOfExperience: yearsOfExperience?.trim(),
+        githubLink: githubLink?.trim(),
+        portfolioLink: portfolioLink?.trim(),
+        careerGoals: careerGoals?.trim(),
+        weeklyCommitment: weeklyCommitment?.trim(),
         referralSource: referralSource?.trim(),
+        referralSourceOther: referralSourceOther?.trim(),
+
+        // Legacy fields for backward compatibility
+        educationalQualification: educationalQualification?.trim(),
         motivation: motivation?.trim(),
       });
 

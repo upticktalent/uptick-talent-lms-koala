@@ -24,6 +24,7 @@ export const validate = (
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
+      console.log(req.body);
       // Validate request body
       const validatedData = schema.parse(req.body);
       // Replace req.body with validated and transformed data

@@ -63,13 +63,13 @@ export default function ThemeDemo() {
             </CardHeader>
             <CardContent className='space-y-4'>
               <div className='flex flex-wrap gap-3'>
-                <Button variant='primary' size='sm'>
+                <Button variant='default' size='sm'>
                   Primary
                 </Button>
                 <Button variant='secondary' size='sm'>
                   Secondary
                 </Button>
-                <Button variant='danger' size='sm'>
+                <Button variant='destructive' size='sm'>
                   Danger
                 </Button>
                 <Button variant='ghost' size='sm'>

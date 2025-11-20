@@ -5,7 +5,6 @@ export interface IApplication extends Document {
   applicant: mongoose.Types.ObjectId;
   cohort: mongoose.Types.ObjectId;
   track: mongoose.Types.ObjectId;
-  educationalQualification: string;
   cvUrl: string;
   tools: string[];
   status: "pending" | "under-review" | "accepted" | "rejected" | "shortlisted";
@@ -13,8 +12,21 @@ export interface IApplication extends Document {
   reviewedAt?: Date;
   reviewNotes?: string;
   rejectionReason?: string;
+
+  // New enhanced application fields
+  educationalBackground: string;
+  yearsOfExperience: string;
+  githubLink?: string;
+  portfolioLink?: string;
+  careerGoals: string;
+  weeklyCommitment: string;
+  referralSource: string;
+  referralSourceOther?: string;
+
+  // Legacy fields for backward compatibility
   motivation?: string;
-  referralSource?: string;
+  educationalQualification?: string;
+
   submittedAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -37,18 +49,17 @@ const ApplicationSchema: Schema = new Schema(
       ref: "Track",
       required: [true, "Track is required"],
     },
-    educationalQualification: {
-      type: String,
-      trim: true,
-      maxlength: [
-        200,
-        "Educational qualification cannot exceed 200 characters",
-      ],
-    },
     cvUrl: {
       type: String,
       required: [true, "CV is required"],
       trim: true,
+    },
+
+    // New enhanced application fields
+    educationalBackground: {
+      type: String,
+      trim: true,
+      maxlength: [200, "Educational background cannot exceed 200 characters"],
     },
     tools: {
       type: [String],
@@ -81,20 +92,76 @@ const ApplicationSchema: Schema = new Schema(
       trim: true,
       maxlength: [1000, "Review notes cannot exceed 1000 characters"],
     },
-    motivation: {
+    yearsOfExperience: {
+      type: String,
+      required: [true, "Years of experience is required"],
+      trim: true,
+      enum: {
+        values: ["less-than-1", "1-2", "2-3", "above-3"],
+        message:
+          "Years of experience must be less-than-1, 1-2, 2-3, or above-3",
+      },
+    },
+    githubLink: {
       type: String,
       trim: true,
-      maxlength: [1000, "Motivation cannot exceed 1000 characters"],
+      maxlength: [200, "GitHub link cannot exceed 200 characters"],
+    },
+    portfolioLink: {
+      type: String,
+      trim: true,
+      maxlength: [200, "Portfolio link cannot exceed 200 characters"],
+    },
+    careerGoals: {
+      type: String,
+      required: [true, "Career goals are required"],
+      trim: true,
+      maxlength: [500, "Career goals cannot exceed 500 characters"],
+    },
+    weeklyCommitment: {
+      type: String,
+      required: [true, "Weekly commitment is required"],
+      trim: true,
+      enum: {
+        values: ["yes", "no"],
+        message: "Weekly commitment must be yes or no",
+      },
     },
     referralSource: {
       type: String,
+      required: [true, "Referral source is required"],
       trim: true,
-      maxlength: [500, "Referral source cannot exceed 500 characters"],
+      enum: {
+        values: [
+          "linkedin",
+          "twitter",
+          "instagram",
+          "facebook",
+          "friend-referral",
+          "google-search",
+          "job-board",
+          "university",
+          "other",
+        ],
+        message: "Invalid referral source",
+      },
+    },
+    referralSourceOther: {
+      type: String,
+      trim: true,
+      maxlength: [200, "Other referral source cannot exceed 200 characters"],
     },
     rejectionReason: {
       type: String,
       trim: true,
       maxlength: [500, "Rejection reason cannot exceed 500 characters"],
+    },
+
+    // Legacy fields for backward compatibility
+    motivation: {
+      type: String,
+      trim: true,
+      maxlength: [1000, "Motivation cannot exceed 1000 characters"],
     },
     submittedAt: {
       type: Date,
