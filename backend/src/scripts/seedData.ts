@@ -185,6 +185,24 @@ const seedDatabase = async () => {
             maxStudents: 10,
             currentStudents: 0,
           },
+          {
+            track: createdTracks[3]._id, // Data Science
+            mentors: [createdMentorUsers[3]._id],
+            maxStudents: 12,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[5]._id, // Product Design
+            mentors: [createdMentorUsers[1]._id, createdMentorUsers[3]._id],
+            maxStudents: 15,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[6]._id, // Product Management
+            mentors: [createdMentorUsers[0]._id],
+            maxStudents: 13,
+            currentStudents: 0,
+          },
         ],
         isAcceptingApplications: true,
       },
@@ -200,6 +218,30 @@ const seedDatabase = async () => {
         status: "upcoming",
         isCurrentlyActive: false,
         tracks: [
+          {
+            track: createdTracks[0]._id, // Frontend Development
+            mentors: [createdMentorUsers[0]._id, createdMentorUsers[1]._id],
+            maxStudents: 15,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[1]._id, // Backend Development
+            mentors: [createdMentorUsers[2]._id],
+            maxStudents: 15,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[2]._id, // Full Stack Development
+            mentors: [createdMentorUsers[0]._id, createdMentorUsers[2]._id],
+            maxStudents: 10,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[4]._id, // Mobile Development
+            mentors: [createdMentorUsers[1]._id],
+            maxStudents: 10,
+            currentStudents: 0,
+          },
           {
             track: createdTracks[3]._id, // Data Science
             mentors: [createdMentorUsers[3]._id],
@@ -234,21 +276,45 @@ const seedDatabase = async () => {
         tracks: [
           {
             track: createdTracks[0]._id, // Frontend Development
-            mentors: [createdMentorUsers[0]._id],
+            mentors: [createdMentorUsers[0]._id, createdMentorUsers[1]._id],
             maxStudents: 15,
-            currentStudents: 12,
+            currentStudents: 0,
           },
           {
             track: createdTracks[1]._id, // Backend Development
-            mentors: [createdMentorUsers[2]._id, createdMentorUsers[3]._id],
+            mentors: [createdMentorUsers[2]._id],
             maxStudents: 15,
-            currentStudents: 14,
+            currentStudents: 0,
           },
           {
             track: createdTracks[2]._id, // Full Stack Development
+            mentors: [createdMentorUsers[0]._id, createdMentorUsers[2]._id],
+            maxStudents: 10,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[4]._id, // Mobile Development
             mentors: [createdMentorUsers[1]._id],
+            maxStudents: 10,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[3]._id, // Data Science
+            mentors: [createdMentorUsers[3]._id],
+            maxStudents: 12,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[5]._id, // Product Design
+            mentors: [createdMentorUsers[1]._id, createdMentorUsers[3]._id],
             maxStudents: 15,
-            currentStudents: 11,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[6]._id, // Product Management
+            mentors: [createdMentorUsers[0]._id],
+            maxStudents: 13,
+            currentStudents: 0,
           },
         ],
         isAcceptingApplications: false,
@@ -750,17 +816,32 @@ const seedDatabase = async () => {
 
         const timeSlot = timeSlots[slotsCreated % timeSlots.length];
 
-        // Randomly assign 1-2 tracks to each slot from mentor's assigned tracks or all tracks
-        const availableTracks = createdTracks.map((track) => track._id);
-        const numTracks = Math.floor(Math.random() * 2) + 1; // 1 to 2 tracks
-        const slotTracks = [];
-        const shuffledTracks = [...availableTracks].sort(
-          () => Math.random() - 0.5,
-        );
+        // Get mentor's assigned tracks from their mentorAssignments
+        const mentorWithAssignments = await User.findById(mentor._id);
+        let availableTracks = [];
 
-        for (let i = 0; i < numTracks && i < shuffledTracks.length; i++) {
-          slotTracks.push(shuffledTracks[i]);
+        if (mentorWithAssignments && mentorWithAssignments.mentorAssignments) {
+          // Get all tracks this mentor is assigned to across all cohorts
+          for (const assignment of mentorWithAssignments.mentorAssignments) {
+            if (assignment.tracks) {
+              availableTracks.push(...assignment.tracks);
+            }
+          }
         }
+
+        // If mentor has no assignments, use all tracks as fallback
+        if (availableTracks.length === 0) {
+          availableTracks = createdTracks.map((track) => track._id);
+        }
+
+        // Remove duplicates
+        const uniqueTracks = [
+          ...new Set(availableTracks.map((track) => track.toString())),
+        ];
+        const slotTracks = uniqueTracks.slice(
+          0,
+          Math.min(2, uniqueTracks.length),
+        );
 
         const slotData = {
           interviewer: mentor._id,

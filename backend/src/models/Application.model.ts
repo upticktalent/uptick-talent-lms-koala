@@ -194,8 +194,7 @@ ApplicationSchema.pre("save", async function (next) {
 
     const trackExists = cohort.tracks.some(
       (cohortTrack: any) =>
-        cohortTrack.track.trackId?.toString() ===
-        (this.track as any).toString(),
+        cohortTrack.track._id?.toString() === (this.track as any).toString(),
     );
 
     if (!trackExists) {
