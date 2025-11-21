@@ -60,7 +60,6 @@ export default function ProfilePage() {
     firstName: "",
     lastName: "",
     email: "",
-    isActive: true,
   });
 
   useEffect(() => {
@@ -69,7 +68,6 @@ export default function ProfilePage() {
         firstName: profile.firstName || "",
         lastName: profile.lastName || "",
         email: profile.email || "",
-        isActive: profile.isActive ?? true,
       });
     }
   }, [profile]);
@@ -79,9 +77,6 @@ export default function ProfilePage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSwitchChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isActive: checked }));
-  };
 
   const handleUpdateProfile = async () => {
     if (!profile?._id) return;
@@ -209,24 +204,10 @@ export default function ProfilePage() {
                             id="email"
                             name="email"
                             value={formData.email}
+                            readOnly
                             onChange={handleInputChange}
                             className="col-span-3"
                           />
-                        </div>
-                        <div className="flex flex-col gap-4">
-                          <Label htmlFor="isActive" className="text-right">
-                            Active Status
-                          </Label>
-                          <div className="flex space-x-2">
-                            <Switch
-                              id="isActive"
-                              checked={formData.isActive}
-                              onCheckedChange={handleSwitchChange}
-                            />
-                            <Label htmlFor="isActive">
-                              {formData.isActive ? "Active" : "Inactive"}
-                            </Label>
-                          </div>
                         </div>
                       </div>
                       <DialogFooter>

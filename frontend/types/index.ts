@@ -98,6 +98,7 @@ export interface ICohort {
   description?: string;
   startDate: string;
   endDate: string;
+  applicationDeadline: string;
   isActive: boolean;
   tracks: ITrack[];
   students: IUser[];

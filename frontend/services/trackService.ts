@@ -17,6 +17,11 @@ export const trackService = {
     return apiClient.get(`/tracks/${slug}`);
   },
 
+  // Get track by ID
+  getTrackById: async (id: string) => {
+    return apiClient.get(`/tracks/${id}`);
+  },
+
   // Get track by trackId (e.g., "frontend-development")
   getTrackByTrackId: async (trackId: string) => {
     return apiClient.get(`/tracks/trackId/${trackId}`);

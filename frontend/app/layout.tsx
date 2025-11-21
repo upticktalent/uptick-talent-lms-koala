@@ -20,7 +20,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Uptick Talent LMS",
+  title: {
+    template: "%s | Uptick Talent LMS",
+    default: "Uptick Talent LMS",
+  },
   description:
     "Modern Learning Management System - Empowering talent through technology",
   keywords:

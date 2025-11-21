@@ -43,23 +43,54 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
+import { userService } from '@/services/userService';
+import { trackService } from '@/services/trackService';
+import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 
 export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
+  const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [newStudent, setNewStudent] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    gender: '',
+    country: '',
+    state: '',
+    trackId: '',
+  });
 
   const {
     data: students,
     loading,
     error,
-  } = useFetch(() => lmsService.getStudents());
+    refetch: refetchStudents
+  } = useFetch(() => userService.getAllUsers());
 
-  const studentList = students?.students || students || [];
+  const { data: tracksData } = useFetch(() => trackService.getTracks());
+  const tracks = tracksData?.tracks || [];
 
-  const filteredStudents = studentList.filter((student: any) => {
+  const studentList = students?.users?.filter((user: { role: string; })=> user?.role === 'student');
+
+  const filteredStudents = studentList?.filter((student: any) => {
     const matchesSearch =
       !searchTerm ||
       `${student.firstName} ${student.lastName}`
@@ -77,15 +108,47 @@ export default function StudentsPage() {
   });
 
   // Pagination logic
-  const totalItems = filteredStudents.length;
+  const totalItems = filteredStudents?.length;
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedStudents = filteredStudents.slice(
+  const paginatedStudents = filteredStudents?.slice(
     startIndex,
     startIndex + pageSize
   );
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
+  };
+
+  const handleAddStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await userService.createUser({
+        ...newStudent,
+        role: 'student',
+        assignedTracks: newStudent.trackId ? [newStudent.trackId] : [],
+      });
+      
+      toast.success('Student added successfully');
+      setIsAddStudentOpen(false);
+      setNewStudent({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: '',
+        gender: '',
+        country: '',
+        state: '',
+        trackId: '',
+      });
+      refetchStudents();
+    } catch (error) {
+      console.error('Error adding student:', error);
+      toast.error('Failed to add student');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getProgressColor = (progress: number) => {
@@ -105,28 +168,28 @@ export default function StudentsPage() {
   const stats = [
     { 
       label: 'Total Students', 
-      value: studentList.length, 
+      value: studentList?.length, 
       icon: Users, 
       color: 'bg-blue-500', 
       bgColor: 'bg-blue-50' 
     },
     { 
       label: 'Active Students', 
-      value: studentList.filter((s: any) => s.isActive).length, 
+      value: studentList?.filter((s: any) => s.isActive).length, 
       icon: UserCheck, 
       color: 'bg-green-500', 
       bgColor: 'bg-green-50' 
     },
     { 
       label: 'Avg. Progress', 
-      value: studentList.length > 0 ? `${Math.round(studentList.reduce((acc: number, s: any) => acc + (s.progress || 0), 0) / studentList.length)}%` : '0%', 
+      value: studentList?.length > 0 ? `${Math.round(studentList?.reduce((acc: number, s: any) => acc + (s.progress || 0), 0) / studentList?.length)}%` : '0%', 
       icon: TrendingUp, 
       color: 'bg-purple-500', 
       bgColor: 'bg-purple-50' 
     },
     { 
       label: 'High Performers', 
-      value: studentList.filter((s: any) => (s.progress || 0) >= 80).length, 
+      value: studentList?.filter((s: any) => (s.progress || 0) >= 80).length, 
       icon: Award, 
       color: 'bg-orange-500', 
       bgColor: 'bg-orange-50' 
@@ -141,7 +204,133 @@ export default function StudentsPage() {
           <h1 className='text-2xl font-bold text-gray-900'>Students</h1>
           <p className='text-gray-600'>Manage all students in the system</p>
         </div>
-        <Button>Add Student</Button>
+        
+        <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Student
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Student</DialogTitle>
+              <DialogDescription>
+                Enter the details of the new student. They will receive an email with login credentials.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAddStudent} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={newStudent.firstName}
+                    onChange={(e) => setNewStudent({ ...newStudent, firstName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={newStudent.lastName}
+                    onChange={(e) => setNewStudent({ ...newStudent, lastName: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newStudent.email}
+                  onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  value={newStudent.phoneNumber}
+                  onChange={(e) => setNewStudent({ ...newStudent, phoneNumber: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select
+                    value={newStudent.gender}
+                    onValueChange={(value) => setNewStudent({ ...newStudent, gender: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="track">Learning Track</Label>
+                  <Select
+                    value={newStudent.trackId}
+                    onValueChange={(value) => setNewStudent({ ...newStudent, trackId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select track" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tracks.map((track: any) => (
+                        <SelectItem key={track._id} value={track._id}>
+                          {track.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    value={newStudent.country}
+                    onChange={(e) => setNewStudent({ ...newStudent, country: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">State/Province</Label>
+                  <Input
+                    id="state"
+                    value={newStudent.state}
+                    onChange={(e) => setNewStudent({ ...newStudent, state: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAddStudentOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Adding...' : 'Add Student'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Filters */}
@@ -216,7 +405,7 @@ export default function StudentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedStudents.map((student) => (
+              {paginatedStudents.map((student : any) => (
                 <TableRow key={student._id} className="hover:bg-gray-50/50 transition-colors">
                   <TableCell className="py-4">
                     <div className="flex items-center gap-3">
@@ -299,7 +488,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Pagination */}
-      {filteredStudents.length > 0 && (
+      {filteredStudents?.length > 0 && (
         <Pagination
           page={currentPage}
           pageSize={pageSize}

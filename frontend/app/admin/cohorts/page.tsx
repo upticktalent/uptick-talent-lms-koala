@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -65,6 +66,7 @@ export default function CohortsPage() {
     description: "",
     startDate: "",
     endDate: "",
+    applicationDeadline: "",
     cohortNumber: "",
     maxStudents: 60,
     tracks: [] as string[],
@@ -82,6 +84,7 @@ export default function CohortsPage() {
   const tracks = tracksData?.tracks || [];
 
   const cohortsData = data?.cohorts || [];
+  console.log(cohortsData)
 
   const filteredCohorts = cohortsData.filter((cohort: any) =>
     cohort.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -104,7 +107,7 @@ export default function CohortsPage() {
       setIsCreating(true);
       
       // Basic validation
-      if (!newCohort.name || !newCohort.startDate || !newCohort.endDate || !newCohort.cohortNumber) {
+      if (!newCohort.name || !newCohort.startDate || !newCohort.endDate || !newCohort.cohortNumber || !newCohort.applicationDeadline) {
         toast.error("Please fill in all required fields");
         return;
       }
@@ -114,9 +117,11 @@ export default function CohortsPage() {
         cohortNumber: Number(newCohort.cohortNumber),
         startDate: new Date(newCohort.startDate).toISOString(),
         endDate: new Date(newCohort.endDate).toISOString(),
+        applicationDeadline: new Date(newCohort.applicationDeadline).toISOString(),
         tracks: newCohort.tracks.length > 0 ? newCohort.tracks : [""], 
         status: newCohort.status,
       };
+      console.log(payload)
 
       await lmsService.createCohort(payload);
       
@@ -127,6 +132,7 @@ export default function CohortsPage() {
         description: "",
         startDate: "",
         endDate: "",
+        applicationDeadline: "",
         cohortNumber: "",
         maxStudents: 60,
         tracks: [],
@@ -149,7 +155,7 @@ export default function CohortsPage() {
       setIsUpdating(true);
       
       // Basic validation
-      if (!selectedCohort.name || !selectedCohort.startDate || !selectedCohort.endDate) {
+      if (!selectedCohort.name || !selectedCohort.startDate || !selectedCohort.endDate || !selectedCohort.applicationDeadline) {
         toast.error("Please fill in all required fields");
         return;
       }
@@ -159,6 +165,7 @@ export default function CohortsPage() {
         tracks: selectedCohort.tracks?.length > 0 ? selectedCohort.tracks : [""],
         startDate: new Date(selectedCohort.startDate).toISOString(),
         endDate: new Date(selectedCohort.endDate).toISOString(),
+        applicationDeadline: new Date(selectedCohort.applicationDeadline).toISOString(),
         status: selectedCohort.status,
       };
 
@@ -204,6 +211,7 @@ export default function CohortsPage() {
       ...cohort,
       startDate: cohort.startDate ? cohort.startDate.split('T')[0] : "",
       endDate: cohort.endDate ? cohort.endDate.split('T')[0] : "",
+      applicationDeadline: cohort.applicationDeadline ? cohort.applicationDeadline.split('T')[0] : "",
       tracks: cohort.tracks ? cohort.tracks.map((t: any) => (typeof t === 'object' && t !== null && t._id ? t._id : t)) : [],
       status: cohort.status || "upcoming", 
     });
@@ -393,6 +401,18 @@ export default function CohortsPage() {
                 </div>
               </div>
 
+               <div className="grid gap-2">
+                  <Label htmlFor="applicationDeadline">Application Deadline</Label>
+                  <Input
+                    id="applicationDeadline"
+                    type="date"
+                    value={newCohort.applicationDeadline}
+                    onChange={(e) =>
+                      setNewCohort({ ...newCohort, applicationDeadline: e.target.value })
+                    }
+                  />
+                </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="maxStudents">Max Students</Label>
@@ -557,6 +577,7 @@ export default function CohortsPage() {
                 <TableHead className="py-4 font-semibold text-gray-900">Cohort #</TableHead>
                 <TableHead className="py-4 font-semibold text-gray-900">Duration</TableHead>
                 <TableHead className="py-4 font-semibold text-gray-900">Students</TableHead>
+                <TableHead className="py-4 font-semibold text-gray-900">Tracks</TableHead>
                 <TableHead className="py-4 font-semibold text-gray-900">Status</TableHead>
                 <TableHead className="py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
               </TableRow>
@@ -591,6 +612,11 @@ export default function CohortsPage() {
                     <TableCell className="py-4">
                       <div className="text-sm text-gray-600">
                         {cohort.currentStudents} / {cohort.maxStudents}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="text-sm text-gray-600">
+                        {cohort.tracks?.length || 0}
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
@@ -752,6 +778,18 @@ export default function CohortsPage() {
                   />
                 </div>
               </div>
+
+               <div className="grid gap-2">
+                  <Label htmlFor="edit-applicationDeadline">Application Deadline *</Label>
+                  <Input
+                    id="edit-applicationDeadline"
+                    type="date"
+                    value={selectedCohort.applicationDeadline || ""}
+                    onChange={(e) =>
+                      setSelectedCohort({ ...selectedCohort, applicationDeadline: e.target.value })
+                    }
+                  />
+                </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="edit-status">Status</Label>
