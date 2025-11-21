@@ -30,6 +30,15 @@ export interface IApplication extends Document {
   submittedAt: Date;
   createdAt: Date;
   updatedAt: Date;
+
+  // Methods
+  acceptAndCreateStudent(
+    reviewedBy: string,
+  ): Promise<{ student: any; generatedPassword: string }>;
+}
+
+export interface IApplicationStatics {
+  createForActiveCohort(applicationData: any): Promise<IApplication>;
 }
 
 const ApplicationSchema: Schema = new Schema(
@@ -173,6 +182,114 @@ const ApplicationSchema: Schema = new Schema(
   },
 );
 
+// Validation to ensure track exists in the selected cohort
+ApplicationSchema.pre("save", async function (next) {
+  if (this.isNew || this.isModified("cohort") || this.isModified("track")) {
+    const Cohort = mongoose.model("Cohort");
+    const cohort = await Cohort.findById(this.cohort).populate("tracks.track");
+
+    if (!cohort) {
+      return next(new Error("Invalid cohort"));
+    }
+
+    const trackExists = cohort.tracks.some(
+      (cohortTrack: any) =>
+        cohortTrack.track.trackId?.toString() ===
+        (this.track as any).toString(),
+    );
+
+    if (!trackExists) {
+      return next(new Error("Selected track is not available in this cohort"));
+    }
+  }
+  next();
+});
+
+// Static method to create application for active cohort
+ApplicationSchema.statics.createForActiveCohort = async function (
+  applicationData: any,
+) {
+  const Cohort = mongoose.model("Cohort") as any;
+  const activeCohort = await Cohort.getCurrentActive();
+
+  if (!activeCohort) {
+    throw new Error("No active cohort is currently accepting applications");
+  }
+
+  if (!activeCohort.isAcceptingApplications) {
+    throw new Error("The current cohort is not accepting applications");
+  }
+
+  // Check deadline
+  if (new Date() > activeCohort.applicationDeadline) {
+    throw new Error("Application deadline has passed");
+  }
+
+  // Verify track exists in active cohort
+  const trackExists = activeCohort.tracks.some(
+    (cohortTrack: any) =>
+      cohortTrack.track.trackId === applicationData.trackId ||
+      cohortTrack.track._id.toString() === applicationData.trackId,
+  );
+
+  if (!trackExists) {
+    throw new Error("Selected track is not available in the current cohort");
+  }
+
+  // Find the actual track ObjectId
+  const cohortTrack = activeCohort.tracks.find(
+    (ct: any) =>
+      ct.track.trackId === applicationData.trackId ||
+      ct.track._id.toString() === applicationData.trackId,
+  );
+
+  return new this({
+    ...applicationData,
+    cohort: activeCohort._id,
+    track: cohortTrack.track._id,
+  });
+};
+
+// Method to accept application and create student
+ApplicationSchema.methods.acceptAndCreateStudent = async function (
+  reviewedBy: string,
+) {
+  if (this.status === "accepted") {
+    throw new Error("Application is already accepted");
+  }
+
+  // Generate random password for student
+  const crypto = require("crypto");
+  const generatedPassword = crypto.randomBytes(8).toString("hex");
+
+  // Hash the password
+  const bcrypt = require("bcrypt");
+  const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+  // Create student user
+  const User = mongoose.model("User") as any;
+  const student = await User.createStudentFromApplication(
+    {
+      applicant: await User.findById(this.applicant),
+      cohort: this.cohort,
+      track: this.track,
+      reviewedBy: reviewedBy,
+    },
+    hashedPassword,
+  );
+
+  // Update application status
+  this.status = "accepted";
+  this.reviewedBy = reviewedBy;
+  this.reviewedAt = new Date();
+  await this.save();
+
+  return {
+    student,
+    generatedPassword, // Return unhashed password for email
+  };
+};
+
 // Compound index to prevent duplicate applications
 ApplicationSchema.index({ applicant: 1, cohort: 1 }, { unique: true });
 ApplicationSchema.index({ status: 1 });
@@ -180,7 +297,7 @@ ApplicationSchema.index({ cohort: 1 });
 ApplicationSchema.index({ track: 1 });
 ApplicationSchema.index({ submittedAt: -1 });
 
-export const Application = mongoose.model<IApplication>(
-  "Application",
-  ApplicationSchema,
-);
+export const Application = mongoose.model<
+  IApplication,
+  mongoose.Model<IApplication> & IApplicationStatics
+>("Application", ApplicationSchema);

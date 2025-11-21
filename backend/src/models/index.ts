@@ -9,6 +9,9 @@ import { EmailTemplate, IEmailTemplate } from "./EmailTemplate.model";
 import { EmailLog } from "./EmailLog.model.";
 import { IEmailLog } from "./EmailLog.model.";
 import { EmailCampaign } from "./EmailCampaign.model";
+import { Stream } from "./Stream.model";
+import { Task, Submission } from "./Task.model";
+import { Material } from "./Material.model";
 
 export {
   Application,
@@ -21,5 +24,9 @@ export {
   EmailTemplate,
   EmailLog,
   EmailCampaign,
+  Stream,
+  Task,
+  Submission,
+  Material,
 };
 export type { IEmailTemplate, IEmailLog };

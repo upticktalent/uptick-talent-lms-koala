@@ -92,4 +92,25 @@ export const urls = {
     bulk: () => "/bulk",
     history: () => "/history",
   },
+  streams: {
+    entry: () => routeCreator("streams"),
+    list: () => "/",
+    create: () => "/",
+    byCohort: (cohortId: string) => `/cohort/${cohortId}`,
+    details: (id: string) => `/${id}`,
+    update: (id: string) => `/${id}`,
+    delete: (id: string) => `/${id}`,
+  },
+  tasks: {
+    entry: () => routeCreator("tasks"),
+    list: () => "/",
+    create: () => "/",
+    byCohortTrack: (cohortId: string, trackId: string) =>
+      `/cohort/${cohortId}/track/${trackId}`,
+    details: (id: string) => `/${id}`,
+    submit: (id: string) => `/${id}/submit`,
+    submissions: (id: string) => `/${id}/submissions`,
+    gradeSubmission: (submissionId: string) =>
+      `/submission/${submissionId}/grade`,
+  },
 };

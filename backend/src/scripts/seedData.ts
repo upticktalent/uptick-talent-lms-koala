@@ -90,7 +90,64 @@ const seedDatabase = async () => {
     const createdTracks = await Track.insertMany(tracks);
     console.log(`✅ Created ${createdTracks.length} tracks`);
 
-    // Create multiple cohorts
+    // First, we need to create some mentor users to assign to tracks
+    const mentorPasswordHash = await hashPassword("mentor123");
+    const mentorUsers = [
+      {
+        firstName: "John",
+        lastName: "Smith",
+        email: "john.smith@uptick.com",
+        phoneNumber: "+234-901-111-1111",
+        gender: "male",
+        country: "Nigeria",
+        state: "Lagos",
+        password: mentorPasswordHash,
+        role: "mentor",
+        isPasswordDefault: false,
+      },
+      {
+        firstName: "Sarah",
+        lastName: "Johnson",
+        email: "sarah.johnson@uptick.com",
+        phoneNumber: "+234-901-222-2222",
+        gender: "female",
+        country: "Nigeria",
+        state: "Abuja",
+        password: mentorPasswordHash,
+        role: "mentor",
+        isPasswordDefault: false,
+      },
+      {
+        firstName: "David",
+        lastName: "Wilson",
+        email: "david.wilson@uptick.com",
+        phoneNumber: "+234-901-333-3333",
+        gender: "male",
+        country: "Nigeria",
+        state: "Lagos",
+        password: mentorPasswordHash,
+        role: "mentor",
+        isPasswordDefault: false,
+      },
+      {
+        firstName: "Maria",
+        lastName: "Garcia",
+        email: "maria.garcia@uptick.com",
+        phoneNumber: "+234-901-444-4444",
+        gender: "female",
+        country: "Nigeria",
+        state: "Kano",
+        password: mentorPasswordHash,
+        role: "mentor",
+        isPasswordDefault: false,
+      },
+    ];
+
+    console.log("👨‍🏫 Creating mentor users...");
+    const createdMentorUsers = await User.insertMany(mentorUsers);
+    console.log(`✅ Created ${createdMentorUsers.length} mentor users`);
+
+    // Create multiple cohorts with new track-mentor structure
     const cohorts = [
       {
         name: "Cohort 2026-Q1",
@@ -102,7 +159,33 @@ const seedDatabase = async () => {
         applicationDeadline: new Date("2025-12-31"), // Future deadline
         maxStudents: 50,
         status: "active",
-        tracks: createdTracks.slice(0, 5).map((track) => track._id), // First 5 tracks
+        isCurrentlyActive: true, // This is the active cohort for applications
+        tracks: [
+          {
+            track: createdTracks[0]._id, // Frontend Development
+            mentors: [createdMentorUsers[0]._id, createdMentorUsers[1]._id],
+            maxStudents: 15,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[1]._id, // Backend Development
+            mentors: [createdMentorUsers[2]._id],
+            maxStudents: 15,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[2]._id, // Full Stack Development
+            mentors: [createdMentorUsers[0]._id, createdMentorUsers[2]._id],
+            maxStudents: 10,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[4]._id, // Mobile Development
+            mentors: [createdMentorUsers[1]._id],
+            maxStudents: 10,
+            currentStudents: 0,
+          },
+        ],
         isAcceptingApplications: true,
       },
       {
@@ -115,7 +198,27 @@ const seedDatabase = async () => {
         applicationDeadline: new Date("2026-03-15"), // Future deadline
         maxStudents: 40,
         status: "upcoming",
-        tracks: createdTracks.slice(3, 8).map((track) => track._id), // Overlapping tracks
+        isCurrentlyActive: false,
+        tracks: [
+          {
+            track: createdTracks[3]._id, // Data Science
+            mentors: [createdMentorUsers[3]._id],
+            maxStudents: 12,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[5]._id, // Product Design
+            mentors: [createdMentorUsers[1]._id, createdMentorUsers[3]._id],
+            maxStudents: 15,
+            currentStudents: 0,
+          },
+          {
+            track: createdTracks[6]._id, // Product Management
+            mentors: [createdMentorUsers[0]._id],
+            maxStudents: 13,
+            currentStudents: 0,
+          },
+        ],
         isAcceptingApplications: false,
       },
       {
@@ -127,7 +230,27 @@ const seedDatabase = async () => {
         applicationDeadline: new Date("2024-08-15"), // Past deadline
         maxStudents: 45,
         status: "completed",
-        tracks: createdTracks.slice(0, 6).map((track) => track._id),
+        isCurrentlyActive: false,
+        tracks: [
+          {
+            track: createdTracks[0]._id, // Frontend Development
+            mentors: [createdMentorUsers[0]._id],
+            maxStudents: 15,
+            currentStudents: 12,
+          },
+          {
+            track: createdTracks[1]._id, // Backend Development
+            mentors: [createdMentorUsers[2]._id, createdMentorUsers[3]._id],
+            maxStudents: 15,
+            currentStudents: 14,
+          },
+          {
+            track: createdTracks[2]._id, // Full Stack Development
+            mentors: [createdMentorUsers[1]._id],
+            maxStudents: 15,
+            currentStudents: 11,
+          },
+        ],
         isAcceptingApplications: false,
       },
     ];
@@ -135,6 +258,71 @@ const seedDatabase = async () => {
     console.log("🏗️  Creating cohorts...");
     const createdCohorts = await Cohort.insertMany(cohorts);
     console.log(`✅ Created ${createdCohorts.length} cohorts`);
+
+    // Update mentors with their cohort assignments
+    console.log("👨‍🏫 Assigning mentors to cohorts and tracks...");
+
+    // John Smith - Frontend and Full Stack in Cohort 1, Product Management in Cohort 2
+    await User.findByIdAndUpdate(createdMentorUsers[0]._id, {
+      mentorAssignments: [
+        {
+          cohort: createdCohorts[0]._id,
+          tracks: [createdTracks[0]._id, createdTracks[2]._id], // Frontend, Full Stack
+        },
+        {
+          cohort: createdCohorts[1]._id,
+          tracks: [createdTracks[6]._id], // Product Management
+        },
+      ],
+    });
+
+    // Sarah Johnson - Frontend in Cohort 1, Mobile in Cohort 1, Product Design in Cohort 2
+    await User.findByIdAndUpdate(createdMentorUsers[1]._id, {
+      mentorAssignments: [
+        {
+          cohort: createdCohorts[0]._id,
+          tracks: [createdTracks[0]._id, createdTracks[4]._id], // Frontend, Mobile
+        },
+        {
+          cohort: createdCohorts[1]._id,
+          tracks: [createdTracks[5]._id], // Product Design
+        },
+        {
+          cohort: createdCohorts[2]._id,
+          tracks: [createdTracks[2]._id], // Full Stack (completed cohort)
+        },
+      ],
+    });
+
+    // David Wilson - Backend and Full Stack in Cohort 1, Backend in completed Cohort
+    await User.findByIdAndUpdate(createdMentorUsers[2]._id, {
+      mentorAssignments: [
+        {
+          cohort: createdCohorts[0]._id,
+          tracks: [createdTracks[1]._id, createdTracks[2]._id], // Backend, Full Stack
+        },
+        {
+          cohort: createdCohorts[2]._id,
+          tracks: [createdTracks[1]._id], // Backend (completed cohort)
+        },
+      ],
+    });
+
+    // Maria Garcia - Data Science in Cohort 2, Product Design in Cohort 2, Backend in completed Cohort
+    await User.findByIdAndUpdate(createdMentorUsers[3]._id, {
+      mentorAssignments: [
+        {
+          cohort: createdCohorts[1]._id,
+          tracks: [createdTracks[3]._id, createdTracks[5]._id], // Data Science, Product Design
+        },
+        {
+          cohort: createdCohorts[2]._id,
+          tracks: [createdTracks[1]._id], // Backend (completed cohort)
+        },
+      ],
+    });
+
+    console.log("✅ Assigned mentors to cohorts and tracks");
 
     // Create admin user
     const adminPassword = await hashPassword("admin123");
@@ -155,7 +343,7 @@ const seedDatabase = async () => {
     console.log("✅ Created admin user");
 
     // Create mentor users
-    const mentors = [
+    const additionalMentors = [
       {
         firstName: "John",
         lastName: "Okafor",
@@ -208,23 +396,23 @@ const seedDatabase = async () => {
       },
     ];
 
-    const mentorPassword = await hashPassword("mentor123");
-    const createdMentors = [];
+    const additionalMentorPasswordHash = await hashPassword("mentor123");
+    const createdAdditionalMentors = [];
 
-    for (const mentorData of mentors) {
+    for (const mentorData of additionalMentors) {
       const mentor = new User({
         ...mentorData,
-        password: mentorPassword,
+        password: additionalMentorPasswordHash,
         role: "mentor",
         isPasswordDefault: false,
         createdBy: admin._id,
       });
       await mentor.save();
-      createdMentors.push(mentor);
+      createdAdditionalMentors.push(mentor);
     }
 
     console.log(
-      `✅ Created ${createdMentors.length} mentor users with assigned tracks`,
+      `✅ Created ${createdMentorUsers.length} mentor users with assigned tracks`,
     );
 
     // Create sample applicant users and applications
@@ -492,8 +680,8 @@ const seedDatabase = async () => {
 
         if (status === "reviewed") {
           assessmentData.reviewedBy =
-            createdMentors[
-              Math.floor(Math.random() * createdMentors.length)
+            createdMentorUsers[
+              Math.floor(Math.random() * createdMentorUsers.length)
             ]._id;
           assessmentData.reviewedAt = new Date(
             assessmentData.submittedAt.getTime() +
@@ -504,8 +692,8 @@ const seedDatabase = async () => {
             "Good implementation of core concepts. Clean code structure and well-documented. Areas for improvement: error handling and test coverage.";
         } else if (status === "under-review") {
           assessmentData.reviewedBy =
-            createdMentors[
-              Math.floor(Math.random() * createdMentors.length)
+            createdMentorUsers[
+              Math.floor(Math.random() * createdMentorUsers.length)
             ]._id;
           assessmentData.reviewedAt = new Date(
             assessmentData.submittedAt.getTime() +
@@ -549,7 +737,7 @@ const seedDatabase = async () => {
     const maxSlots = 20;
 
     // Create slots for each mentor until we reach 20 total
-    for (const mentor of createdMentors) {
+    for (const mentor of createdMentorUsers) {
       if (slotsCreated >= maxSlots) break;
 
       // Create 4 slots per mentor (spread across next 2 weeks)
@@ -734,7 +922,7 @@ const seedDatabase = async () => {
     console.log(`   • ${createdTracks.length} tracks created`);
     console.log(`   • ${createdCohorts.length} cohorts created`);
     console.log(`   • 1 admin user created`);
-    console.log(`   • ${createdMentors.length} mentor users created`);
+    console.log(`   • ${createdMentorUsers.length} mentor users created`);
     console.log(`   • ${createdApplicants.length} applicant users created`);
     console.log(`   • ${createdApplications.length} applications created`);
     console.log(`   • ${assessmentCount} assessments created`);

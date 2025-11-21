@@ -65,57 +65,71 @@ export const submitApplication = asyncHandler(
         });
       }
 
-      // Verify cohort and track exist
-      const selectedCohort = await Cohort.findOne({
-        cohortNumber,
-      });
-      if (!selectedCohort) {
+      // Get the current active cohort
+      const activeCohort = await Cohort.getCurrentActive();
+      if (!activeCohort) {
         return res.status(400).json({
           success: false,
-          message: "Selected cohort not found",
+          message: "No active cohort is currently accepting applications",
         });
       }
 
-      const selectedTrack = await Track.findOne({ trackId });
-      if (!selectedTrack) {
+      if (!activeCohort.isAcceptingApplications) {
         return res.status(400).json({
           success: false,
-          message: "Selected track not found",
-        });
-      }
-
-      // Ensure the cohort is the current active one and accepting applications
-      if (selectedCohort.status !== "active") {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Applications are only accepted for the current active cohort",
+          message: "The current cohort is not accepting applications",
         });
       }
 
       // Check if application deadline has passed
       const now = new Date();
-      if (selectedCohort.applicationDeadline <= now) {
+      if (activeCohort.applicationDeadline <= now) {
         return res.status(400).json({
           success: false,
-          message: "Application deadline has passed for this cohort",
+          message: "Application deadline has passed",
         });
       }
+
+      // Verify the selected track exists in the active cohort
+      const trackExists = activeCohort.tracks.some(
+        (cohortTrack: any) => cohortTrack.track.trackId === trackId,
+      );
+
+      if (!trackExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Selected track is not available in the current cohort",
+        });
+      }
+
+      // Get the actual track object
+      const cohortTrack = activeCohort.tracks.find(
+        (ct: any) => ct.track.trackId === trackId,
+      );
+
+      if (!cohortTrack) {
+        return res.status(400).json({
+          success: false,
+          message: "Track not found in the current cohort",
+        });
+      }
+
+      const selectedTrack = cohortTrack.track;
 
       // Check if user already exists with this email
       let user = await User.findOne({ email: email.toLowerCase() });
 
       if (user) {
-        // Check if user already has an application for this cohort
+        // Check if user already has an application for the active cohort
         const existingApplication = await Application.findOne({
           applicant: user._id,
-          cohort: selectedCohort._id,
+          cohort: activeCohort._id,
         });
 
         if (existingApplication) {
           return res.status(HttpStatusCode.BAD_REQUEST).json({
             success: false,
-            message: "You have already applied for this cohort",
+            message: "You have already applied for the current cohort",
           });
         }
       } else {
@@ -139,12 +153,8 @@ export const submitApplication = asyncHandler(
         await user.save();
       }
 
-      if (!selectedCohort.isAcceptingApplications) {
-        return res.status(400).json({
-          success: false,
-          message: "This cohort is not currently accepting applications",
-        });
-      }
+      // This check is now redundant since we already checked it above
+      // but keeping for extra safety
 
       // Extract CV URL safely from Cloudinary upload
       let cvUrl: string;
@@ -162,7 +172,7 @@ export const submitApplication = asyncHandler(
 
       const application = new Application({
         applicant: user._id,
-        cohort: selectedCohort._id,
+        cohort: activeCohort._id,
         track: selectedTrack._id,
         educationalBackground: educationalBackground?.trim(),
         tools: Array.isArray(tools)
@@ -189,7 +199,7 @@ export const submitApplication = asyncHandler(
       await brevoEmailService.sendApplicationConfirmation(
         user.email,
         `${user.firstName} ${user.lastName}`,
-        selectedTrack.name,
+        (selectedTrack as any).name || "Unknown Track",
         application._id.toString(),
       );
 
@@ -319,31 +329,40 @@ export const reviewApplication = asyncHandler(
         application._id,
       );
     } else if (status === "accepted") {
-      // Generate password and update user role
-      const tempPassword = generatePassword();
-      const hashedPassword = await hashPassword(tempPassword);
-
-      const user = await User.findById(applicant._id);
-      if (user) {
-        user.password = hashedPassword;
-        user.role = "student";
-        user.isPasswordDefault = true;
-        await user.save();
+      // Use the new acceptAndCreateStudent method
+      try {
+        const { student, generatedPassword } =
+          await application.acceptAndCreateStudent(req.user!._id.toString());
 
         // Send acceptance email with credentials
         await brevoEmailService.sendAcceptanceEmail(
-          applicant.email,
-          `${applicant.firstName} ${applicant.lastName}`,
+          student.email,
+          `${student.firstName} ${student.lastName}`,
           cohort.name,
-          tempPassword,
+          generatedPassword,
         );
 
-        // Update cohort student count
+        // Update cohort and track student counts
         const cohortDoc = await Cohort.findById(cohort._id);
         if (cohortDoc) {
           cohortDoc.currentStudents += 1;
+
+          // Update track-specific student count
+          const trackIndex = cohortDoc.tracks.findIndex(
+            (ct: any) => ct.track.toString() === application.track.toString(),
+          );
+          if (trackIndex !== -1) {
+            cohortDoc.tracks[trackIndex].currentStudents += 1;
+          }
+
           await cohortDoc.save();
         }
+      } catch (error) {
+        console.error("Error creating student from application:", error);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to create student account. Please try again.",
+        });
       }
     } else if (status === "rejected") {
       // Send rejection email
