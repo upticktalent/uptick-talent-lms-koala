@@ -93,25 +93,28 @@ const seedDatabase = async () => {
     // Create multiple cohorts
     const cohorts = [
       {
-        name: "Cohort 2025-Q1",
+        name: "Cohort 2026-Q1",
         cohortNumber: "1",
         description:
-          "First quarter 2025 cohort - Full immersive program focusing on modern web development",
-        startDate: new Date("2025-03-01"),
-        endDate: new Date("2025-08-31"),
+          "First quarter 2026 cohort - Full immersive program focusing on modern web development",
+        startDate: new Date("2026-01-15"),
+        endDate: new Date("2026-06-30"),
+        applicationDeadline: new Date("2025-12-31"), // Future deadline
         maxStudents: 50,
         status: "active",
         tracks: createdTracks.slice(0, 5).map((track) => track._id), // First 5 tracks
         isAcceptingApplications: true,
       },
       {
-        name: "Cohort 2025-Q2",
+        name: "Cohort 2026-Q2",
         cohortNumber: "2",
         description:
-          "Second quarter 2025 cohort - Advanced technologies and specializations",
-        startDate: new Date("2025-06-01"),
-        endDate: new Date("2025-11-30"),
+          "Second quarter 2026 cohort - Advanced technologies and specializations",
+        startDate: new Date("2026-04-01"),
+        endDate: new Date("2026-09-30"),
+        applicationDeadline: new Date("2026-03-15"), // Future deadline
         maxStudents: 40,
+        status: "upcoming",
         tracks: createdTracks.slice(3, 8).map((track) => track._id), // Overlapping tracks
         isAcceptingApplications: false,
       },
@@ -121,7 +124,9 @@ const seedDatabase = async () => {
         description: "Previous cohort for reference - Already completed",
         startDate: new Date("2024-09-01"),
         endDate: new Date("2025-02-28"),
+        applicationDeadline: new Date("2024-08-15"), // Past deadline
         maxStudents: 45,
+        status: "completed",
         tracks: createdTracks.slice(0, 6).map((track) => track._id),
         isAcceptingApplications: false,
       },
@@ -232,10 +237,18 @@ const seedDatabase = async () => {
         gender: "female",
         country: "Nigeria",
         state: "Lagos",
-        educationalQualification: "BSc Computer Science",
-        tools: ["JavaScript", "React", "HTML", "CSS"],
+        educationalBackground:
+          "BSc Computer Science, University of Lagos (2020)",
+        tools: ["JavaScript", "React", "HTML", "CSS", "TypeScript"],
         trackId: "frontend-development",
         cohortNumber: "1",
+        yearsOfExperience: "1-2",
+        githubLink: "https://github.com/chioma-nkosi",
+        portfolioLink: "https://chioma-portfolio.vercel.app",
+        careerGoals:
+          "I want to become a senior frontend developer at a tech company and contribute to building user-friendly applications that solve real-world problems.",
+        weeklyCommitment: "yes",
+        referralSource: "linkedin",
       },
       {
         firstName: "Emeka",
@@ -245,10 +258,18 @@ const seedDatabase = async () => {
         gender: "male",
         country: "Nigeria",
         state: "Abuja",
-        educationalQualification: "BSc Information Technology",
-        tools: ["Python", "Django", "PostgreSQL", "Docker"],
+        educationalBackground:
+          "BSc Information Technology, University of Abuja (2019)",
+        tools: ["Python", "Django", "PostgreSQL", "Docker", "AWS"],
         trackId: "backend-development",
         cohortNumber: "1",
+        yearsOfExperience: "2-3",
+        githubLink: "https://github.com/emeka-obi",
+        portfolioLink: "https://github.com/emeka-obi/api-portfolio",
+        careerGoals:
+          "My goal is to become a backend architect and specialize in building scalable microservices for enterprise applications.",
+        weeklyCommitment: "yes",
+        referralSource: "friend-referral",
       },
       {
         firstName: "Fatima",
@@ -258,10 +279,16 @@ const seedDatabase = async () => {
         gender: "female",
         country: "Nigeria",
         state: "Kano",
-        educationalQualification: "BSc Mathematics",
-        tools: ["Python", "R", "SQL", "Tableau"],
+        educationalBackground: "BSc Mathematics, Bayero University (2021)",
+        tools: ["Python", "R", "SQL", "Tableau", "Power BI"],
         trackId: "data-science",
         cohortNumber: "2",
+        yearsOfExperience: "less-than-1",
+        portfolioLink: "https://fatima-data-projects.herokuapp.com",
+        careerGoals:
+          "I aspire to become a data scientist specializing in machine learning and help organizations make data-driven decisions.",
+        weeklyCommitment: "yes",
+        referralSource: "google-search",
       },
       {
         firstName: "Joseph",
@@ -271,10 +298,17 @@ const seedDatabase = async () => {
         gender: "male",
         country: "Nigeria",
         state: "Kaduna",
-        educationalQualification: "BSc Business Administration",
-        tools: ["Figma", "Adobe XD", "Sketch", "InVision"],
+        educationalBackground:
+          "BSc Business Administration, Ahmadu Bello University (2018)",
+        tools: ["Figma", "Adobe XD", "Sketch", "InVision", "Miro"],
         trackId: "product-design",
         cohortNumber: "2",
+        yearsOfExperience: "2-3",
+        portfolioLink: "https://joseph-design-portfolio.framer.website",
+        careerGoals:
+          "I want to become a senior UX designer and create intuitive digital experiences that delight users and drive business growth.",
+        weeklyCommitment: "yes",
+        referralSource: "instagram",
       },
       {
         firstName: "Blessing",
@@ -284,10 +318,19 @@ const seedDatabase = async () => {
         gender: "female",
         country: "Nigeria",
         state: "Enugu",
-        educationalQualification: "BSc Computer Engineering",
-        tools: ["React Native", "Flutter", "Kotlin", "Swift"],
+        educationalBackground:
+          "BSc Computer Engineering, University of Nigeria Nsukka (2020)",
+        tools: ["React Native", "Flutter", "Kotlin", "Swift", "Firebase"],
         trackId: "mobile-development",
         cohortNumber: "1",
+        yearsOfExperience: "1-2",
+        githubLink: "https://github.com/blessing-okwu",
+        portfolioLink:
+          "https://play.google.com/store/apps/developer?id=BlessingOkwu",
+        careerGoals:
+          "My goal is to become a mobile development expert and create innovative mobile applications that impact millions of users globally.",
+        weeklyCommitment: "yes",
+        referralSource: "twitter",
       },
       {
         firstName: "Ahmed",
@@ -297,10 +340,39 @@ const seedDatabase = async () => {
         gender: "male",
         country: "Nigeria",
         state: "Sokoto",
-        educationalQualification: "BSc Economics",
-        tools: ["Jira", "Confluence", "Notion", "Slack"],
+        educationalBackground:
+          "BSc Economics, Usmanu Danfodiyo University (2019)",
+        tools: ["Jira", "Confluence", "Notion", "Slack", "Figma"],
         trackId: "product-management",
         cohortNumber: "2",
+        yearsOfExperience: "1-2",
+        portfolioLink: "https://ahmed-product-case-studies.notion.site",
+        careerGoals:
+          "I aim to become a senior product manager and lead cross-functional teams to build products that solve complex business problems.",
+        weeklyCommitment: "yes",
+        referralSource: "university",
+      },
+      {
+        firstName: "Grace",
+        lastName: "Okoro",
+        email: "grace.okoro@example.com",
+        phoneNumber: "+234-807-777-7777",
+        gender: "female",
+        country: "Nigeria",
+        state: "Rivers",
+        educationalBackground:
+          "BSc Computer Science, University of Port Harcourt (2022)",
+        tools: ["JavaScript", "Node.js", "React", "MongoDB", "Express"],
+        trackId: "fullstack-development",
+        cohortNumber: "1",
+        yearsOfExperience: "less-than-1",
+        githubLink: "https://github.com/grace-okoro",
+        portfolioLink: "https://grace-fullstack-projects.netlify.app",
+        careerGoals:
+          "I want to become a full-stack engineer capable of building end-to-end web applications and eventually start my own tech company.",
+        weeklyCommitment: "no",
+        referralSource: "other",
+        referralSourceOther: "Tech community meetup in Port Harcourt",
       },
     ];
 
@@ -336,16 +408,24 @@ const seedDatabase = async () => {
       // Create application
       const application = new Application({
         applicant: applicant._id,
-        email: applicantData.email,
-        phoneNumber: applicantData.phoneNumber,
-        gender: applicantData.gender,
-        country: applicantData.country,
-        state: applicantData.state,
-        educationalQualification: applicantData.educationalQualification,
-        tools: applicantData.tools,
         track: track?._id,
         cohort: cohort?._id,
         cvUrl: `https://res.cloudinary.com/sample/raw/upload/v1699123456/cvs/${applicant.firstName.toLowerCase()}-${applicant.lastName.toLowerCase()}-cv.pdf`,
+
+        // New enhanced application fields
+        educationalBackground: applicantData.educationalBackground,
+        tools: applicantData.tools,
+        yearsOfExperience: applicantData.yearsOfExperience,
+        githubLink: applicantData.githubLink,
+        portfolioLink: applicantData.portfolioLink,
+        careerGoals: applicantData.careerGoals,
+        weeklyCommitment: applicantData.weeklyCommitment,
+        referralSource: applicantData.referralSource,
+        referralSourceOther: applicantData.referralSourceOther,
+
+        // Legacy field for backward compatibility
+        motivation: `I am passionate about ${track?.name.toLowerCase()} and eager to learn through this fellowship program.`,
+
         status: (() => {
           const rand = Math.random();
           if (rand < 0.4) return "shortlisted"; // 40% shortlisted

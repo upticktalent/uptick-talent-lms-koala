@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Pagination,
@@ -8,7 +8,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
+} from '@/components/ui/pagination';
 
 interface CustomPaginationProps {
   page: number;
@@ -39,36 +39,38 @@ export function CustomPagination({
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
-      <div className="text-sm text-muted-foreground order-2 sm:order-1">
+    <div className='flex flex-col sm:flex-row items-center justify-between gap-4 mt-4'>
+      <div className='text-sm text-muted-foreground order-2 sm:order-1'>
         Page {page} of {totalPages} — {total} items
       </div>
 
-      <div className="order-1 sm:order-2">
+      <div className='order-1 sm:order-2'>
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious 
-                href="#"
+              <PaginationPrevious
                 onClick={(e) => {
                   e.preventDefault();
                   onPageChange(page - 1);
                 }}
                 disabled={page === 1}
-                className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                className={
+                  page === 1
+                    ? 'pointer-events-none opacity-50'
+                    : 'cursor-pointer'
+                }
               />
             </PaginationItem>
 
             {/* First Page */}
             {left > 1 && (
               <PaginationItem>
-                <PaginationLink 
-                  href="#"
+                <PaginationLink
                   onClick={(e) => {
                     e.preventDefault();
                     onPageChange(1);
                   }}
-                  className="cursor-pointer"
+                  className='cursor-pointer'
                 >
                   1
                 </PaginationLink>
@@ -86,13 +88,12 @@ export function CustomPagination({
             {pages.map((p) => (
               <PaginationItem key={p}>
                 <PaginationLink
-                  href="#"
                   isActive={p === page}
                   onClick={(e) => {
                     e.preventDefault();
                     onPageChange(p);
                   }}
-                  className="cursor-pointer"
+                  className='cursor-pointer'
                 >
                   {p}
                 </PaginationLink>
@@ -109,13 +110,12 @@ export function CustomPagination({
             {/* Last Page */}
             {right < totalPages && (
               <PaginationItem>
-                <PaginationLink 
-                  href="#"
+                <PaginationLink
                   onClick={(e) => {
                     e.preventDefault();
                     onPageChange(totalPages);
                   }}
-                  className="cursor-pointer"
+                  className='cursor-pointer'
                 >
                   {totalPages}
                 </PaginationLink>
@@ -123,14 +123,17 @@ export function CustomPagination({
             )}
 
             <PaginationItem>
-              <PaginationNext 
-                href="#"
+              <PaginationNext
                 onClick={(e) => {
                   e.preventDefault();
                   onPageChange(page + 1);
                 }}
                 disabled={page === totalPages}
-                className={page === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                className={
+                  page === totalPages
+                    ? 'pointer-events-none opacity-50'
+                    : 'cursor-pointer'
+                }
               />
             </PaginationItem>
           </PaginationContent>

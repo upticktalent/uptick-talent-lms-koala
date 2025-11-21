@@ -680,7 +680,11 @@ export default function InterviewDetailPage() {
                   </div>
 
                   <div className='flex gap-3'>
-                    <Button type='submit' variant='danger' disabled={isLoading}>
+                    <Button
+                      type='submit'
+                      variant='destructive'
+                      disabled={isLoading}
+                    >
                       {isLoading ? 'Cancelling...' : 'Cancel Interview'}
                     </Button>
                     <Button

@@ -119,9 +119,9 @@ export default function DesignSystemShowcase() {
               <div>
                 <h4 className='text-white font-medium mb-4'>Variants</h4>
                 <div className='flex flex-wrap gap-4'>
-                  <Button variant='primary'>Primary Button</Button>
+                  <Button variant='default'>Primary Button</Button>
                   <Button variant='secondary'>Secondary Button</Button>
-                  <Button variant='danger'>Danger Button</Button>
+                  <Button variant='destructive'>Danger Button</Button>
                   <Button variant='ghost'>Ghost Button</Button>
                   <Button variant='link'>Link Button</Button>
                 </div>

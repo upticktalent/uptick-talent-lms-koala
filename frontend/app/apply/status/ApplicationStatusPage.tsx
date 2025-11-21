@@ -119,7 +119,7 @@ export default function ApplicationStatusPage({
             <div className='text-red-600 font-medium mb-2'>Error</div>
             <p className='text-gray-600 mb-4'>{error}</p>
             <Link href='/apply'>
-              <Button variant='primary'>Submit New Application</Button>
+              <Button variant='default'>Submit New Application</Button>
             </Link>
           </div>
         </CardContent>
@@ -140,7 +140,7 @@ export default function ApplicationStatusPage({
               submit a new application.
             </p>
             <Link href='/apply'>
-              <Button variant='primary'>Submit New Application</Button>
+              <Button variant='default'>Submit New Application</Button>
             </Link>
           </div>
         </CardContent>

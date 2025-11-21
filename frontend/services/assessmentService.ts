@@ -1,13 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import apiClient from "./apiClient";
+import apiClient from './apiClient';
 
 export const assessmentService = {
-  // Submit assessment
-  submitAssessment: async (assessmentData: {
-    applicantId: string;
-    answers: Record<string, any>;
-  }) => {
-    return apiClient.post("/assessments/submit", assessmentData);
+  // Check application eligibility for assessment
+  checkApplicationEligibility: async (applicationId: string) => {
+    return apiClient.get(`/assessments/check-application/${applicationId}`);
+  },
+
+  // Submit assessment (file or URL)
+  submitAssessment: async (formData: FormData) => {
+    return apiClient.post('/assessments/submit', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Get assessment by application ID
+  getAssessmentByApplication: async (applicationId: string) => {
+    return apiClient.get(`/assessments/application/${applicationId}`);
   },
 
   // Get all assessments (admin)
@@ -16,7 +27,7 @@ export const assessmentService = {
     page?: number;
     limit?: number;
   }) => {
-    return apiClient.get("/assessments", { params });
+    return apiClient.get('/assessments', { params });
   },
 
   // Grade assessment (admin)
