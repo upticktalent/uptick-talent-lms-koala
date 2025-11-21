@@ -1,6 +1,6 @@
 'use client';
 
-import { LoaderCircle } from 'lucide-react';
+
 import { useUser } from '@/hooks/useUser';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -33,7 +33,7 @@ export default function Home() {
   }
 
   if (isAuthenticated) {
-    return null; // Will redirect in useEffect
+    return null; 
   }
 
   return <Loader />;

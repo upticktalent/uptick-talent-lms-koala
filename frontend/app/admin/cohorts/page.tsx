@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,11 +26,20 @@ import {
 } from "@/components/ui/table";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Calendar, LoaderCircle, MoreVertical, Edit, Trash2, Users, Clock } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Search, Calendar, LoaderCircle, MoreVertical, Edit, Trash2, Users, Clock, ChevronDown, X } from "lucide-react";
 import { useFetch } from "@/hooks/useFetch";
 import { lmsService } from "@/services/lmsService";
 import { trackService } from "@/services/trackService";
@@ -58,7 +68,7 @@ export default function CohortsPage() {
     cohortNumber: "",
     maxStudents: 60,
     tracks: [] as string[],
-    isActive: true,
+    status: "upcoming",
   });
 
   const {
@@ -105,6 +115,7 @@ export default function CohortsPage() {
         startDate: new Date(newCohort.startDate).toISOString(),
         endDate: new Date(newCohort.endDate).toISOString(),
         tracks: newCohort.tracks.length > 0 ? newCohort.tracks : [""], 
+        status: newCohort.status,
       };
 
       await lmsService.createCohort(payload);
@@ -119,7 +130,7 @@ export default function CohortsPage() {
         cohortNumber: "",
         maxStudents: 60,
         tracks: [],
-        isActive: true,
+        status: "upcoming",
       });
       refetch();
     } catch (error) {
@@ -148,7 +159,7 @@ export default function CohortsPage() {
         tracks: selectedCohort.tracks?.length > 0 ? selectedCohort.tracks : [""],
         startDate: new Date(selectedCohort.startDate).toISOString(),
         endDate: new Date(selectedCohort.endDate).toISOString(),
-        isActive: selectedCohort.isActive,
+        status: selectedCohort.status,
       };
 
       await lmsService.updateCohort(selectedCohort._id, payload);
@@ -189,15 +200,12 @@ export default function CohortsPage() {
   const openEditDialog = (cohort: any) => {
     console.log("Editing cohort:", cohort); // Debug log
     
-    // Map status to isActive for the form
-    const isActive = cohort.status === "active";
-    
     setSelectedCohort({
       ...cohort,
       startDate: cohort.startDate ? cohort.startDate.split('T')[0] : "",
       endDate: cohort.endDate ? cohort.endDate.split('T')[0] : "",
-      tracks: cohort.tracks || [],
-      isActive: isActive, // Map status to isActive
+      tracks: cohort.tracks ? cohort.tracks.map((t: any) => (typeof t === 'object' && t !== null && t._id ? t._id : t)) : [],
+      status: cohort.status || "upcoming", 
     });
     setIsEditDialogOpen(true);
   };
@@ -206,6 +214,36 @@ export default function CohortsPage() {
   const openDeleteDialog = (cohort: any) => {
     setSelectedCohort(cohort);
     setIsDeleteDialogOpen(true);
+  };
+
+  // Helper to toggle track selection
+  const toggleTrack = (trackId: string, isSelected: boolean, isEditMode: boolean) => {
+    if (isEditMode) {
+      const currentTracks = selectedCohort.tracks || [];
+      if (isSelected) {
+        setSelectedCohort({
+          ...selectedCohort,
+          tracks: [...currentTracks, trackId],
+        });
+      } else {
+        setSelectedCohort({
+          ...selectedCohort,
+          tracks: currentTracks.filter((id: string) => id !== trackId),
+        });
+      }
+    } else {
+      if (isSelected) {
+        setNewCohort({
+          ...newCohort,
+          tracks: [...newCohort.tracks, trackId],
+        });
+      } else {
+        setNewCohort({
+          ...newCohort,
+          tracks: newCohort.tracks.filter((id) => id !== trackId),
+        });
+      }
+    }
   };
 
   if (loading) {
@@ -219,6 +257,7 @@ export default function CohortsPage() {
       </div>
     );
   }
+  
 
   return (
     <div className="space-y-4">
@@ -248,14 +287,14 @@ export default function CohortsPage() {
               <span className="sm:hidden">Create</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto mx-4">
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New Cohort</DialogTitle>
               <DialogDescription>
                 Define a new learning cohort with its schedule.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-6 py-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="name">Cohort Name</Label>
@@ -283,39 +322,50 @@ export default function CohortsPage() {
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="tracks">Tracks</Label>
-                <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto">
-                  {tracks.map((track: any) => (
-                    <div key={track._id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`track-${track._id}`}
-                        checked={newCohort.tracks.includes(track._id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewCohort({
-                              ...newCohort,
-                              tracks: [...newCohort.tracks, track._id],
-                            });
-                          } else {
-                            setNewCohort({
-                              ...newCohort,
-                              tracks: newCohort.tracks.filter((id) => id !== track._id),
-                            });
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <label
-                        htmlFor={`track-${track._id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {track.name}
-                      </label>
-                    </div>
-                  ))}
-                  {tracks.length === 0 && <p className="text-sm text-gray-500">No tracks available</p>}
-                </div>
+                <Label>Tracks</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      Select Tracks
+                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+                    {tracks.length > 0 ? (
+                      tracks.map((track: any) => (
+                        <DropdownMenuCheckboxItem
+                          key={track._id}
+                          checked={newCohort.tracks.includes(track._id)}
+                          onCheckedChange={(checked) => toggleTrack(track._id, checked, false)}
+                        >
+                          {track.name}
+                        </DropdownMenuCheckboxItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground">No tracks available</div>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                {newCohort.tracks.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {newCohort.tracks.map((trackId) => {
+                      const track = tracks.find((t: any) => t._id === trackId);
+                      return (
+                        <Badge key={trackId} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1">
+                          {track?.name || "Unknown Track"}
+                          <button
+                            onClick={() => toggleTrack(trackId, false, false)}
+                            className="ml-1 hover:bg-slate-200 rounded-full p-0.5 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                            <span className="sr-only">Remove</span>
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -355,17 +405,23 @@ export default function CohortsPage() {
                     }
                   />
                 </div>
-                <div className="grid gap-2 items-center">
-                   <div className="flex items-center space-x-2 sm:mt-6">
-                    <Switch
-                      id="isActive"
-                      checked={newCohort.isActive}
-                      onCheckedChange={(checked) =>
-                        setNewCohort({ ...newCohort, isActive: checked })
-                      }
-                    />
-                    <Label htmlFor="isActive">Active Cohort</Label>
-                  </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    onValueChange={(value) =>
+                      setNewCohort({ ...newCohort, status: value })
+                    }
+                    defaultValue={newCohort.status}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="upcoming">Upcoming</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -378,6 +434,7 @@ export default function CohortsPage() {
                   onChange={(e) =>
                     setNewCohort({ ...newCohort, description: e.target.value })
                   }
+                  className="min-h-[100px]"
                 />
               </div>
             </div>
@@ -409,7 +466,9 @@ export default function CohortsPage() {
             <div key={cohort._id} className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">{cohort.name}</h3>
+                  <Link href={`/admin/cohorts/${cohort._id}`} className="font-semibold text-gray-900 text-lg hover:underline">
+                    {cohort.name}
+                  </Link>
                   <p className="text-sm text-gray-500 mt-1 line-clamp-2">
                     {cohort.description || "No description"}
                   </p>
@@ -508,9 +567,9 @@ export default function CohortsPage() {
                   <TableRow key={cohort._id} className="hover:bg-gray-50/50 transition-colors">
                     <TableCell className="py-4">
                       <div>
-                        <div className="font-semibold text-gray-900">
+                        <Link href={`/admin/cohorts/${cohort._id}`} className="font-semibold text-gray-900 hover:underline">
                           {cohort.name}
-                        </div>
+                        </Link>
                         <div className="text-sm text-gray-500 truncate max-w-[200px]">
                           {cohort.description}
                         </div>
@@ -601,7 +660,7 @@ export default function CohortsPage() {
 
       {/* Edit Cohort Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto mx-4">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Cohort</DialogTitle>
             <DialogDescription>
@@ -609,7 +668,7 @@ export default function CohortsPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedCohort && (
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-6 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="edit-name">Cohort Name *</Label>
                 <Input
@@ -623,43 +682,50 @@ export default function CohortsPage() {
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="edit-tracks">Tracks</Label>
-                <div className="border rounded-md p-3 space-y-2 max-h-32 overflow-y-auto">
-                  {tracks.length > 0 ? (
-                    tracks.map((track: any) => (
-                      <div key={track._id} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`edit-track-${track._id}`}
+                <Label>Tracks</Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      Select Tracks
+                      <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+                    {tracks.length > 0 ? (
+                      tracks.map((track: any) => (
+                        <DropdownMenuCheckboxItem
+                          key={track._id}
                           checked={selectedCohort.tracks?.includes(track._id) || false}
-                          onChange={(e) => {
-                            const currentTracks = selectedCohort.tracks || [];
-                            if (e.target.checked) {
-                              setSelectedCohort({
-                                ...selectedCohort,
-                                tracks: [...currentTracks, track._id],
-                              });
-                            } else {
-                              setSelectedCohort({
-                                ...selectedCohort,
-                                tracks: currentTracks.filter((id: string) => id !== track._id),
-                              });
-                            }
-                          }}
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <label
-                          htmlFor={`edit-track-${track._id}`}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          onCheckedChange={(checked) => toggleTrack(track._id, checked, true)}
                         >
                           {track.name}
-                        </label>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">No tracks available</p>
-                  )}
-                </div>
+                        </DropdownMenuCheckboxItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground">No tracks available</div>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                {selectedCohort.tracks && selectedCohort.tracks.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedCohort.tracks.map((trackId: any) => {
+                      const track = tracks.find((t: any) => t._id === trackId);
+                      return (
+                        <Badge key={trackId} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1">
+                          {track?.name || "Unknown Track"}
+                          <button
+                            onClick={() => toggleTrack(trackId, false, true)}
+                            className="ml-1 hover:bg-slate-200 rounded-full p-0.5 transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                            <span className="sr-only">Remove</span>
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -687,20 +753,24 @@ export default function CohortsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="edit-isActive"
-                  checked={selectedCohort.isActive || false}
-                  onCheckedChange={(checked) =>
-                    setSelectedCohort({ ...selectedCohort, isActive: checked })
+              <div className="grid gap-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select
+                  onValueChange={(value) =>
+                    setSelectedCohort({ ...selectedCohort, status: value })
                   }
-                />
-                <Label htmlFor="edit-isActive">Active Cohort</Label>
-              </div>
-
-              <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
-                <p><strong>Note:</strong> Only name, tracks, dates, and status can be edited. Cohort number, description, and student limits are read-only.</p>
-                <p className="mt-1">Current status: {selectedCohort.isActive ? "Active" : "Inactive"}</p>
+                  defaultValue={selectedCohort.status}
+                  value={selectedCohort.status}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
