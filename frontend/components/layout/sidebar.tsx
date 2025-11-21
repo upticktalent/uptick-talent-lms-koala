@@ -17,6 +17,7 @@ import {
   ChevronRight,
   BookOpen,
   Megaphone,
+  GraduationCap,
 } from "lucide-react";
 import { X } from "lucide-react";
 
@@ -28,14 +29,14 @@ interface SidebarProps {
 
 export function Sidebar({ className, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { user, canManageRecruitment } = useUser();
+  const { user, canManageRecruitment, isStudent } = useUser();
 
   const navigation = [
     {
       name: "Dashboard",
       href: "/lms/dashboard",
       icon: LayoutDashboard,
-      show: true,
+      show: canManageRecruitment,
     },
     {
       name: "Recruitment",
@@ -71,7 +72,27 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
       href: "/lms/emails",
       icon: Mail,
       show: canManageRecruitment,
-    },
+    }, {
+      name: 'Stream',
+      href:'/lms/stream',
+      icon:BookOpen,
+      show:isStudent
+    }, {
+      name:'Classwork',
+      href:'/lms/classwork',
+      icon:BookOpen,
+      show:isStudent
+    }, {
+      name: 'People',
+      href:'/lms/people',
+      icon:Users,
+      show:isStudent
+    }, {
+      name:'Grades',
+      href:'/lms/grades',
+      icon:GraduationCap,
+      show:isStudent
+    }
   ];
 
   useEffect(() => {

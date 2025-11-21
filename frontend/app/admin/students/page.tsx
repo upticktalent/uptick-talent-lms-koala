@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { lmsService } from '@/services/lmsService';
 import { useFetch } from '@/hooks/useFetch';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import Loader from '@/components/Loader';
 import { formatDate } from '@/utils/formatDate';
 import { 
   Search, 
@@ -99,7 +99,7 @@ export default function StudentsPage() {
   };
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <Loader />;
   }
 
   const stats = [
@@ -199,13 +199,13 @@ export default function StudentsPage() {
       </div>
 
       {/* Students List */}
-      <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden overflow-x-auto">
         {!paginatedStudents || paginatedStudents.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <p>No students found matching your criteria.</p>
           </div>
         ) : (
-          <Table>
+          <Table className="min-w-[800px]">
             <TableHeader className="bg-gray-50/50">
               <TableRow>
                 <TableHead className="py-4 font-semibold text-gray-900">Student</TableHead>

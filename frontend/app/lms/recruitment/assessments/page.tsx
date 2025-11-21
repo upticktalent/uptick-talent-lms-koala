@@ -11,7 +11,7 @@ import { RoleGuard } from "@/middleware/roleGuard";
 import { formatDate } from "@/utils/formatDate";
 import Link from "next/link";
 import { Search, FileCheck, Send, MoreHorizontal } from "lucide-react";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
 import { toast } from "sonner";
 import {
@@ -134,9 +134,7 @@ export default function AssessmentsPage() {
     setCurrentPage(newPage);
   };
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  if (loading) return <Loader />;
 
   if (error) {
     return (

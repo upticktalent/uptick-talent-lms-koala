@@ -13,12 +13,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { interviewSlotService } from '@/services/interviewSlotService';
 import { userService } from '@/services/userService';
 import { trackService } from '@/services/trackService';
 import { useFetch } from '@/hooks/useFetch';
 import { RoleGuard } from '@/middleware/roleGuard';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Link as LinkIcon, Plus, Trash2, Users } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
@@ -48,7 +50,7 @@ interface ManualSlot {
 export default function CreateInterviewSlotsPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<'bulk' | 'manual'>('bulk');
+  const [activeTab, setActiveTab] = useState('bulk');
 
   const [bulkForm, setBulkForm] = useState<BulkForm>({
     startDate: '',
@@ -62,7 +64,17 @@ export default function CreateInterviewSlotsPage() {
     notes: '',
   });
 
-  const [manualSlots, setManualSlots] = useState<ManualSlot[]>([]);
+  const [manualSlots, setManualSlots] = useState<ManualSlot[]>([
+    {
+      date: '',
+      startTime: '09:00',
+      endTime: '10:00',
+      duration: 60,
+      maxInterviews: 1,
+      tracks: [],
+      meetingLink: '',
+    }
+  ]);
 
   // Fetch current user as interviewer
   const { data: usersData } = useFetch(() =>
@@ -180,7 +192,7 @@ export default function CreateInterviewSlotsPage() {
     setIsLoading(true);
 
     try {
-      if (mode === 'bulk') {
+      if (activeTab === 'bulk') {
         const { startDate, endDate, startTime, endTime, tracks } = bulkForm;
         if (!startDate || !endDate || !startTime || !endTime) {
           toast.error('All bulk form fields are required');
@@ -236,61 +248,42 @@ export default function CreateInterviewSlotsPage() {
 
   return (
     <RoleGuard allowedRoles={['admin', 'mentor']}>
-      <div className='max-w-3xl mx-auto space-y-6'>
+      <div className='max-w-7xl mx-auto space-y-6'>
         {/* Header */}
-        <div className='flex items-center gap-4'>
+        <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
           <Link href='/lms/recruitment/interview-slots'>
-            <Button variant='outline' size='sm'>
+            <Button variant='ghost' size='sm' className="-ml-2">
               <ArrowLeft className='w-4 h-4 mr-2' />
-              Back to Slots
+              Back
             </Button>
           </Link>
-          <div>
-            <h1 className='text-2xl font-bold text-gray-900'>
-              Create Interview Slots
-            </h1>
-            <p className='text-gray-600'>
-              Set up available time slots for interviews
-            </p>
-          </div>
         </div>
 
-        {/* Mode Selection */}
-        <div className='flex gap-4'>
-          <Button
-            variant={mode === 'bulk' ? 'default' : 'outline'}
-            onClick={() => setMode('bulk')}
-          >
-            Bulk
-          </Button>
-          <Button
-            variant={mode === 'manual' ? 'default' : 'outline'}
-            onClick={() => setMode('manual')}
-          >
-            Manual
-          </Button>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-200">
+            <TabsTrigger value="bulk">Bulk Creation</TabsTrigger>
+            <TabsTrigger value="manual">Manual Creation</TabsTrigger>
+          </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <Calendar className='w-5 h-5' />
-              Schedule Configuration
-            </CardTitle>
-            <CardDescription>
-              Define when and how interviews can be scheduled
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className='space-y-6'>
-              {mode === 'bulk' && (
-                <>
-                  {/* Bulk Inputs */}
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <form onSubmit={handleSubmit}>
+            <TabsContent value="bulk" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className='flex items-center gap-2'>
+                    <Calendar className='w-5 h-5 text-primary' />
+                    Date & Time Configuration
+                  </CardTitle>
+                  <CardDescription>
+                    Define the date range and daily schedule for generating slots
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className='space-y-6'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div className='space-y-2'>
                       <Label htmlFor='startDate'>Start Date *</Label>
                       <Input
                         type='date'
+                        id='startDate'
                         name='startDate'
                         value={bulkForm.startDate}
                         onChange={handleBulkChange}
@@ -301,6 +294,7 @@ export default function CreateInterviewSlotsPage() {
                       <Label htmlFor='endDate'>End Date *</Label>
                       <Input
                         type='date'
+                        id='endDate'
                         name='endDate'
                         value={bulkForm.endDate}
                         onChange={handleBulkChange}
@@ -312,32 +306,43 @@ export default function CreateInterviewSlotsPage() {
                     </div>
                   </div>
 
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div className='space-y-2'>
                       <Label htmlFor='startTime'>Start Time *</Label>
-                      <Input
-                        type='time'
-                        name='startTime'
-                        value={bulkForm.startTime}
-                        onChange={handleBulkChange}
-                      />
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type='time'
+                          id='startTime'
+                          name='startTime'
+                          value={bulkForm.startTime}
+                          onChange={handleBulkChange}
+                          className="pl-9"
+                        />
+                      </div>
                     </div>
                     <div className='space-y-2'>
                       <Label htmlFor='endTime'>End Time *</Label>
-                      <Input
-                        type='time'
-                        name='endTime'
-                        value={bulkForm.endTime}
-                        onChange={handleBulkChange}
-                      />
+                      <div className="relative">
+                        <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type='time'
+                          id='endTime'
+                          name='endTime'
+                          value={bulkForm.endTime}
+                          onChange={handleBulkChange}
+                          className="pl-9"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
                     <div className='space-y-2'>
-                      <Label htmlFor='slotDuration'>Slot Duration</Label>
+                      <Label htmlFor='slotDuration'>Slot Duration (minutes)</Label>
                       <Input
                         type='number'
+                        id='slotDuration'
                         name='slotDuration'
                         value={bulkForm.slotDuration}
                         onChange={handleBulkChange}
@@ -351,6 +356,7 @@ export default function CreateInterviewSlotsPage() {
                       </Label>
                       <Input
                         type='number'
+                        id='maxInterviews'
                         name='maxInterviews'
                         value={bulkForm.maxInterviews}
                         onChange={handleBulkChange}
@@ -359,43 +365,60 @@ export default function CreateInterviewSlotsPage() {
                       />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className='space-y-2'>
-                    <Label>Tracks *</Label>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+              <Card>
+                <CardHeader>
+                  <CardTitle className='flex items-center gap-2'>
+                    <Users className='w-5 h-5 text-primary' />
+                    Details & Tracks
+                  </CardTitle>
+                  <CardDescription>
+                    Assign tracks and meeting details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className='space-y-6'>
+                  <div className='space-y-3'>
+                    <Label>Applicable Tracks *</Label>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
                       {tracks.map((track: any) => (
-                        <label
-                          key={track._id}
-                          className='flex items-center space-x-2'
-                        >
-                          <input
-                            type='checkbox'
+                        <div key={track._id} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-slate-50 transition-colors">
+                          <Checkbox 
+                            id={`track-${track._id}`}
                             checked={bulkForm.tracks.includes(track._id)}
-                            onChange={(e) =>
-                              handleBulkTrackChange(track._id, e.target.checked)
+                            onCheckedChange={(checked) => 
+                              handleBulkTrackChange(track._id, checked as boolean)
                             }
-                            className='rounded border-gray-300'
                           />
-                          <span className='text-sm'>{track.name}</span>
-                        </label>
+                          <Label 
+                            htmlFor={`track-${track._id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full"
+                          >
+                            {track.name}
+                          </Label>
+                        </div>
                       ))}
                     </div>
                     {bulkForm.tracks.length === 0 && (
-                      <p className='text-sm text-red-600'>
+                      <p className='text-sm text-red-500 font-medium'>
                         Please select at least one track
                       </p>
                     )}
                   </div>
 
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <div className='space-y-2'>
-                      <Label htmlFor='meetingLink'>Meeting Link</Label>
+                  <div className='space-y-2'>
+                    <Label htmlFor='meetingLink'>Meeting Link</Label>
+                    <div className="relative">
+                      <LinkIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
                         type='url'
+                        id='meetingLink'
                         name='meetingLink'
                         value={bulkForm.meetingLink}
                         onChange={handleBulkChange}
                         placeholder='https://meet.google.com/xxx-xxx-xxx'
+                        className="pl-9"
                       />
                     </div>
                   </div>
@@ -403,25 +426,78 @@ export default function CreateInterviewSlotsPage() {
                   <div className='space-y-2'>
                     <Label htmlFor='notes'>Notes (Optional)</Label>
                     <Textarea
+                      id='notes'
                       name='notes'
                       value={bulkForm.notes}
                       onChange={handleBulkChange}
                       rows={3}
+                      placeholder="Add any instructions for the candidate..."
                     />
                   </div>
-                </>
-              )}
+                </CardContent>
+              </Card>
 
-              {mode === 'manual' && (
-                <div className='space-y-4'>
-                  {manualSlots.map((slot, index) => (
-                    <div
-                      key={index}
-                      className='border p-4 rounded-lg space-y-4'
-                    >
-                      <div className='grid grid-cols-1 md:grid-cols-3 gap-2'>
-                        <div>
-                          <Label>Date</Label>
+              {/* Preview Section */}
+              <Card className="bg-slate-50 border-slate-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium text-slate-700">
+                    Summary Preview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <div>
+                      <div className="text-2xl font-bold text-slate-900">
+                        {bulkSlotsPreview.length}
+                      </div>
+                      <div className="text-sm text-slate-500">Slots will be created</div>
+                    </div>
+                    {bulkSlotsPreview.length > 0 && (
+                      <div className="text-sm text-slate-600 bg-white px-3 py-2 rounded-md border">
+                        First slot: {bulkSlotsPreview[0].date} at {bulkSlotsPreview[0].startTime}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {bulkSlotsPreview.length > 0 && (
+                    <div className="max-h-40 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                      {bulkSlotsPreview.map((s, i) => (
+                        <div key={i} className="text-sm text-slate-600 flex justify-between border-b border-slate-100 last:border-0 py-1">
+                          <span>{s.date}</span>
+                          <span className="font-mono text-xs bg-slate-200 px-2 py-0.5 rounded">{s.startTime} - {s.endTime}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="manual" className="space-y-6">
+              <div className="space-y-4">
+                {manualSlots.map((slot, index) => (
+                  <Card key={index} className="relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                    <CardHeader className="pb-3 pt-4">
+                      <div className="flex justify-between items-center">
+                        <CardTitle className="text-base">Slot #{index + 1}</CardTitle>
+                        {manualSlots.length > 1 && (
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            size="icon"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 h-8 w-8"
+                            onClick={() => removeManualSlot(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                        <div className='space-y-2'>
+                          <Label>Date *</Label>
                           <Input
                             type='date'
                             value={slot.date}
@@ -434,8 +510,8 @@ export default function CreateInterviewSlotsPage() {
                             }
                           />
                         </div>
-                        <div>
-                          <Label>Start Time</Label>
+                        <div className='space-y-2'>
+                          <Label>Start Time *</Label>
                           <Input
                             type='time'
                             value={slot.startTime}
@@ -448,8 +524,8 @@ export default function CreateInterviewSlotsPage() {
                             }
                           />
                         </div>
-                        <div>
-                          <Label>End Time</Label>
+                        <div className='space-y-2'>
+                          <Label>End Time *</Label>
                           <Input
                             type='time'
                             value={slot.endTime}
@@ -464,111 +540,77 @@ export default function CreateInterviewSlotsPage() {
                         </div>
                       </div>
 
-                      <div>
+                      <div className='space-y-3'>
                         <Label>Tracks *</Label>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-2 mt-2'>
+                        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
                           {tracks.map((track: any) => (
-                            <label
-                              key={track._id}
-                              className='flex items-center space-x-2'
-                            >
-                              <input
-                                type='checkbox'
+                            <div key={track._id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`manual-track-${index}-${track._id}`}
                                 checked={slot.tracks.includes(track._id)}
-                                onChange={(e) =>
+                                onCheckedChange={(checked) =>
                                   handleManualTrackChange(
                                     index,
                                     track._id,
-                                    e.target.checked
+                                    checked as boolean
                                   )
                                 }
-                                className='rounded border-gray-300'
                               />
-                              <span className='text-sm'>{track.name}</span>
-                            </label>
+                              <Label 
+                                htmlFor={`manual-track-${index}-${track._id}`}
+                                className="text-sm font-normal cursor-pointer"
+                              >
+                                {track.name}
+                              </Label>
+                            </div>
                           ))}
                         </div>
-                        {slot.tracks.length === 0 && (
-                          <p className='text-sm text-red-600'>
-                            Please select at least one track
-                          </p>
-                        )}
                       </div>
 
-                      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                        <div>
-                          <Label>Meeting Link</Label>
-                          <Input
-                            type='url'
-                            value={slot.meetingLink || ''}
-                            onChange={(e) =>
-                              handleManualSlotChange(
-                                index,
-                                'meetingLink',
-                                e.target.value
-                              )
-                            }
-                            placeholder='https://meet.google.com/xxx-xxx-xxx'
-                          />
-                        </div>
+                      <div className='space-y-2'>
+                        <Label>Meeting Link</Label>
+                        <Input
+                          type='url'
+                          value={slot.meetingLink || ''}
+                          onChange={(e) =>
+                            handleManualSlotChange(
+                              index,
+                              'meetingLink',
+                              e.target.value
+                            )
+                          }
+                          placeholder='https://meet.google.com/xxx-xxx-xxx'
+                        />
                       </div>
-
-                      <div className='flex justify-end'>
-                        <Button
-                          type='button'
-                          variant='destructive'
-                          onClick={() => removeManualSlot(index)}
-                        >
-                          Remove Slot
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  <Button type='button' onClick={addManualSlot}>
-                    Add Slot
-                  </Button>
-                </div>
-              )}
-
-              {/* Preview */}
-              <div className='p-4 bg-blue-50 rounded-lg max-h-80 overflow-auto'>
-                <h4 className='font-medium text-blue-900 mb-2'>Preview</h4>
-                <div className='text-sm text-blue-800 space-y-1'>
-                  {mode === 'bulk' &&
-                    bulkSlotsPreview.map((s, i) => (
-                      <p key={i}>
-                        {s.date} - {s.startTime} to {s.endTime}
-                      </p>
-                    ))}
-                  {mode === 'manual' &&
-                    manualSlots.map((s, i) => (
-                      <p key={i}>
-                        {s.date} - {s.startTime} to {s.endTime}
-                      </p>
-                    ))}
-                  <p className='mt-2 font-semibold'>
-                    Total slots to be created:{' '}
-                    {mode === 'bulk'
-                      ? bulkSlotsPreview.length
-                      : manualSlots.length}
-                  </p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className='flex gap-3 pt-4'>
-                <Button type='submit' disabled={isLoading} className='flex-1'>
-                  {isLoading ? 'Creating Slots...' : 'Create Slots'}
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                <Button 
+                  type='button' 
+                  variant="default" 
+                  className="w-full py-6"
+                  onClick={addManualSlot}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Another Slot
                 </Button>
-                <Link href='/lms/recruitment/interview-slots'>
-                  <Button type='button' variant='outline' className='px-8'>
-                    Cancel
-                  </Button>
-                </Link>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            </TabsContent>
+
+            {/* Footer Actions */}
+            <div className='flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t mt-6'>
+              <Link href='/lms/recruitment/interview-slots' className="w-full sm:w-auto">
+                <Button type='button' variant='outline' className='w-full sm:w-auto'>
+                  Cancel
+                </Button>
+              </Link>
+              <Button type='submit' disabled={isLoading} className='w-full sm:w-auto sm:ml-auto'>
+                {isLoading ? 'Creating Slots...' : `Create ${activeTab === 'bulk' ? 'Bulk' : 'Manual'} Slots`}
+              </Button>
+            </div>
+          </form>
+        </Tabs>
       </div>
     </RoleGuard>
   );

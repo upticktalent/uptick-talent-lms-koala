@@ -1,9 +1,9 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Loader from "@/components/Loader";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -13,7 +13,7 @@ interface AuthGuardProps {
 
 export function AuthGuard({
   children,
-  fallback = <LoadingSpinner />,
+  fallback = <Loader />,
   redirectTo = "/auth/login",
 }: AuthGuardProps) {
   const { isAuthenticated, loading } = useAuth();

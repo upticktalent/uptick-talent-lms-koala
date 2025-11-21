@@ -44,7 +44,9 @@ export const applicantService = {
 
   // Shortlist applicant (admin)
   shortlistApplicant: async (applicantId: string) => {
-    return apiClient.patch(`/applications/${applicantId}/shortlist`);
+    return apiClient.patch(
+      `/applications/${applicantId}/shortlist`
+    );
   },
 
   // Get single application (admin)

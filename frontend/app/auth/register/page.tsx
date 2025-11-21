@@ -68,7 +68,7 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <Card>
+    <Card className="w-full max-w-md">
         <CardContent className='pt-6'>
           <div className='text-center'>
             <div className='text-green-600 text-lg font-medium mb-2'>
@@ -84,7 +84,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card>
+    <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Create Account</CardTitle>
         <CardDescription>
@@ -99,7 +99,7 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <div className='grid grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div>
               <label
                 htmlFor='firstName'

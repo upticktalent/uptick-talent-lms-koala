@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { trackService } from "@/services/trackService";
 import { useFetch } from "@/hooks/useFetch";
 import { MessageSquare, MoreVertical, FileText, Info, Eye, Trash2 } from "lucide-react";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 import AnnouncementInput from "./announcement-input";
 import {
   DropdownMenu,
@@ -36,7 +36,7 @@ export default function StreamPage() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const { data: track, loading } = useFetch(() => trackService.getTrackBySlug(slug));
+  const { data: track, loading } = useFetch(() => trackService.getTrackByTrackId(slug));
 
   const [streamItems, setStreamItems] = useState<StreamItem[]>([
     {
@@ -73,13 +73,13 @@ export default function StreamPage() {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) return <Loader />;
   if (!track) return null;
 
   return (
     <div className=" space-y-6">
       {/* Banner */}
-      <div className="relative w-full h-60 rounded-xl overflow-hidden bg-gradient-to-r from-blue-600 to-blue-400 text-white p-8 flex flex-col justify-end">
+      <div className="relative space-y-6 mt-6 w-full h-60 rounded-xl overflow-hidden bg-gradient-to-r from-blue-600 to-blue-400 text-white p-8 flex flex-col justify-end">
         <div className="relative z-10">
             <h1 className="text-4xl font-bold mb-2">{track.name}</h1>
             <p className="text-xl opacity-90">Uptick Talent Engineering Fellowship</p>

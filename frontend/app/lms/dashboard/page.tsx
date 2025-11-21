@@ -25,31 +25,7 @@ import { formatDate } from "@/utils/formatDate";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
-type StatCardProps = {
-  title: string;
-  value: number;
-  icon: ReactNode;
-  trend?: string;
-  loading?: boolean;
-};
 
-function StatCard({ title, value, icon, trend, loading }: StatCardProps) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-gray-600">
-            {title}
-          </CardTitle>
-          {icon}
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{loading ? '...' : value}</div>
-      </CardContent>
-    </Card>
-  );
-}
 
 type QuickActionProps = {
   href: string;
@@ -120,30 +96,58 @@ export default function LMSDashboard() {
       {/* Stats */}
       {(isAdmin || isMentor) && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Total Students"
-            value={stats.totalStudents}
-            icon={<Users className="h-4 w-4 text-blue-600" />}
-            loading={statsLoading}
-          />
-          <StatCard
-            title="Active Tracks"
-            value={stats.totalTracks}
-            icon={<BookOpen className="h-4 w-4 text-green-600" />}
-            loading={statsLoading}
-          />
-          <StatCard
-            title="Pending Applications"
-            value={stats.activeApplications}
-            icon={<FileText className="h-4 w-4 text-orange-600" />}
-            loading={statsLoading}
-          />
-          <StatCard
-            title="Pending Assessments"
-            value={stats.pendingAssessments}
-            icon={<ClipboardCheck className="h-4 w-4 text-purple-600" />}
-            loading={statsLoading}
-          />
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">
+                Total Students
+              </p>
+              <h3 className="text-3xl font-bold text-slate-900">
+                {statsLoading ? '...' : stats.totalStudents}
+              </h3>
+            </div>
+            <div className="p-3 rounded-full bg-blue-50">
+              <Users className="w-6 h-6 text-blue-500" />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">
+                Active Tracks
+              </p>
+              <h3 className="text-3xl font-bold text-slate-900">
+                {statsLoading ? '...' : stats.totalTracks}
+              </h3>
+            </div>
+            <div className="p-3 rounded-full bg-green-50">
+              <BookOpen className="w-6 h-6 text-green-500" />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">
+                Pending Applications
+              </p>
+              <h3 className="text-3xl font-bold text-slate-900">
+                {statsLoading ? '...' : stats.activeApplications}
+              </h3>
+            </div>
+            <div className="p-3 rounded-full bg-orange-50">
+              <FileText className="w-6 h-6 text-orange-500" />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">
+                Pending Assessments
+              </p>
+              <h3 className="text-3xl font-bold text-slate-900">
+                {statsLoading ? '...' : stats.pendingAssessments}
+              </h3>
+            </div>
+            <div className="p-3 rounded-full bg-purple-50">
+              <ClipboardCheck className="w-6 h-6 text-purple-500" />
+            </div>
+          </div>
         </div>
       )}
 
@@ -263,7 +267,7 @@ export default function LMSDashboard() {
               <div className="space-y-4">
                 {tracks.map((track: any) => (
                   <div key={track._id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <h4 className="font-medium text-gray-900">
                           {track.name}
@@ -312,7 +316,7 @@ export default function LMSDashboard() {
                 {applications.slice(0, 5).map((app: any) => (
                   <div
                     key={app._id}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium text-sm capitalize">

@@ -16,7 +16,7 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 
 export default function ApplicationDetail() {
   const params = useParams();
@@ -73,36 +73,6 @@ export default function ApplicationDetail() {
       console.error(err);
     }
   };
-
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen p-4 sm:p-6 flex items-center justify-center">
-        <div className="text-center max-w-md w-full">
-          <div className="text-red-600 text-lg mb-4">⚠️</div>
-          <h3 className="text-lg font-semibold mb-2">
-            Failed to load application
-          </h3>
-          <p className="text-gray-600 mb-6 break-words">{error}</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button onClick={() => refetch()} className="w-full sm:w-auto">
-              Try Again
-            </Button>
-            <Button
-              onClick={() => router.back()}
-              variant="outline"
-              className="w-full sm:w-auto"
-            >
-              Go Back
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (!application) {
     return (

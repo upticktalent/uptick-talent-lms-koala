@@ -43,15 +43,8 @@ export default function RootLayout({
       <body
         className={`${raleway.variable} ${inter.variable} font-raleway antialiased min-h-screen`}
       >
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='dark'
-          enableSystem
-          disableTransitionOnChange={false}
-        >
           <AuthProvider>{children}</AuthProvider>
           <Toaster position='top-right' />
-        </ThemeProvider>
       </body>
     </html>
   );

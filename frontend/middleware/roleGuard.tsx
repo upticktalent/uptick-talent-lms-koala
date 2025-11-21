@@ -3,7 +3,7 @@
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 
 interface RoleGuardProps {
   children: React.ReactNode;
@@ -36,7 +36,7 @@ export function RoleGuard({
   }, [user, loading, isAuthenticated, allowedRoles, router, redirectTo]);
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <Loader />;
   }
 
   if (!isAuthenticated || !user) {

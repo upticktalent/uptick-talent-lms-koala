@@ -1,30 +1,45 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { interviewService } from '@/services/interviewService';
 import { trackService } from '@/services/trackService';
-import { useFetch } from '@/hooks/useFetch';
-import { formatDate, formatDateTime, formatTime } from '@/utils/formatDate';
+import { formatDate, formatDateTime } from '@/utils/formatDate';
 import { RoleGuard } from '@/middleware/roleGuard';
 import Link from 'next/link';
-import { Calendar, Clock, Users, Plus, Filter } from 'lucide-react';
+import { Calendar, Clock, Users, MoreHorizontal, Filter } from 'lucide-react';
 import Loader from '@/components/Loader';
+import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function InterviewsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
-  const [interviewerFilter, setInterviewerFilter] = useState('all');
   const [trackFilter, setTrackFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
 
   const [interviews, setInterviews] = useState<any[]>([]);
   const [tracks, setTracks] = useState<any[]>([]);
@@ -38,8 +53,6 @@ export default function InterviewsPage() {
 
       const params = {
         status: statusFilter !== 'all' ? statusFilter : undefined,
-        interviewer:
-          interviewerFilter !== 'all' ? interviewerFilter : undefined,
         track: trackFilter !== 'all' ? trackFilter : undefined,
       };
 
@@ -64,7 +77,8 @@ export default function InterviewsPage() {
   // Fetch interviews on component mount and when filters change
   useEffect(() => {
     fetchInterviews();
-  }, [statusFilter, interviewerFilter, trackFilter]);
+    setCurrentPage(1);
+  }, [statusFilter, trackFilter]);
 
   const fetchTracks = async () => {
     try {
@@ -112,15 +126,15 @@ export default function InterviewsPage() {
     }
   };
 
-  const getResultColor = (status: string) => {
-    switch (status) {
-      case 'interviewed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+
+
+  // Pagination logic
+  const totalItems = interviews.length;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedInterviews = interviews.slice(startIndex, startIndex + pageSize);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
   };
 
   if (loading) {
@@ -167,32 +181,40 @@ export default function InterviewsPage() {
         {/* Filters */}
         <div className='flex gap-4 flex-wrap'>
           <div className='w-48'>
-            <select
+            <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+              onValueChange={(value) => setStatusFilter(value)}
             >
-              {statuses.map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statuses.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className='w-48'>
-            <select
+            <Select
               value={trackFilter}
-              onChange={(e) => setTrackFilter(e.target.value)}
-              className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+              onValueChange={(value) => setTrackFilter(value)}
             >
-              <option value='all'>All Tracks</option>
-              {Array.isArray(tracks) &&
-                tracks.map((track) => (
-                  <option key={track._id} value={track._id}>
-                    {track.name}
-                  </option>
-                ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by track" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tracks</SelectItem>
+                {Array.isArray(tracks) &&
+                  tracks.map((track) => (
+                    <SelectItem key={track._id} value={track._id}>
+                      {track.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
           {(statusFilter !== 'all' || trackFilter !== 'all') && (
             <Button
@@ -200,7 +222,6 @@ export default function InterviewsPage() {
               onClick={() => {
                 setStatusFilter('all');
                 setTrackFilter('all');
-                // No need to call refetch here since useEffect will handle it
               }}
             >
               Clear Filters
@@ -276,130 +297,99 @@ export default function InterviewsPage() {
           </Card>
         </div>
 
-        {/* Interviews List */}
-        <div className='space-y-4'>
-          {interviews.length === 0 ? (
-            <Card>
-              <CardContent className='pt-6 text-center text-gray-500'>
-                No interviews found matching your criteria.
-              </CardContent>
-            </Card>
+        {/* Interviews Table */}
+        <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
+          {paginatedInterviews.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <p>No interviews found matching your criteria.</p>
+            </div>
           ) : (
-            interviews.map((interview: any) => (
-              <Card key={interview._id}>
-                <CardContent className='pt-6'>
-                  <div className='flex items-center justify-between'>
-                    <div className='flex-1'>
-                      <div className='flex items-center gap-4 mb-3'>
-                        <div>
-                          <h3 className='font-semibold text-gray-900'>
-                            Interview #{interview._id.slice(-6)}
-                          </h3>
-                          <p className='text-sm text-gray-600'>
-                            Applicant:{' '}
-                            {interview.application?.applicant?.firstName}{' '}
-                            {interview.application?.applicant?.lastName}
-                          </p>
-                          <p className='text-sm text-gray-500'>
-                            Interviewer: {interview.interviewer?.firstName}{' '}
-                            {interview.interviewer?.lastName}
-                          </p>
+            <Table>
+              <TableHeader className="bg-gray-50/50">
+                <TableRow>
+                  <TableHead className="py-4 font-semibold text-gray-900">Applicant</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">Interviewer</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">Date & Time</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">Status</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedInterviews.map((interview: any) => (
+                  <TableRow key={interview._id} className="hover:bg-gray-50/50 transition-colors">
+                    <TableCell className="py-4">
+                      <div>
+                        <div className="font-semibold text-gray-900 capitalize">
+                          {interview.application?.applicant?.firstName} {interview.application?.applicant?.lastName}
                         </div>
-                        <div className='flex gap-2'>
-                          {interview.status && (
-                            <Badge className={getResultColor(interview.status)}>
-                              {interview.status.toUpperCase()}
-                            </Badge>
-                          )}
-                          {interview.rating && (
-                            <Badge variant='secondary'>
-                              ⭐ {interview.rating}
-                            </Badge>
-                          )}
+                        <div className="text-sm text-gray-500">
+                          Interview #{interview._id.slice(-6)}
                         </div>
                       </div>
-
-                      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600'>
-                        <div>
-                          <span className='font-medium'>Date & Time:</span>
-                          <div className='ml-1'>
-                            {formatDateTime(`${interview.scheduledDate}`)}
-                          </div>
-                        </div>
-                        <div>
-                          <span className='font-medium'>Interview Link:</span>
-                          <div className='ml-1'>
-                            {interview.meetingLink ? (
-                              <a
-                                href={interview.meetingLink}
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                className='text-blue-600 hover:underline'
-                              >
-                                Join Meeting
-                              </a>
-                            ) : (
-                              'Not provided'
-                            )}
-                          </div>
-                        </div>
-                        <div>
-                          <span className='font-medium'>Scheduled:</span>
-                          <div className='ml-1'>
-                            {formatDate(interview.createdAt)}
-                          </div>
-                        </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="text-sm text-gray-700">
+                        {interview.interviewer?.firstName} {interview.interviewer?.lastName}
                       </div>
-
-                      {interview.notes && (
-                        <div className='mt-3 p-3 bg-gray-50 rounded-md'>
-                          <span className='text-sm font-medium text-gray-700'>
-                            Notes:
-                          </span>
-                          <p className='text-sm text-gray-600 mt-1'>
-                            {interview.notes}
-                          </p>
-                        </div>
-                      )}
-
-                      {interview.feedback && (
-                        <div className='mt-3 p-3 bg-blue-50 rounded-md'>
-                          <span className='text-sm font-medium text-gray-700'>
-                            Feedback:
-                          </span>
-                          <p className='text-sm text-gray-600 mt-1'>
-                            {interview.feedback}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className='flex gap-2'>
-                      <Link
-                        href={`/lms/recruitment/interviews/${interview._id}`}
-                      >
-                        <Button variant='secondary' size='sm'>
-                          {interview.status === 'scheduled'
-                            ? 'Manage'
-                            : 'View Details'}
-                        </Button>
-                      </Link>
-                      {interview.status === 'scheduled' && (
-                        <Link
-                          href={`/lms/recruitment/interviews/${interview._id}/edit`}
-                        >
-                          <Button variant='secondary' size='sm'>
-                            Edit
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="text-sm text-gray-700">
+                        {formatDateTime(`${interview.scheduledDate}`)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <Badge className={getStatusColor(interview.status)}>
+                        {interview.status.toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px] bg-white">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <Link href={`/lms/recruitment/interviews/${interview._id}`} className="w-full cursor-pointer">
+                            <DropdownMenuItem className="cursor-pointer">
+                              {interview.status === 'scheduled' ? 'Manage' : 'View Details'}
+                            </DropdownMenuItem>
+                          </Link>
+                          {interview.status === 'scheduled' && (
+                            <Link href={`/lms/recruitment/interviews/${interview._id}/edit`} className="w-full cursor-pointer">
+                              <DropdownMenuItem className="cursor-pointer">
+                                Edit
+                              </DropdownMenuItem>
+                            </Link>
+                          )}
+                          {interview.meetingLink && (
+                            <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className="w-full cursor-pointer">
+                              <DropdownMenuItem className="cursor-pointer">
+                                Join Meeting
+                              </DropdownMenuItem>
+                            </a>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </div>
+
+        {/* Pagination */}
+        {interviews.length > 0 && (
+          <Pagination
+            page={currentPage}
+            pageSize={pageSize}
+            total={totalItems}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
     </RoleGuard>
   );

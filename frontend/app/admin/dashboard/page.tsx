@@ -178,7 +178,7 @@ export default function AdminDashboard() {
           return (
             <div
               key={index}
-              className={`bg-white p-6 rounded-xl border border-slate-200 flex items-center justify-between`}
+              className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow"
             >
               <div>
                 <p className="text-sm font-medium text-slate-500 mb-1">
@@ -187,9 +187,6 @@ export default function AdminDashboard() {
                 <h3 className="text-3xl font-bold text-slate-900">
                   {stat.value}
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  {stat.description}
-                </p>
               </div>
               <div className={`p-3 rounded-full ${stat.bgColor}`}>
                 <Icon className={`w-6 h-6 ${stat.color}`} />
@@ -224,7 +221,7 @@ export default function AdminDashboard() {
                 {applications.slice(0, 5).map((app: any) => (
                   <div
                     key={app?.applicant?._id}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100"
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium text-sm capitalize">

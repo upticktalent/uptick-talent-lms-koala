@@ -1,15 +1,30 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useFetch } from "@/hooks/useFetch";
+import { useAuth } from "@/hooks/useAuth";
 import { authService } from "@/services/authService";
+import { userService } from "@/services/userService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 import Skeleton from "@/components/ui/skeleton";
 import { formatDateTime, formatDate } from "@/utils/formatDate";
 import { Mail, Phone, MapPin, User, Calendar, Shield, Key } from "lucide-react";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import Loader from "@/components/Loader";
 
 function Initials({
   firstName,
@@ -37,8 +52,56 @@ export default function ProfilePage() {
     refetch,
   } = useFetch(() => authService.getCurrentUser());
 
+  const { refreshUser } = useAuth();
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    isActive: true,
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        firstName: profile.firstName || "",
+        lastName: profile.lastName || "",
+        email: profile.email || "",
+        isActive: profile.isActive ?? true,
+      });
+    }
+  }, [profile]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setFormData((prev) => ({ ...prev, isActive: checked }));
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!profile?._id) return;
+
+    setIsUpdating(true);
+    try {
+      await userService.updateUser(profile._id, formData);
+      toast.success("Profile updated successfully");
+      setIsDialogOpen(false);
+      refetch();
+      refreshUser();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to update profile");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (loading) {
-    return <LoadingSpinner />;
+    return <Loader />;
   }
 
   return (
@@ -97,12 +160,82 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                  <Button
-                    className="w-full sm:w-auto bg-white text-[hsl(var(--primary))] hover:bg-white/90 font-semibold border-2 border-white/50 cursor-pointer transition-all hover:scale-105"
-                    size="lg"
-                  >
-                    Edit Profile
-                  </Button>
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        className="w-full sm:w-auto bg-white text-[hsl(var(--primary))] hover:bg-white/90 font-semibold border-2 border-white/50 cursor-pointer transition-all hover:scale-105"
+                        size="lg"
+                      >
+                        Edit Profile
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Edit Profile</DialogTitle>
+                        <DialogDescription>
+                          Make changes to your profile here. Click save when you're done.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="flex flex-col gap-4">
+                          <Label htmlFor="firstName" className="text-right">
+                            First Name
+                          </Label>
+                          <Input
+                            id="firstName"
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleInputChange}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-4">
+                          <Label htmlFor="lastName" className="text-right">
+                            Last Name
+                          </Label>
+                          <Input
+                            id="lastName"
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleInputChange}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-4">
+                          <Label htmlFor="email" className="text-right">
+                            Email
+                          </Label>
+                          <Input
+                            id="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-4">
+                          <Label htmlFor="isActive" className="text-right">
+                            Active Status
+                          </Label>
+                          <div className="flex space-x-2">
+                            <Switch
+                              id="isActive"
+                              checked={formData.isActive}
+                              onCheckedChange={handleSwitchChange}
+                            />
+                            <Label htmlFor="isActive">
+                              {formData.isActive ? "Active" : "Inactive"}
+                            </Label>
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" onClick={handleUpdateProfile} disabled={isUpdating}>
+                          {isUpdating ? "Saving..." : "Save changes"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </div>
