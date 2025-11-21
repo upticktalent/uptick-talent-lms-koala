@@ -1,4 +1,9 @@
 import Image from 'next/image';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Application Portal",
+};
 
 export default function ApplyLayout({ children }: { children: React.ReactNode }) {
   return (
