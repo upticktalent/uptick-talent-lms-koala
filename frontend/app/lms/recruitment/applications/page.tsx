@@ -51,6 +51,7 @@ export default function ApplicationsPage() {
     error,
     refetch,
   } = useFetch(() => applicantService.getApplications());
+  console.log(applications)
 
   const statuses = [
     { value: "all", label: "All Applications" },

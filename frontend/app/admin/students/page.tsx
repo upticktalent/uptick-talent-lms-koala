@@ -44,6 +44,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
+import { userService } from '@/services/userService';
 
 export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,11 +56,11 @@ export default function StudentsPage() {
     data: students,
     loading,
     error,
-  } = useFetch(() => lmsService.getStudents());
+  } = useFetch(() => userService.getAllUsers());
+  const studentList = students?.users?.filter((user: { role: string; })=> user?.role === 'student');
+  console.log(studentList)
 
-  const studentList = students?.students || students || [];
-
-  const filteredStudents = studentList.filter((student: any) => {
+  const filteredStudents = studentList?.filter((student: any) => {
     const matchesSearch =
       !searchTerm ||
       `${student.firstName} ${student.lastName}`
@@ -77,9 +78,9 @@ export default function StudentsPage() {
   });
 
   // Pagination logic
-  const totalItems = filteredStudents.length;
+  const totalItems = filteredStudents?.length;
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedStudents = filteredStudents.slice(
+  const paginatedStudents = filteredStudents?.slice(
     startIndex,
     startIndex + pageSize
   );
@@ -105,28 +106,28 @@ export default function StudentsPage() {
   const stats = [
     { 
       label: 'Total Students', 
-      value: studentList.length, 
+      value: studentList?.length, 
       icon: Users, 
       color: 'bg-blue-500', 
       bgColor: 'bg-blue-50' 
     },
     { 
       label: 'Active Students', 
-      value: studentList.filter((s: any) => s.isActive).length, 
+      value: studentList?.filter((s: any) => s.isActive).length, 
       icon: UserCheck, 
       color: 'bg-green-500', 
       bgColor: 'bg-green-50' 
     },
     { 
       label: 'Avg. Progress', 
-      value: studentList.length > 0 ? `${Math.round(studentList.reduce((acc: number, s: any) => acc + (s.progress || 0), 0) / studentList.length)}%` : '0%', 
+      value: studentList?.length > 0 ? `${Math.round(studentList?.reduce((acc: number, s: any) => acc + (s.progress || 0), 0) / studentList?.length)}%` : '0%', 
       icon: TrendingUp, 
       color: 'bg-purple-500', 
       bgColor: 'bg-purple-50' 
     },
     { 
       label: 'High Performers', 
-      value: studentList.filter((s: any) => (s.progress || 0) >= 80).length, 
+      value: studentList?.filter((s: any) => (s.progress || 0) >= 80).length, 
       icon: Award, 
       color: 'bg-orange-500', 
       bgColor: 'bg-orange-50' 
@@ -216,7 +217,7 @@ export default function StudentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedStudents.map((student) => (
+              {paginatedStudents.map((student : any) => (
                 <TableRow key={student._id} className="hover:bg-gray-50/50 transition-colors">
                   <TableCell className="py-4">
                     <div className="flex items-center gap-3">
@@ -299,7 +300,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Pagination */}
-      {filteredStudents.length > 0 && (
+      {filteredStudents?.length > 0 && (
         <Pagination
           page={currentPage}
           pageSize={pageSize}

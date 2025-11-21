@@ -2,27 +2,9 @@ import apiClient from './apiClient';
 
 export const userService = {
   // Get all users with optional role filtering (no pagination)
-  getAllUsers: async (params?: {
-    role?: string | string[];
-    isActive?: boolean;
-  }) => {
-    const queryParams = new URLSearchParams();
-
-    if (params?.role) {
-      // Handle both string and array of roles
-      const roles = Array.isArray(params.role)
-        ? params.role.join(',')
-        : params.role;
-      queryParams.append('role', roles);
-    }
-
-    if (params?.isActive !== undefined) {
-      queryParams.append('isActive', params.isActive.toString());
-    }
-
-    return apiClient.get(`/users/all?${queryParams.toString()}`);
-  },
-
+  getAllUsers: async () => {
+      return apiClient.get(`/users`);
+    },
   // Get users with pagination
   getUsers: async (params?: {
     role?: string | string[];

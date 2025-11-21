@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { lmsService } from "@/services/lmsService";
 import { applicantService } from "@/services/applicantService";
 import { trackService } from "@/services/trackService";
+import { assessmentService } from "@/services/assessmentService";
+import { interviewService } from "@/services/interviewService";
 import { useFetch } from "@/hooks/useFetch";
 import {
   Users,
@@ -29,7 +31,9 @@ import {
   Mail,
   HardDrive,
   Activity,
-  ArrowRight
+  ArrowRight,
+  FileText,
+  Calendar
 } from "lucide-react";
 
 import { DashboardCharts } from "@/components/shared/DashboardCharts";
@@ -46,6 +50,33 @@ export default function AdminDashboard() {
   const { data: tracks } = useFetch(() => trackService.getTracks());
 
   const { data: cohorts } = useFetch(() => lmsService.getCohorts());
+
+  const { data: assessmentsData } = useFetch(() => 
+    assessmentService.getAssessments({ limit: 5 })
+  );
+  const recentAssessments = assessmentsData?.assessments || [];
+
+  const { data: interviewsData } = useFetch(() => 
+    interviewService.getInterviews({ limit: 5, status: 'scheduled' })
+  );
+  const upcomingInterviews = interviewsData?.interviews || [];
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+      case 'passed':
+      case 'accepted':
+        return 'text-green-600 bg-green-50 border-green-100';
+      case 'rejected':
+      case 'failed':
+        return 'text-red-600 bg-red-50 border-red-100';
+      case 'pending':
+      case 'scheduled':
+        return 'text-yellow-600 bg-yellow-50 border-yellow-100';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-100';
+    }
+  };
 
   const stats = {
     totalStudents: dashboardStats?.totalStudents || 0,
@@ -258,64 +289,94 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="p-6 border-b border-slate-100">
-            <h3 className="font-semibold text-gray-900">System Status</h3>
-            <p className="text-sm text-gray-500">Current system health and status</p>
+        <div className="space-y-6">
+          {/* Recent Assessments */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold text-gray-900">Recent Assessments</h3>
+                <p className="text-sm text-gray-500">Latest assessment submissions</p>
+              </div>
+              <Link href="/lms/recruitment/assessments">
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                  View All <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+            <div className="p-6">
+              {recentAssessments && recentAssessments.length > 0 ? (
+                <div className="space-y-4">
+                  {recentAssessments.slice(0, 3).map((assessment: any) => (
+                    <div key={assessment._id} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-100 rounded-full text-purple-600">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {assessment.application?.applicant?.firstName} {assessment.application?.applicant?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Score: {assessment.score ? `${assessment.score}%` : 'Not graded'}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusColor(assessment.status)}`}>
+                        {assessment.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500 text-sm">
+                  No recent assessments
+                </div>
+              )}
+            </div>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-full text-green-600">
-                    <Database className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">Database</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-green-600 font-medium">Healthy</span>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-full text-green-600">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">Email Service</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-green-600 font-medium">Operational</span>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-full text-green-600">
-                    <HardDrive className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">File Storage</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-green-600 font-medium">Available</span>
-                </div>
+          {/* Scheduled Interviews */}
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h3 className="font-semibold text-gray-900">Scheduled Interviews</h3>
+                <p className="text-sm text-gray-500">Upcoming interview sessions</p>
               </div>
-
-              <div className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 rounded-full text-yellow-600">
-                    <Activity className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">API Performance</span>
+              <Link href="/lms/recruitment/interviews">
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                  View All <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+            <div className="p-6">
+              {upcomingInterviews && upcomingInterviews.length > 0 ? (
+                <div className="space-y-4">
+                  {upcomingInterviews.slice(0, 3).map((interview: any) => (
+                    <div key={interview._id} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-100 rounded-full text-indigo-600">
+                          <Calendar className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {interview.application?.applicant?.firstName} {interview.application?.applicant?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(interview.scheduledDate).toLocaleDateString()} at {new Date(interview.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusColor(interview.status)}`}>
+                        {interview.status}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm text-yellow-600 font-medium">Moderate</span>
+              ) : (
+                <div className="text-center py-6 text-gray-500 text-sm">
+                  No upcoming interviews
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

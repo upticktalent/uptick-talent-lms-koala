@@ -3,7 +3,7 @@
 import { useUser } from "@/hooks/useUser";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Menu, LogOut, User, ChevronDown, Bell, Settings } from "lucide-react";
+import { Menu, LogOut, User, ChevronDown, Bell, Settings, UserCog } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface NavbarProps {
   title?: string;
@@ -20,7 +21,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ title, onOpenSidebar }: NavbarProps) {
-  const { user, fullName, initials } = useUser();
+  const { user, fullName, initials, isAdmin } = useUser();
   const { logout } = useAuth();
 
   const router = useRouter();
@@ -49,16 +50,26 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
 
           {/* Title */}
           <div className="flex items-center min-w-0">
-            {title && (
+            {title ? (
               <h1 className="text-lg sm:text-xl font-semibold text-[hsl(var(--foreground))] truncate">
                 {title}
               </h1>
+            ) : (
+              isAdmin && (
+                <Link
+                  href="/admin/dashboard"
+                  className="text-lg sm:text-xl font-semibold text-[hsl(var(--foreground))] truncate"
+                >
+                  <UserCog />
+                </Link>
+              )
             )}
           </div>
         </div>
 
         {/* Right Section - User Info & Actions */}
         <div className="flex items-center gap-2 sm:gap-4">
+
           {/* Notifications Icon - Hidden on mobile */}
           <button
             className="hidden sm:flex items-center justify-center p-2 rounded-md text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors relative cursor-pointer"
