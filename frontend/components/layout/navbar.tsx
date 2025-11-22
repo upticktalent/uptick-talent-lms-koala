@@ -35,7 +35,7 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
   };
 
   return (
-    <header className="bg-[hsl(var(--background))] shadow-sm border-b border-[hsl(var(--border))] sticky top-0 z-40">
+    <header className="bg-[hsl(var(--background))] shadow-sm border-b border-[hsl(var(--border))] sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 sm:px-6 py-3">
         {/* Left Section - Menu Button & Title */}
         <div className="flex items-center gap-2 sm:gap-4">

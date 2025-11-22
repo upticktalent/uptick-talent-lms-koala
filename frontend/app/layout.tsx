@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html lang='en' suppressHydrationWarning>
       <body
-        className={`${raleway.variable} ${inter.variable} font-raleway antialiased min-h-screen`}
+        className={`${raleway.variable} ${inter.variable} font-raleway antialiased`}
       >
           <AuthProvider>{children}</AuthProvider>
           <Toaster position='top-right' />
