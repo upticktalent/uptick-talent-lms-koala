@@ -122,7 +122,7 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "h-full w-64 flex-col hidden lg:flex bg-[hsl(var(--card))] border-r border-[hsl(var(--border))]",
+          "sticky top-0 h-screen w-64 flex-col hidden lg:flex bg-[hsl(var(--card))] border-r border-[hsl(var(--border))]",
           className
         )}
       >

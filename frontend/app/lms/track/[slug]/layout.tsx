@@ -33,7 +33,7 @@ export default function TrackLayout({ children }: { children: ReactNode }) {
     <div>
       {/* Tabs */}
       {!isStudent && (
-        <div className="sticky top-0 z-50 bg-white border-b border-gray-200">
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200">
           <nav className="-mb-px flex space-x-8 px-6 overflow-x-auto scrollbar-hide" aria-label="Tabs">
             {tabs.map((tab) => {
               const isActive = pathname === tab.href;

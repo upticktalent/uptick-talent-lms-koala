@@ -12,14 +12,14 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
       <RoleGuard allowedRoles={["admin", "mentor", "student"]}>
-        <div className="h-screen flex bg-gray-100 overflow-hidden">
+        <div className="min-h-screen flex bg-gray-100">
           <Sidebar open={isSidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-w-0">
             <Navbar onOpenSidebar={() => setSidebarOpen(true)} />
 
-            {/* ONLY this scrolls */}
-            <main className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0">
+            {/* Main content scrolls naturally with the window */}
+            <main className="flex-1 p-3 sm:p-4 pb-24">
               {children}
             </main>
           </div>
