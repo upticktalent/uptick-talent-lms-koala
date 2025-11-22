@@ -19,7 +19,7 @@ export default function LMSLayout({ children }: { children: React.ReactNode }) {
             <Navbar onOpenSidebar={() => setSidebarOpen(true)} />
 
             {/* Main content scrolls naturally with the window */}
-            <main className="flex-1 p-3 sm:p-4 pb-24">
+            <main className="flex-1 p-3 sm:p-4">
               {children}
             </main>
           </div>
