@@ -6,16 +6,18 @@ export const applicationService = {
   submitApplication: async (
     formData: FormData
   ): Promise<ApiResponse<IApplication>> => {
-    return apiClient.post('/applications/apply', formData, {
+    const response = await apiClient.post('/applications/apply', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
   },
 
   // Get available tracks for current active cohort
   getAvailableTracks: async (): Promise<ApiResponse<any[]>> => {
-    return apiClient.get('/applications/available-tracks');
+    const response = await apiClient.get('/tracks/active');
+    return response.data;
   },
 
   // Get current active cohort (accepting applications)
@@ -32,28 +34,32 @@ export const applicationService = {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<IApplication[]>> => {
-    return apiClient.get('/applications', { params });
+    const response = await apiClient.get('/applications', { params });
+    return response.data;
   },
 
   // Get applications by cohort (admin/mentor)
   getApplicationsByCohort: async (
     cohortId: string
   ): Promise<ApiResponse<IApplication[]>> => {
-    return apiClient.get(`/applications/cohort/${cohortId}`);
+    const response = await apiClient.get(`/applications/cohort/${cohortId}`);
+    return response.data;
   },
 
   // Get applications by track (mentor)
   getApplicationsByTrack: async (
     trackId: string
   ): Promise<ApiResponse<IApplication[]>> => {
-    return apiClient.get(`/applications/track/${trackId}`);
+    const response = await apiClient.get(`/applications/track/${trackId}`);
+    return response.data;
   },
 
   // Get single application (admin/mentor)
   getApplication: async (
     applicationId: string
   ): Promise<ApiResponse<IApplication>> => {
-    return apiClient.get(`/applications/${applicationId}`);
+    const response = await apiClient.get(`/applications/${applicationId}`);
+    return response.data;
   },
 
   // Review application (admin/mentor)
@@ -65,7 +71,8 @@ export const applicationService = {
       rejectionReason?: string;
     }
   ): Promise<ApiResponse<IApplication>> => {
-    return apiClient.patch(`/applications/${applicationId}/review`, reviewData);
+    const response = await apiClient.patch(`/applications/${applicationId}/review`, reviewData);
+    return response.data;
   },
 
   // Accept application and create student (admin only)
@@ -78,14 +85,16 @@ export const applicationService = {
       generatedPassword: string;
     }>
   > => {
-    return apiClient.post(`/applications/${applicationId}/accept`);
+    const response = await apiClient.post(`/applications/${applicationId}/accept`);
+    return response.data;
   },
 
   // Shortlist application (admin/mentor)
   shortlistApplication: async (
     applicationId: string
   ): Promise<ApiResponse<IApplication>> => {
-    return apiClient.patch(`/applications/${applicationId}/shortlist`);
+    const response = await apiClient.patch(`/applications/${applicationId}/shortlist`);
+    return response.data;
   },
 
   // Reject application (admin/mentor)
@@ -93,16 +102,18 @@ export const applicationService = {
     applicationId: string,
     rejectionReason?: string
   ): Promise<ApiResponse<IApplication>> => {
-    return apiClient.patch(`/applications/${applicationId}/reject`, {
+    const response = await apiClient.patch(`/applications/${applicationId}/reject`, {
       rejectionReason,
     });
+    return response.data;
   },
 
   // Get application statistics
   getApplicationStats: async (cohortId?: string): Promise<ApiResponse<any>> => {
-    return apiClient.get('/applications/stats', {
+    const response = await apiClient.get('/applications/stats', {
       params: cohortId ? { cohortId } : {},
     });
+    return response.data;
   },
 
   // Bulk update applications (admin only)
@@ -110,35 +121,40 @@ export const applicationService = {
     applicationIds: string[],
     status: string
   ): Promise<ApiResponse<any>> => {
-    return apiClient.patch('/applications/bulk-update', {
+    const response = await apiClient.patch('/applications/bulk-update', {
       applicationIds,
       status,
     });
+    return response.data;
   },
 
   // Export applications to CSV (admin only)
   exportApplications: async (cohortId?: string): Promise<ApiResponse<any>> => {
-    return apiClient.get('/applications/export', {
+    const response = await apiClient.get('/applications/export', {
       params: cohortId ? { cohortId } : {},
       responseType: 'blob',
     });
+    return response.data;
   },
 
   // Legacy methods for backward compatibility
   getTracks: async (): Promise<ApiResponse<any[]>> => {
-    return apiClient.get('/tracks/active');
+    const response = await apiClient.get('/tracks/active');
+    return response.data;
   },
 
   updateApplicationStatus: async (
     applicationId: string,
     status: string
   ): Promise<ApiResponse<IApplication>> => {
-    return apiClient.patch(`/applications/${applicationId}/review`, { status });
+    const response = await apiClient.patch(`/applications/${applicationId}/review`, { status });
+    return response.data;
   },
 
   getApplicationStatus: async (
     applicationId: string
   ): Promise<ApiResponse<IApplication>> => {
-    return apiClient.get(`/applications/${applicationId}`);
+    const response = await apiClient.get(`/applications/${applicationId}`);
+    return response.data;
   },
 };

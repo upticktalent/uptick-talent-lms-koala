@@ -28,9 +28,19 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Only redirect to login if:
+    // 1. Status is 401 (Unauthorized)
+    // 2. User was previously authenticated (has token)
+    // 3. Not on public pages (apply, auth)
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/auth/login";
+      const hasToken = localStorage.getItem("token");
+      const isPublicPage = window.location.pathname.startsWith('/apply') || 
+                          window.location.pathname.startsWith('/auth');
+      
+      if (hasToken && !isPublicPage) {
+        localStorage.removeItem("token");
+        window.location.href = "/auth/login";
+      }
     }
     return Promise.reject(error);
   }
