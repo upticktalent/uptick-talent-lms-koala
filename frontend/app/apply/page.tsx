@@ -22,15 +22,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { applicantService } from '@/services/applicantService';
-import { handleApiError } from '@/utils/handleApiError';
+import { Checkbox } from '@/components/ui/checkbox';
+import { applicationService } from '@/services/applicationService';
+import { ICohort, ITrack, ApplicationForm, ApiResponse } from '@/types';
 import { toast } from 'sonner';
-import { getToolsForTrack, getTrackInfo } from '@/utils/trackData';
-
-// Import country and state data
-import COUNTRIES_DATA from '../../files/countriesminified.json';
-import STATES_DATA from '../../files/statesminified.json';
-
 import {
   ChevronLeft,
   ChevronRight,
@@ -43,684 +38,339 @@ import {
   FileText,
   Target,
   Code,
+  Upload,
+  Loader2,
 } from 'lucide-react';
 
-interface Track {
-  _id: string;
-  trackId: string;
-  name: string;
-  description: string;
+interface TrackWithDetails extends ITrack {
+  availableSlots?: number;
 }
 
-interface Cohort {
-  _id: string;
-  cohortNumber: string;
-  name: string;
-  description: string;
-  isAcceptingApplications: boolean;
-  applicationDeadline: string;
-  startDate: string;
-  endDate: string;
-}
+export default function ApplicationPage() {
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [currentCohort, setCurrentCohort] = useState<ICohort | null>(null);
+  const [availableTracks, setAvailableTracks] = useState<TrackWithDetails[]>(
+    []
+  );
 
-type ApplicationStep =
-  | 'about'
-  | 'personal-info'
-  | 'track-selection'
-  | 'background'
-  | 'final-review';
-
-export default function ApplyPage() {
-  // Current step state
-  const [currentStep, setCurrentStep] = useState<ApplicationStep>('about');
-
-  // Form state
-  const [formData, setFormData] = useState({
-    // Personal Information
+  const [formData, setFormData] = useState<ApplicationForm>({
     firstName: '',
     lastName: '',
     email: '',
     phoneNumber: '',
-    gender: '',
-    countryId: 161, // Default to Nigeria (ID 161)
-    country: 'Nigeria', // Keep for backend compatibility
-    stateId: 0, // Use number type to match country data structure
+    gender: 'male',
+    country: '',
     state: '',
     educationalBackground: '',
-
-    // Track Selection
-    trackId: '',
-    tools: [] as string[],
-
-    // Background & Experience
     yearsOfExperience: '',
+    tools: [],
     githubLink: '',
     portfolioLink: '',
     careerGoals: '',
     weeklyCommitment: '',
     referralSource: '',
     referralSourceOther: '',
-
-    // Backend compatibility
-    cohortNumber: '',
+    track: '',
   });
 
-  const [cvFile, setCvFile] = useState<File | null>(null);
-  const [selectedTrackTools, setSelectedTrackTools] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Data states
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [cohorts, setCohorts] = useState<Cohort[]>([]);
-  const [activeCohort, setActiveCohort] = useState<Cohort | null>(null);
-  const [availableStates, setAvailableStates] = useState<any[]>([]);
+  const toolOptions = [
+    'HTML/CSS',
+    'JavaScript',
+    'React',
+    'Vue.js',
+    'Angular',
+    'Node.js',
+    'Express.js',
+    'Python',
+    'Django',
+    'Flask',
+    'Java',
+    'Spring Boot',
+    'C#',
+    '.NET',
+    'PHP',
+    'Laravel',
+    'Ruby',
+    'Ruby on Rails',
+    'Go',
+    'Rust',
+    'MySQL',
+    'PostgreSQL',
+    'MongoDB',
+    'Redis',
+    'Docker',
+    'Kubernetes',
+    'AWS',
+    'Azure',
+    'Google Cloud',
+    'Git',
+    'GitHub',
+    'GitLab',
+    'Figma',
+    'Adobe XD',
+    'Sketch',
+    'Photoshop',
+    'Illustrator',
+    'Flutter',
+    'React Native',
+    'Swift',
+    'Kotlin',
+    'Xamarin',
+  ];
 
-  // UI states
-  const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
+  const referralSources = [
+    'Social Media',
+    'Google Search',
+    'Friend/Colleague',
+    'University/School',
+    'Tech Community',
+    'Job Board',
+    'Blog/Article',
+    'Podcast',
+    'YouTube',
+    'Other',
+  ];
 
-  // Utility functions for country/state data
-  const getCountries = () => {
-    return COUNTRIES_DATA;
-  };
+  const countries = [
+    'Nigeria',
+    'Ghana',
+    'Kenya',
+    'South Africa',
+    'United States',
+    'United Kingdom',
+    'Canada',
+    'Germany',
+    'France',
+    'Australia',
+  ];
 
-  const getStatesForCountry = (countryId: number) => {
-    const countryData = STATES_DATA.find((item: any) => item.id === countryId);
-    return countryData ? countryData.states : [];
-  };
-
-  const getCountryById = (countryId: number) => {
-    return COUNTRIES_DATA.find((country: any) => country.id === countryId);
-  };
-
-  const getStateById = (countryId: number, stateId: number) => {
-    const states = getStatesForCountry(countryId);
-    return states.find((state: any) => state.id === stateId);
-  };
-
-  const router = useRouter();
+  const nigerianStates = [
+    'Lagos',
+    'Abuja',
+    'Kano',
+    'Rivers',
+    'Oyo',
+    'Delta',
+    'Edo',
+    'Ogun',
+    'Kaduna',
+    'Imo',
+    'Enugu',
+    'Abia',
+    'Anambra',
+  ];
 
   useEffect(() => {
-    loadInitialData();
+    fetchApplicationData();
   }, []);
 
-  // Load states when country changes
-  useEffect(() => {
-    if (formData.countryId) {
-      const states = getStatesForCountry(formData.countryId);
-      setAvailableStates(states);
-
-      // Clear selected state when country changes
-      if (formData.stateId && states.length > 0) {
-        const stateExists = states.find(
-          (state: any) => state.id === formData.stateId
-        );
-        if (!stateExists) {
-          setFormData((prev) => ({
-            ...prev,
-            stateId: 0,
-            state: '',
-          }));
-        }
-      }
-    }
-  }, [formData.countryId]);
-
-  const loadInitialData = async () => {
+  const fetchApplicationData = async () => {
     try {
-      const [tracksResponse] = await Promise.all([
-        applicantService.getTracks(),
-      ]);
+      setLoading(true);
 
-      setTracks(tracksResponse.data.data || []);
+      // Get current active cohort
+      const cohortResponse: ApiResponse<ICohort> =
+        await applicationService.getCurrentActiveCohort();
+      if (cohortResponse.success && cohortResponse.data) {
+        setCurrentCohort(cohortResponse.data);
 
-      // Get the current active cohort
-      try {
-        const cohortResponse = await applicantService.getCurrentActiveCohort();
-        const currentCohort = cohortResponse.data.data;
-        setActiveCohort(currentCohort);
-        setCohorts([currentCohort]); // Set as array for compatibility
-        setFormData((prev) => ({
-          ...prev,
-          cohortNumber: currentCohort.cohortNumber,
-        }));
-      } catch (cohortErr: any) {
-        // No active cohort found
-        if (cohortErr.response?.status === 404) {
-          setActiveCohort(null);
-          setCohorts([]);
-        } else {
-          throw cohortErr;
+        // Get available tracks for the cohort
+        const tracksResponse: ApiResponse<ITrack[]> =
+          await applicationService.getAvailableTracks();
+        if (tracksResponse.success) {
+          setAvailableTracks(tracksResponse.data || []);
         }
-      }
-
-      // Load initial states for Nigeria (default country)
-      const initialStates = getStatesForCountry(161); // Nigeria ID is 161
-      setAvailableStates(initialStates);
-    } catch (err) {
-      toast.error('Failed to load application data. Please refresh the page.');
-    } finally {
-      setDataLoading(false);
-    }
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleCountryChange = (countryId: string) => {
-    const country = getCountryById(parseInt(countryId));
-    setFormData((prev) => ({
-      ...prev,
-      countryId: parseInt(countryId),
-      country: country ? country.name : '',
-      stateId: 0, // Clear state when country changes
-      state: '',
-    }));
-  };
-
-  const handleStateChange = (stateId: string) => {
-    const state = getStateById(formData.countryId, parseInt(stateId));
-    setFormData((prev) => ({
-      ...prev,
-      stateId: parseInt(stateId),
-      state: state ? state.name : '',
-    }));
-  };
-
-  const handleTrackSelection = (trackId: string) => {
-    setFormData((prev) => ({ ...prev, trackId }));
-
-    // Load suggested tools for the selected track
-    const suggestedTools = getToolsForTrack(trackId);
-    setSelectedTrackTools(suggestedTools);
-
-    // Clear current tools when switching tracks
-    setFormData((prev) => ({ ...prev, tools: [] }));
-  };
-
-  const addTool = (tool: string) => {
-    if (!formData.tools.includes(tool)) {
-      setFormData((prev) => ({
-        ...prev,
-        tools: [...prev.tools, tool],
-      }));
-    }
-  };
-
-  const removeTool = (toolToRemove: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tools: prev.tools.filter((tool) => tool !== toolToRemove),
-    }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('CV file size must be less than 5MB');
-        return;
-      }
-
-      // Validate file type
-      const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      ];
-
-      if (!allowedTypes.includes(file.type)) {
-        toast.error('Please upload a PDF or Word document');
-        return;
-      }
-
-      setCvFile(file);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!cvFile) {
-      toast.error('Please upload your CV');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const formDataToSend = new FormData();
-
-      // Send the correct fields as expected by backend
-      formDataToSend.append('firstName', formData.firstName);
-      formDataToSend.append('lastName', formData.lastName);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('phoneNumber', formData.phoneNumber);
-      formDataToSend.append('gender', formData.gender);
-      formDataToSend.append('country', formData.country);
-      formDataToSend.append('state', formData.state);
-      formDataToSend.append('trackId', formData.trackId);
-      formDataToSend.append('cohortNumber', formData.cohortNumber);
-      formDataToSend.append(
-        'educationalBackground',
-        formData.educationalBackground
-      );
-
-      // New application fields
-      formDataToSend.append('yearsOfExperience', formData.yearsOfExperience);
-      formDataToSend.append('githubLink', formData.githubLink || '');
-      formDataToSend.append('portfolioLink', formData.portfolioLink || '');
-      formDataToSend.append('careerGoals', formData.careerGoals);
-      formDataToSend.append('weeklyCommitment', formData.weeklyCommitment);
-      formDataToSend.append('referralSource', formData.referralSource);
-      formDataToSend.append(
-        'referralSourceOther',
-        formData.referralSourceOther || ''
-      );
-
-      // Add selected tools
-      formData.tools.forEach((tool) => formDataToSend.append('tools[]', tool));
-
-      // Add CV file
-      formDataToSend.append('cv', cvFile);
-
-      const response = await applicantService.submitApplication(formDataToSend);
-      const applicationId = response.data.data.applicationId;
-
-      toast.success('Application submitted successfully!');
-      router.push(`/apply/success?id=${applicationId}`);
-    } catch (err: any) {
-      // Clear previous validation errors
-      setValidationErrors({});
-
-      // Handle validation errors specifically
-      if (err?.response?.status === 400 && err?.response?.data?.errors) {
-        const errors = err.response.data.errors;
-        const fieldErrors: Record<string, string> = {};
-
-        // Map backend validation errors to field-specific errors
-        errors.forEach((error: any) => {
-          if (error.field && error.message) {
-            fieldErrors[error.field] = error.message;
-          }
-        });
-
-        setValidationErrors(fieldErrors);
-        setError('Please correct the errors below and try again.');
-        toast.error('Please correct the validation errors and try again.');
       } else {
-        // Handle other types of errors
-        const errorMessage = handleApiError(err);
-        setError(errorMessage);
-        toast.error(errorMessage);
+        toast.error('No active cohort found for applications');
       }
+    } catch (error) {
+      console.error('Error fetching application data:', error);
+      toast.error('Error loading application form');
     } finally {
       setLoading(false);
     }
   };
 
-  const validateCurrentStep = () => {
-    const errors: Record<string, string> = {};
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
 
-    switch (currentStep) {
-      case 'about':
-        // No validation needed for about step
-        break;
-      case 'personal-info':
+    switch (step) {
+      case 1:
         if (!formData.firstName.trim())
-          errors.firstName = 'First name is required';
+          newErrors.firstName = 'First name is required';
         if (!formData.lastName.trim())
-          errors.lastName = 'Last name is required';
-        if (!formData.email.trim()) {
-          errors.email = 'Email is required';
-        } else if (!validateEmail(formData.email)) {
-          errors.email = 'Please enter a valid email address';
+          newErrors.lastName = 'Last name is required';
+        if (!formData.email.trim()) newErrors.email = 'Email is required';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+          newErrors.email = 'Please enter a valid email address';
         }
-        if (!formData.phoneNumber.trim()) {
-          errors.phoneNumber = 'Phone number is required';
-        } else if (!validatePhone(formData.phoneNumber)) {
-          errors.phoneNumber = 'Please enter a valid phone number';
-        }
-        if (!formData.gender) errors.gender = 'Gender is required';
-        if (!formData.countryId) errors.country = 'Country is required';
-        if (!formData.stateId || formData.stateId === 0)
-          errors.state = 'State is required';
-        // Educational background is now optional
+        if (!formData.phoneNumber.trim())
+          newErrors.phoneNumber = 'Phone number is required';
+        if (!formData.gender) newErrors.gender = 'Gender is required';
         break;
 
-      case 'track-selection':
-        if (!formData.trackId) errors.trackId = 'Please select a track';
-        if (formData.tools.length === 0)
-          errors.tools = 'Please select at least one tool or technology';
+      case 2:
+        if (!formData.country.trim()) newErrors.country = 'Country is required';
+        if (!formData.state.trim()) newErrors.state = 'State is required';
+        if (!formData.educationalBackground.trim()) {
+          newErrors.educationalBackground =
+            'Educational background is required';
+        }
+        if (!formData.yearsOfExperience.trim()) {
+          newErrors.yearsOfExperience = 'Years of experience is required';
+        }
         break;
 
-      case 'background':
-        if (!formData.yearsOfExperience)
-          errors.yearsOfExperience = 'Years of experience is required';
+      case 3:
+        if (!formData.track) newErrors.track = 'Please select a track';
+        if (formData.tools.length === 0) {
+          newErrors.tools = 'Please select at least one tool/technology';
+        }
+        break;
+
+      case 4:
         if (!formData.careerGoals.trim())
-          errors.careerGoals = 'Career goals are required';
-        if (!formData.weeklyCommitment)
-          errors.weeklyCommitment = 'Weekly commitment is required';
-        if (!formData.referralSource)
-          errors.referralSource = 'Please tell us how you heard about us';
-        if (!formData.portfolioLink.trim()) {
-          errors.portfolioLink = 'Portfolio/project link is required';
-        } else if (!validateUrl(formData.portfolioLink)) {
-          errors.portfolioLink = 'Please enter a valid URL';
+          newErrors.careerGoals = 'Career goals are required';
+        if (!formData.weeklyCommitment.trim()) {
+          newErrors.weeklyCommitment = 'Weekly commitment is required';
         }
-
-        // Programming tracks require GitHub link
-        const programmingTracks = [
-          'frontend-development',
-          'backend-development',
-          'fullstack-development',
-          'mobile-development',
-        ];
-        if (programmingTracks.includes(formData.trackId)) {
-          if (!formData.githubLink.trim()) {
-            errors.githubLink =
-              'GitHub profile link is required for programming tracks';
-          } else if (!validateGitHubUrl(formData.githubLink)) {
-            errors.githubLink = 'Please enter a valid GitHub profile URL';
-          }
+        if (!formData.referralSource.trim()) {
+          newErrors.referralSource = 'Referral source is required';
         }
-
-        // Other referral source validation
         if (
-          formData.referralSource === 'other' &&
-          !formData.referralSourceOther.trim()
+          formData.referralSource === 'Other' &&
+          !formData.referralSourceOther?.trim()
         ) {
-          errors.referralSourceOther = 'Please specify how you heard about us';
+          newErrors.referralSourceOther = 'Please specify other source';
         }
-
-        if (!cvFile) {
-          toast.error('Please upload your CV/Resume');
-          return false;
-        }
+        if (!selectedFile) newErrors.cv = 'CV/Resume is required';
         break;
     }
 
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      setError('Please correct the errors below and try again.');
-      return false;
-    }
-
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const nextStep = () => {
-    // Validate current step before proceeding
-    if (!validateCurrentStep()) {
-      return;
-    }
-
-    const steps: ApplicationStep[] = [
-      'about',
-      'personal-info',
-      'track-selection',
-      'background',
-      'final-review',
-    ];
-    const currentIndex = steps.indexOf(currentStep);
-    if (currentIndex < steps.length - 1) {
-      setCurrentStep(steps[currentIndex + 1]);
-      // Clear validation errors when moving to next step
-      setValidationErrors({});
-      setError('');
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(prev + 1, 4));
     }
   };
 
-  const prevStep = () => {
-    const steps: ApplicationStep[] = [
-      'about',
-      'personal-info',
-      'track-selection',
-      'background',
-      'final-review',
-    ];
-    const currentIndex = steps.indexOf(currentStep);
-    if (currentIndex > 0) {
-      setCurrentStep(steps[currentIndex - 1]);
-      // Clear validation errors when moving to previous step
-      setValidationErrors({});
-      setError('');
-    }
+  const handlePrevious = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+  const handleToolToggle = (tool: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      tools: prev.tools.includes(tool)
+        ? prev.tools.filter((t) => t !== tool)
+        : [...prev.tools, tool],
+    }));
   };
 
-  const getFieldError = (fieldName: string) => {
-    return validationErrors[fieldName];
-  };
+  const handleSubmit = async () => {
+    if (!validateStep(4)) return;
 
-  const clearFieldError = (fieldName: string) => {
-    if (validationErrors[fieldName]) {
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldName];
-        return newErrors;
-      });
-    }
-  };
+    setSubmitting(true);
 
-  // Frontend validation functions
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validateUrl = (url: string) => {
-    if (!url) return true; // Allow empty URLs for optional fields
     try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
+      const submitFormData = new FormData();
+
+      // Add all form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'tools') {
+          submitFormData.append(key, JSON.stringify(value));
+        } else if (value) {
+          submitFormData.append(key, value.toString());
+        }
+      });
+
+      // Add CV file
+      if (selectedFile) {
+        submitFormData.append('cv', selectedFile);
+      }
+
+      const response: ApiResponse<any> =
+        await applicationService.submitApplication(submitFormData);
+
+      if (response.success) {
+        toast.success('Application submitted successfully!');
+        router.push('/apply/success');
+      } else {
+        toast.error(response.message || 'Failed to submit application');
+      }
+    } catch (error: any) {
+      console.error('Application submission error:', error);
+      toast.error(
+        error.response?.data?.message || 'Error submitting application'
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const validatePhone = (phone: string) => {
-    // Allow various phone formats
-    const phoneRegex = /^[\+]?[\d\-\(\)\s]{10,}$/;
-    return phoneRegex.test(phone.replace(/\s/g, ''));
+  const getSelectedTrack = () => {
+    return availableTracks.find((track) => track._id === formData.track);
   };
 
-  const validateGitHubUrl = (url: string) => {
-    if (!url) return true;
-    const githubRegex = /^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9_-]+\/?$/;
-    return githubRegex.test(url);
-  };
-
-  // Real-time validation
-  const validateField = (name: string, value: string) => {
-    let error = '';
-
-    switch (name) {
-      case 'email':
-        if (value && !validateEmail(value)) {
-          error = 'Please enter a valid email address';
-        }
-        break;
-      case 'phoneNumber':
-        if (value && !validatePhone(value)) {
-          error = 'Please enter a valid phone number';
-        }
-        break;
-      case 'githubLink':
-        if (value && !validateGitHubUrl(value)) {
-          error =
-            'Please enter a valid GitHub profile URL (e.g., https://github.com/username)';
-        }
-        break;
-      case 'portfolioLink':
-        if (value && !validateUrl(value)) {
-          error = 'Please enter a valid URL';
-        }
-        break;
-      case 'firstName':
-      case 'lastName':
-        if (value && value.length > 50) {
-          error = 'Name cannot exceed 50 characters';
-        }
-        break;
-      case 'careerGoals':
-        if (value && value.length > 500) {
-          error = 'Career goals cannot exceed 500 characters';
-        }
-        break;
-      case 'educationalBackground':
-        if (value && value.length > 200) {
-          error = 'Educational background cannot exceed 200 characters';
-        }
-        break;
-      case 'referralSourceOther':
-        if (value && value.length > 200) {
-          error = 'This field cannot exceed 200 characters';
-        }
-        break;
-    }
-
-    return error;
-  };
-
-  const handleInputChangeWithValidation = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-
-    // Update form data
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear previous field error
-    clearFieldError(name);
-
-    // Validate field and set error if invalid
-    const fieldError = validateField(name, value);
-    if (fieldError) {
-      setValidationErrors((prev) => ({
-        ...prev,
-        [name]: fieldError,
-      }));
-    }
-  };
-
-  const handleSelectChangeWithValidation = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear field-specific error when user makes selection
-    clearFieldError(name);
-  };
-
-  const isStepValid = () => {
-    switch (currentStep) {
-      case 'about':
-        return true; // About step is always valid
-      case 'personal-info':
-        return (
-          formData.firstName &&
-          formData.lastName &&
-          formData.email &&
-          formData.phoneNumber &&
-          formData.gender &&
-          formData.countryId &&
-          formData.stateId &&
-          formData.stateId !== 0
-        );
-      case 'track-selection':
-        return formData.trackId !== '' && formData.tools.length > 0;
-      case 'background':
-        const baseValid =
-          formData.yearsOfExperience &&
-          formData.careerGoals &&
-          formData.weeklyCommitment &&
-          formData.referralSource &&
-          formData.portfolioLink &&
-          cvFile;
-
-        // Check if "other" is selected and requires additional input
-        const referralValid =
-          formData.referralSource !== 'other' ||
-          (formData.referralSource === 'other' && formData.referralSourceOther);
-
-        // Programming tracks require GitHub link
-        const programmingTracks = [
-          'frontend-development',
-          'backend-development',
-          'fullstack-development',
-          'mobile-development',
-        ];
-        if (programmingTracks.includes(formData.trackId)) {
-          return baseValid && referralValid && formData.githubLink;
-        }
-
-        return baseValid && referralValid;
-      case 'final-review':
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  if (dataLoading) {
+  if (loading) {
     return (
-      <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+      <div className='min-h-screen flex items-center justify-center'>
         <div className='text-center'>
-          <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto'></div>
-          <p className='mt-4 text-gray-600'>Loading application form...</p>
+          <Loader2 className='h-8 w-8 animate-spin mx-auto mb-4' />
+          <p>Loading application form...</p>
         </div>
       </div>
     );
   }
 
-  // Show no active cohort available message
-  if (!activeCohort) {
+  if (!currentCohort) {
     return (
-      <div className='min-h-screen bg-gray-50 flex items-center justify-center p-4'>
-        <Card className='w-full max-w-md text-center'>
+      <div className='min-h-screen flex items-center justify-center'>
+        <Card className='max-w-md'>
           <CardHeader>
-            <XCircle className='h-16 w-16 text-red-500 mx-auto mb-4' />
-            <CardTitle className='text-2xl text-red-600'>
+            <CardTitle className='flex items-center gap-2'>
+              <XCircle className='h-5 w-5 text-red-500' />
               Applications Closed
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className='text-gray-600 mb-6'>
-              We're not currently accepting applications. The application
-              deadline may have passed or there's no active cohort at the
-              moment. Please check back later or follow our social media for
-              updates on the next cohort.
+            <p className='text-muted-foreground'>
+              There are currently no active cohorts accepting applications.
+              Please check back later.
             </p>
-            <Button onClick={() => router.push('/')} variant='outline'>
-              Return to Home
-            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const isApplicationDeadlinePassed =
+    new Date() > new Date(currentCohort.applicationDeadline);
+
+  if (isApplicationDeadlinePassed) {
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <Card className='max-w-md'>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'>
+              <AlertTriangle className='h-5 w-5 text-yellow-500' />
+              Application Deadline Passed
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className='text-muted-foreground'>
+              The application deadline for {currentCohort.name} has passed.
+              Applications are no longer being accepted.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -728,1078 +378,754 @@ export default function ApplyPage() {
   }
 
   return (
-    <div className='min-h-screen bg-gray-50 p-4'>
-      <div className='max-w-4xl mx-auto'>
-        {/* Progress Bar */}
-        <div className='mb-8'>
-          <div className='flex items-center justify-between mb-4'>
-            <h1 className='text-2xl font-bold text-gray-900'>
-              Apply to Uptick Talent LMS
-            </h1>
-            <div className='text-sm text-gray-500'>
-              Step{' '}
-              {[
-                'about',
-                'personal-info',
-                'track-selection',
-                'background',
-                'final-review',
-              ].indexOf(currentStep) + 1}{' '}
-              of 5
-            </div>
-          </div>
-          <div className='w-full bg-gray-200 rounded-full h-2'>
-            <div
-              className='bg-blue-600 h-2 rounded-full transition-all duration-300'
-              style={{
-                width: `${
-                  (([
-                    'about',
-                    'personal-info',
-                    'track-selection',
-                    'background',
-                    'final-review',
-                  ].indexOf(currentStep) +
-                    1) /
-                    5) *
-                  100
-                }%`,
-              }}
-            />
+    <div className='min-h-screen bg-gray-50 py-12'>
+      <div className='max-w-4xl mx-auto px-4'>
+        {/* Header */}
+        <div className='text-center mb-8'>
+          <h1 className='text-3xl font-bold text-gray-900 mb-2'>
+            Apply to {currentCohort.name}
+          </h1>
+          <p className='text-gray-600'>
+            Join our comprehensive software development program
+          </p>
+
+          {/* Cohort Info */}
+          <div className='mt-6 flex justify-center'>
+            <Card className='max-w-2xl'>
+              <CardContent className='p-6'>
+                <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-center'>
+                  <div className='flex items-center justify-center gap-2'>
+                    <Calendar className='h-5 w-5 text-blue-500' />
+                    <div>
+                      <p className='text-sm text-gray-600'>Program Duration</p>
+                      <p className='font-medium'>
+                        {new Date(currentCohort.startDate).toLocaleDateString()}{' '}
+                        - {new Date(currentCohort.endDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className='flex items-center justify-center gap-2'>
+                    <Clock className='h-5 w-5 text-green-500' />
+                    <div>
+                      <p className='text-sm text-gray-600'>
+                        Application Deadline
+                      </p>
+                      <p className='font-medium'>
+                        {new Date(
+                          currentCohort.applicationDeadline
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className='flex items-center justify-center gap-2'>
+                    <Users className='h-5 w-5 text-purple-500' />
+                    <div>
+                      <p className='text-sm text-gray-600'>Available Spots</p>
+                      <p className='font-medium'>
+                        {currentCohort.maxStudents -
+                          currentCohort.currentStudents}{' '}
+                        remaining
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
 
-        {/* Step Content */}
-        <Card>
-          <CardContent className='p-8'>
-            {error && (
-              <Alert variant='destructive' className='mb-6'>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {/* Custom styles for red asterisks */}
-            <style jsx>{`
-              .required-asterisk {
-                color: #ef4444;
-              }
-            `}</style>
-
-            {/* About Step */}
-            {currentStep === 'about' && (
-              <div className='space-y-6'>
-                <div className='text-center mb-8'>
-                  <h2 className='text-3xl font-bold text-gray-900 mb-4'>
-                    About Uptick Talent Fellowship
-                  </h2>
-                  <CardDescription className='text-lg'>
-                    Learn about our program before you apply
-                  </CardDescription>
+        {/* Progress Steps */}
+        <div className='mb-8'>
+          <div className='flex items-center justify-center space-x-4'>
+            {[1, 2, 3, 4].map((step) => (
+              <div key={step} className='flex items-center'>
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    currentStep >= step
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
+                  {currentStep > step ? (
+                    <CheckCircle className='h-5 w-5' />
+                  ) : (
+                    step
+                  )}
                 </div>
-
-                <div className='prose prose-lg max-w-none text-gray-700'>
-                  <p className='mb-6 text-lg leading-relaxed'>
-                    Uptick Talent Fellowship is a structured and personalized
-                    program designed to equip self-taught engineers, product
-                    designers, and product managers with the skills, mentorship,
-                    and hands-on experience needed to secure their first
-                    entry-level role in the tech industry.
-                  </p>
-
-                  <p className='mb-6 leading-relaxed'>
-                    Each program follows a 4.5-month structure—beginning with a
-                    2-month intensive mentorship phase, where participants work
-                    closely with industry experts, followed by a 2.5-month
-                    capstone project designed to provide real-world experience
-                    and build a strong portfolio.
-                  </p>
-
-                  <p className='mb-8 leading-relaxed'>
-                    Our programs are tailored to assess your current skill
-                    level, bridge knowledge gaps, and help you become a
-                    job-ready, world-class professional.
-                  </p>
-
-                  <div className='bg-blue-50 border border-blue-200 rounded-lg p-6'>
-                    <h3 className='text-xl font-semibold text-blue-900 mb-4 flex items-center'>
-                      <Target className='h-6 w-6 mr-2' />
-                      Who should apply?
-                    </h3>
-                    <ul className='space-y-2 text-blue-800'>
-                      <li className='flex items-start'>
-                        <CheckCircle className='h-5 w-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0' />
-                        Self-taught software engineers, product designers, and
-                        product managers struggling to land their first role.
-                      </li>
-                      <li className='flex items-start'>
-                        <CheckCircle className='h-5 w-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0' />
-                        Individuals with zero to little professional experience
-                        looking for structured guidance and industry exposure.
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Cohort Information */}
-                {activeCohort && (
-                  <div className='bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8'>
-                    <div className='flex items-center mb-4'>
-                      <CheckCircle className='h-6 w-6 text-green-500 mr-2' />
-                      <h3 className='text-lg font-semibold text-blue-900'>
-                        {activeCohort.name} - Applications Open
-                      </h3>
-                    </div>
-                    <p className='text-blue-800 mb-4'>
-                      {activeCohort.description}
-                    </p>
-                    <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm'>
-                      <div className='flex items-center text-blue-700'>
-                        <Calendar className='h-4 w-4 mr-2' />
-                        <span>
-                          Deadline:{' '}
-                          {formatDate(activeCohort.applicationDeadline)}
-                        </span>
-                      </div>
-                      <div className='flex items-center text-blue-700'>
-                        <Clock className='h-4 w-4 mr-2' />
-                        <span>
-                          Starts: {formatDate(activeCohort.startDate)}
-                        </span>
-                      </div>
-                      <div className='flex items-center text-blue-700'>
-                        <Users className='h-4 w-4 mr-2' />
-                        <span>
-                          Duration:{' '}
-                          {Math.round(
-                            (new Date(activeCohort.endDate).getTime() -
-                              new Date(activeCohort.startDate).getTime()) /
-                              (1000 * 60 * 60 * 24 * 30)
-                          )}{' '}
-                          months
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                {step < 4 && (
+                  <div
+                    className={`w-16 h-1 mx-2 ${
+                      currentStep > step ? 'bg-blue-600' : 'bg-gray-200'
+                    }`}
+                  />
                 )}
+              </div>
+            ))}
+          </div>
+          <div className='flex justify-center mt-2'>
+            <p className='text-sm text-gray-600'>
+              Step {currentStep} of 4:{' '}
+              {currentStep === 1
+                ? 'Personal Information'
+                : currentStep === 2
+                ? 'Background & Experience'
+                : currentStep === 3
+                ? 'Track & Skills'
+                : 'Goals & Motivation'}
+            </p>
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <Card className='max-w-2xl mx-auto'>
+          <CardContent className='p-8'>
+            {currentStep === 1 && (
+              <div className='space-y-6'>
+                <div className='text-center mb-6'>
+                  <h2 className='text-xl font-semibold'>
+                    Personal Information
+                  </h2>
+                  <p className='text-gray-600'>Tell us about yourself</p>
+                </div>
+
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <div>
+                    <Label htmlFor='firstName'>First Name *</Label>
+                    <Input
+                      id='firstName'
+                      value={formData.firstName}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          firstName: e.target.value,
+                        }))
+                      }
+                      placeholder='John'
+                      className={errors.firstName ? 'border-red-500' : ''}
+                    />
+                    {errors.firstName && (
+                      <p className='text-red-500 text-sm mt-1'>
+                        {errors.firstName}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor='lastName'>Last Name *</Label>
+                    <Input
+                      id='lastName'
+                      value={formData.lastName}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          lastName: e.target.value,
+                        }))
+                      }
+                      placeholder='Doe'
+                      className={errors.lastName ? 'border-red-500' : ''}
+                    />
+                    {errors.lastName && (
+                      <p className='text-red-500 text-sm mt-1'>
+                        {errors.lastName}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor='email'>Email Address *</Label>
+                  <Input
+                    id='email'
+                    type='email'
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    placeholder='john@example.com'
+                    className={errors.email ? 'border-red-500' : ''}
+                  />
+                  {errors.email && (
+                    <p className='text-red-500 text-sm mt-1'>{errors.email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor='phoneNumber'>Phone Number *</Label>
+                  <Input
+                    id='phoneNumber'
+                    value={formData.phoneNumber}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        phoneNumber: e.target.value,
+                      }))
+                    }
+                    placeholder='+234 801 234 5678'
+                    className={errors.phoneNumber ? 'border-red-500' : ''}
+                  />
+                  {errors.phoneNumber && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.phoneNumber}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor='gender'>Gender *</Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value: 'male' | 'female') =>
+                      setFormData((prev) => ({ ...prev, gender: value }))
+                    }
+                  >
+                    <SelectTrigger
+                      className={errors.gender ? 'border-red-500' : ''}
+                    >
+                      <SelectValue placeholder='Select gender' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='male'>Male</SelectItem>
+                      <SelectItem value='female'>Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.gender && (
+                    <p className='text-red-500 text-sm mt-1'>{errors.gender}</p>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Personal Information Step */}
-            {currentStep === 'personal-info' && (
+            {currentStep === 2 && (
               <div className='space-y-6'>
-                <div className='text-center mb-8'>
-                  <CardTitle className='text-3xl mb-2'>
-                    Personal Information
-                  </CardTitle>
-                  <CardDescription className='text-lg'>
-                    Tell us about yourself
-                  </CardDescription>
+                <div className='text-center mb-6'>
+                  <h2 className='text-xl font-semibold'>
+                    Background & Experience
+                  </h2>
+                  <p className='text-gray-600'>
+                    Share your educational and professional background
+                  </p>
                 </div>
 
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                  <div className='space-y-2'>
-                    <Label htmlFor='firstName'>
-                      First Name <span className='required-asterisk'>*</span>
-                    </Label>
-                    <Input
-                      id='firstName'
-                      name='firstName'
-                      value={formData.firstName}
-                      onChange={handleInputChangeWithValidation}
-                      required
-                      maxLength={50}
-                      className={
-                        getFieldError('firstName')
-                          ? 'border-red-500 focus:border-red-500'
-                          : ''
-                      }
-                    />
-                    {getFieldError('firstName') && (
-                      <p className='text-sm text-red-600'>
-                        {getFieldError('firstName')}
-                      </p>
-                    )}
-                  </div>
-                  <div className='space-y-2'>
-                    <Label htmlFor='lastName'>
-                      Last Name <span className='required-asterisk'>*</span>
-                    </Label>
-                    <Input
-                      id='lastName'
-                      name='lastName'
-                      value={formData.lastName}
-                      onChange={handleInputChangeWithValidation}
-                      required
-                      maxLength={50}
-                      className={
-                        getFieldError('lastName')
-                          ? 'border-red-500 focus:border-red-500'
-                          : ''
-                      }
-                    />
-                    {getFieldError('lastName') && (
-                      <p className='text-sm text-red-600'>
-                        {getFieldError('lastName')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                  <div className='space-y-2'>
-                    <Label htmlFor='email'>
-                      Email Address <span className='required-asterisk'>*</span>
-                    </Label>
-                    <Input
-                      id='email'
-                      name='email'
-                      type='email'
-                      value={formData.email}
-                      onChange={handleInputChangeWithValidation}
-                      required
-                      placeholder='example@email.com'
-                      className={
-                        getFieldError('email')
-                          ? 'border-red-500 focus:border-red-500'
-                          : formData.email && validateEmail(formData.email)
-                          ? 'border-green-500 focus:border-green-500'
-                          : ''
-                      }
-                    />
-                    {getFieldError('email') && (
-                      <p className='text-sm text-red-600'>
-                        {getFieldError('email')}
-                      </p>
-                    )}
-                  </div>
-                  <div className='space-y-2'>
-                    <Label htmlFor='phoneNumber'>
-                      Phone Number <span className='required-asterisk'>*</span>
-                    </Label>
-                    <Input
-                      id='phoneNumber'
-                      name='phoneNumber'
-                      type='tel'
-                      value={formData.phoneNumber}
-                      onChange={handleInputChangeWithValidation}
-                      placeholder='+234-xxx-xxx-xxxx'
-                      required
-                      className={
-                        getFieldError('phoneNumber')
-                          ? 'border-red-500 focus:border-red-500'
-                          : formData.phoneNumber &&
-                            validatePhone(formData.phoneNumber)
-                          ? 'border-green-500 focus:border-green-500'
-                          : ''
-                      }
-                    />
-                    {getFieldError('phoneNumber') && (
-                      <p className='text-sm text-red-600'>
-                        {getFieldError('phoneNumber')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                  <div className='space-y-2'>
-                    <Label htmlFor='gender'>
-                      Gender <span className='required-asterisk'>*</span>
-                    </Label>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <div>
+                    <Label htmlFor='country'>Country *</Label>
                     <Select
-                      name='gender'
-                      value={formData.gender}
+                      value={formData.country}
                       onValueChange={(value) =>
-                        handleSelectChangeWithValidation('gender', value)
+                        setFormData((prev) => ({
+                          ...prev,
+                          country: value,
+                          state: '',
+                        }))
                       }
                     >
                       <SelectTrigger
-                        className={
-                          getFieldError('gender')
-                            ? 'border-red-500 focus:border-red-500'
-                            : ''
-                        }
-                      >
-                        <SelectValue placeholder='Select gender' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='male'>Male</SelectItem>
-                        <SelectItem value='female'>Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {getFieldError('gender') && (
-                      <p className='text-sm text-red-600'>
-                        {getFieldError('gender')}
-                      </p>
-                    )}
-                  </div>
-                  <div className='space-y-2'>
-                    <Label htmlFor='country'>
-                      Country <span className='required-asterisk'>*</span>
-                    </Label>
-                    <Select
-                      name='country'
-                      value={formData.countryId.toString()}
-                      onValueChange={(value) => {
-                        handleCountryChange(value);
-                        clearFieldError('country');
-                      }}
-                    >
-                      <SelectTrigger
-                        className={
-                          getFieldError('country')
-                            ? 'border-red-500 focus:border-red-500'
-                            : ''
-                        }
+                        className={errors.country ? 'border-red-500' : ''}
                       >
                         <SelectValue placeholder='Select country' />
                       </SelectTrigger>
                       <SelectContent>
-                        {getCountries().map(
-                          (country: { id: number; name: string }) => (
-                            <SelectItem
-                              key={country.id}
-                              value={country.id.toString()}
-                            >
-                              {country.name}
-                            </SelectItem>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {getFieldError('country') && (
-                      <p className='text-sm text-red-600'>
-                        {getFieldError('country')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                  <div className='space-y-2'>
-                    <Label htmlFor='state'>
-                      State <span className='required-asterisk'>*</span>
-                    </Label>
-                    <Select
-                      name='state'
-                      value={
-                        formData.stateId && formData.stateId !== 0
-                          ? formData.stateId.toString()
-                          : ''
-                      }
-                      onValueChange={(value) => {
-                        handleStateChange(value);
-                        clearFieldError('state');
-                      }}
-                      disabled={
-                        !formData.countryId || availableStates.length === 0
-                      }
-                    >
-                      <SelectTrigger
-                        className={
-                          getFieldError('state')
-                            ? 'border-red-500 focus:border-red-500'
-                            : ''
-                        }
-                      >
-                        <SelectValue
-                          placeholder={
-                            !formData.countryId
-                              ? 'Select country first'
-                              : availableStates.length === 0
-                              ? 'No states available'
-                              : 'Select state'
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableStates.map((state) => (
-                          <SelectItem
-                            key={state.id}
-                            value={state.id.toString()}
-                          >
-                            {state.name}
+                        {countries.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {getFieldError('state') && (
-                      <p className='text-sm text-red-600'>
-                        {getFieldError('state')}
+                    {errors.country && (
+                      <p className='text-red-500 text-sm mt-1'>
+                        {errors.country}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor='state'>State/Province *</Label>
+                    <Select
+                      value={formData.state}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, state: value }))
+                      }
+                      disabled={!formData.country}
+                    >
+                      <SelectTrigger
+                        className={errors.state ? 'border-red-500' : ''}
+                      >
+                        <SelectValue placeholder='Select state' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(formData.country === 'Nigeria'
+                          ? nigerianStates
+                          : ['Other']
+                        ).map((state) => (
+                          <SelectItem key={state} value={state}>
+                            {state}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.state && (
+                      <p className='text-red-500 text-sm mt-1'>
+                        {errors.state}
                       </p>
                     )}
                   </div>
                 </div>
 
-                <div className='space-y-2'>
+                <div>
                   <Label htmlFor='educationalBackground'>
-                    Educational Background
+                    Educational Background *
                   </Label>
                   <Textarea
                     id='educationalBackground'
-                    name='educationalBackground'
                     value={formData.educationalBackground}
-                    onChange={handleInputChangeWithValidation}
-                    placeholder='e.g., BSc Computer Science, University of Lagos (2020) - Optional'
-                    rows={3}
-                    maxLength={200}
-                    className={
-                      getFieldError('educationalBackground')
-                        ? 'border-red-500 focus:border-red-500'
-                        : ''
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        educationalBackground: e.target.value,
+                      }))
                     }
+                    placeholder="e.g., Bachelor's degree in Computer Science from University of Lagos"
+                    className={
+                      errors.educationalBackground ? 'border-red-500' : ''
+                    }
+                    rows={3}
                   />
-                  {getFieldError('educationalBackground') && (
-                    <p className='text-sm text-red-600'>
-                      {getFieldError('educationalBackground')}
+                  {errors.educationalBackground && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.educationalBackground}
                     </p>
                   )}
-                  <p
-                    className={`text-xs ${
-                      formData.educationalBackground.length > 180
-                        ? 'text-orange-500'
-                        : 'text-gray-500'
-                    }`}
-                  >
-                    {formData.educationalBackground.length}/200 characters
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Track Selection Step */}
-            {currentStep === 'track-selection' && (
-              <div className='space-y-6'>
-                <div className='text-center mb-8'>
-                  <CardTitle className='text-3xl mb-2'>
-                    Choose Your Track
-                  </CardTitle>
-                  <CardDescription className='text-lg'>
-                    Select the program that aligns with your career goals
-                  </CardDescription>
                 </div>
 
-                {/* Track Cards - Clean Design */}
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                  {tracks.map((track) => {
-                    const isSelected = formData.trackId === track.trackId;
-
-                    return (
-                      <div
-                        key={track._id}
-                        onClick={() => handleTrackSelection(track.trackId)}
-                        className={`cursor-pointer rounded-xl border-2 p-6 transition-all hover:shadow-lg ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200'
-                            : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
-                        }`}
-                      >
-                        <div className='flex flex-col items-center text-center'>
-                          <div
-                            className={`p-3 rounded-full mb-4 ${
-                              isSelected ? 'bg-blue-100' : 'bg-gray-100'
-                            }`}
-                          >
-                            <Code
-                              className={`h-8 w-8 ${
-                                isSelected ? 'text-blue-600' : 'text-gray-600'
-                              }`}
-                            />
-                          </div>
-                          <h3
-                            className={`font-semibold text-lg mb-2 ${
-                              isSelected ? 'text-blue-900' : 'text-gray-900'
-                            }`}
-                          >
-                            {track.name}
-                          </h3>
-
-                          {isSelected && (
-                            <div className='flex items-center text-blue-600 mt-2'>
-                              <CheckCircle className='h-5 w-5 mr-1' />
-                              <span className='text-sm font-medium'>
-                                Selected
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Track Selection Error */}
-                {getFieldError('trackId') && (
-                  <Alert variant='destructive' className='mt-4'>
-                    <AlertDescription>
-                      {getFieldError('trackId')}
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Tools Selection - Show when track is selected */}
-                {formData.trackId && (
-                  <div className='space-y-4'>
-                    <div className='text-center'>
-                      <h3 className='text-xl font-semibold text-gray-900 mb-2'>
-                        Tools & Technologies{' '}
-                        <span className='required-asterisk'>*</span>
-                      </h3>
-                      <p className='text-gray-600'>
-                        Select at least one tool you have experience with or are
-                        interested in learning
-                      </p>
-                    </div>
-
-                    <div className='space-y-4'>
-                      <div className='flex flex-wrap gap-2'>
-                        {selectedTrackTools.map((tool) => (
-                          <button
-                            key={tool}
-                            type='button'
-                            onClick={() => {
-                              if (formData.tools.includes(tool)) {
-                                removeTool(tool);
-                              } else {
-                                addTool(tool);
-                              }
-                            }}
-                            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                              formData.tools.includes(tool)
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                          >
-                            {tool}
-                          </button>
-                        ))}
-                      </div>
-
-                      {formData.tools.length > 0 && (
-                        <div className='mt-4'>
-                          <p className='text-sm text-gray-600 mb-2'>
-                            Selected tools:
-                          </p>
-                          <div className='flex flex-wrap gap-2'>
-                            {formData.tools.map((tool) => (
-                              <Badge
-                                key={tool}
-                                variant='secondary'
-                                className='flex items-center gap-1'
-                              >
-                                {tool}
-                                <button
-                                  type='button'
-                                  onClick={() => removeTool(tool)}
-                                  className='ml-1 text-gray-500 hover:text-red-500'
-                                >
-                                  ×
-                                </button>
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Tools Selection Error */}
-                      {getFieldError('tools') && (
-                        <p className='text-sm text-red-600 mt-2'>
-                          {getFieldError('tools')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Background & Experience Step */}
-            {currentStep === 'background' && (
-              <div className='space-y-6'>
-                <div className='text-center mb-8'>
-                  <CardTitle className='text-3xl mb-2'>
-                    Experience & Background
-                  </CardTitle>
-                  <CardDescription className='text-lg'>
-                    Tell us about your experience and goals
-                  </CardDescription>
-                </div>
-
-                {/* Years of Experience */}
-                <div className='space-y-2'>
+                <div>
                   <Label htmlFor='yearsOfExperience'>
-                    How many years of experience do you have in{' '}
-                    {tracks.find((t) => t.trackId === formData.trackId)?.name ||
-                      'this field'}
-                    ? <span className='required-asterisk'>*</span>
+                    Years of Professional Experience *
                   </Label>
                   <Select
+                    value={formData.yearsOfExperience}
                     onValueChange={(value) =>
-                      handleSelectChangeWithValidation(
-                        'yearsOfExperience',
-                        value
-                      )
+                      setFormData((prev) => ({
+                        ...prev,
+                        yearsOfExperience: value,
+                      }))
                     }
                   >
                     <SelectTrigger
                       className={
-                        getFieldError('yearsOfExperience')
-                          ? 'border-red-500 focus:border-red-500'
-                          : ''
+                        errors.yearsOfExperience ? 'border-red-500' : ''
                       }
                     >
-                      <SelectValue placeholder='Select your experience level' />
+                      <SelectValue placeholder='Select experience level' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='less-than-1'>
-                        Less than 1 year
+                      <SelectItem value='0'>
+                        No professional experience
                       </SelectItem>
+                      <SelectItem value='1'>Less than 1 year</SelectItem>
                       <SelectItem value='1-2'>1-2 years</SelectItem>
-                      <SelectItem value='2-3'>2-3 years</SelectItem>
-                      <SelectItem value='above-3'>Above 3 years</SelectItem>
+                      <SelectItem value='3-5'>3-5 years</SelectItem>
+                      <SelectItem value='5+'>5+ years</SelectItem>
                     </SelectContent>
                   </Select>
-                  {getFieldError('yearsOfExperience') && (
-                    <p className='text-sm text-red-600'>
-                      {getFieldError('yearsOfExperience')}
+                  {errors.yearsOfExperience && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.yearsOfExperience}
                     </p>
                   )}
                 </div>
 
-                {/* GitHub Link for Programming Tracks */}
-                {[
-                  'frontend-development',
-                  'backend-development',
-                  'fullstack-development',
-                  'mobile-development',
-                ].includes(formData.trackId) && (
-                  <div className='space-y-2'>
-                    <Label htmlFor='githubLink'>GitHub Profile Link *</Label>
-                    <Input
-                      id='githubLink'
-                      name='githubLink'
-                      type='url'
-                      value={formData.githubLink}
-                      onChange={handleInputChangeWithValidation}
-                      placeholder='https://github.com/yourusername'
-                      required
-                      className={
-                        getFieldError('githubLink')
-                          ? 'border-red-500 focus:border-red-500'
-                          : formData.githubLink &&
-                            validateGitHubUrl(formData.githubLink)
-                          ? 'border-green-500 focus:border-green-500'
-                          : ''
-                      }
-                    />
-                    {getFieldError('githubLink') && (
-                      <p className='text-sm text-red-600'>
-                        {getFieldError('githubLink')}
-                      </p>
-                    )}
-                  </div>
-                )}
+                <div>
+                  <Label htmlFor='githubLink'>GitHub Profile (Optional)</Label>
+                  <Input
+                    id='githubLink'
+                    value={formData.githubLink}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        githubLink: e.target.value,
+                      }))
+                    }
+                    placeholder='https://github.com/yourusername'
+                  />
+                </div>
 
-                {/* Portfolio Link */}
-                <div className='space-y-2'>
+                <div>
                   <Label htmlFor='portfolioLink'>
-                    {[
-                      'frontend-development',
-                      'backend-development',
-                      'fullstack-development',
-                      'mobile-development',
-                    ].includes(formData.trackId)
-                      ? 'Portfolio/Project Link *'
-                      : 'Portfolio Link *'}
+                    Portfolio Website (Optional)
                   </Label>
                   <Input
                     id='portfolioLink'
-                    name='portfolioLink'
-                    type='url'
                     value={formData.portfolioLink}
-                    onChange={handleInputChangeWithValidation}
-                    placeholder={
-                      [
-                        'frontend-development',
-                        'backend-development',
-                        'fullstack-development',
-                        'mobile-development',
-                      ].includes(formData.trackId)
-                        ? 'https://yourproject.com or https://github.com/username/project'
-                        : 'https://yourportfolio.com'
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        portfolioLink: e.target.value,
+                      }))
                     }
-                    required
-                    className={
-                      getFieldError('portfolioLink')
-                        ? 'border-red-500 focus:border-red-500'
-                        : formData.portfolioLink &&
-                          validateUrl(formData.portfolioLink)
-                        ? 'border-green-500 focus:border-green-500'
-                        : ''
-                    }
+                    placeholder='https://yourportfolio.com'
                   />
-                  {getFieldError('portfolioLink') && (
-                    <p className='text-sm text-red-600'>
-                      {getFieldError('portfolioLink')}
-                    </p>
-                  )}
                 </div>
+              </div>
+            )}
 
-                {/* Career Goals */}
-                <div className='space-y-2'>
-                  <Label htmlFor='careerGoals'>
-                    What are your career goals in the next two years? *
-                  </Label>
-                  <Textarea
-                    id='careerGoals'
-                    name='careerGoals'
-                    value={formData.careerGoals}
-                    onChange={handleInputChangeWithValidation}
-                    placeholder='Describe your career aspirations and what you hope to achieve in the next 2 years...'
-                    rows={4}
-                    required
-                    maxLength={500}
-                    className={
-                      getFieldError('careerGoals')
-                        ? 'border-red-500 focus:border-red-500'
-                        : ''
-                    }
-                  />
-                  {getFieldError('careerGoals') && (
-                    <p className='text-sm text-red-600'>
-                      {getFieldError('careerGoals')}
-                    </p>
-                  )}
-                  <p
-                    className={`text-xs ${
-                      formData.careerGoals.length > 450
-                        ? 'text-orange-500'
-                        : 'text-gray-500'
-                    }`}
-                  >
-                    {formData.careerGoals.length}/500 characters
+            {currentStep === 3 && (
+              <div className='space-y-6'>
+                <div className='text-center mb-6'>
+                  <h2 className='text-xl font-semibold'>Track & Skills</h2>
+                  <p className='text-gray-600'>
+                    Choose your specialization and current skills
                   </p>
                 </div>
 
-                {/* Weekly Commitment */}
-                <div className='space-y-2'>
+                <div>
+                  <Label htmlFor='track'>Select Track *</Label>
+                  <div className='grid grid-cols-1 gap-4 mt-3'>
+                    {availableTracks.map((track) => (
+                      <Card
+                        key={track._id}
+                        className={`cursor-pointer transition-all ${
+                          formData.track === track._id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'hover:border-gray-300'
+                        }`}
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, track: track._id }))
+                        }
+                      >
+                        <CardContent className='p-4'>
+                          <div className='flex items-center justify-between'>
+                            <div className='flex items-center gap-3'>
+                              <div
+                                className='w-4 h-4 rounded-full border-2 flex items-center justify-center'
+                                style={{
+                                  borderColor:
+                                    formData.track === track._id
+                                      ? '#3b82f6'
+                                      : '#d1d5db',
+                                  backgroundColor:
+                                    formData.track === track._id
+                                      ? '#3b82f6'
+                                      : 'transparent',
+                                }}
+                              >
+                                {formData.track === track._id && (
+                                  <div className='w-2 h-2 bg-white rounded-full' />
+                                )}
+                              </div>
+                              <div>
+                                <h3 className='font-medium'>{track.name}</h3>
+                                <p className='text-sm text-gray-600'>
+                                  {track.description}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge
+                              variant='outline'
+                              style={{ backgroundColor: track.color }}
+                            >
+                              {track.slug}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  {errors.track && (
+                    <p className='text-red-500 text-sm mt-1'>{errors.track}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label>Technical Skills & Tools *</Label>
+                  <p className='text-sm text-gray-600 mb-3'>
+                    Select all tools and technologies you have experience with:
+                  </p>
+                  <div className='grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto border rounded-lg p-4'>
+                    {toolOptions.map((tool) => (
+                      <div key={tool} className='flex items-center space-x-2'>
+                        <Checkbox
+                          id={tool}
+                          checked={formData.tools.includes(tool)}
+                          onCheckedChange={() => handleToolToggle(tool)}
+                        />
+                        <Label htmlFor={tool} className='text-sm'>
+                          {tool}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.tools && (
+                    <p className='text-red-500 text-sm mt-1'>{errors.tools}</p>
+                  )}
+                  <p className='text-sm text-gray-500 mt-2'>
+                    Selected: {formData.tools.length} tools
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 4 && (
+              <div className='space-y-6'>
+                <div className='text-center mb-6'>
+                  <h2 className='text-xl font-semibold'>Goals & Motivation</h2>
+                  <p className='text-gray-600'>
+                    Tell us about your aspirations and commitment
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor='careerGoals'>Career Goals *</Label>
+                  <Textarea
+                    id='careerGoals'
+                    value={formData.careerGoals}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        careerGoals: e.target.value,
+                      }))
+                    }
+                    placeholder='Describe your career goals and how this program will help you achieve them...'
+                    className={errors.careerGoals ? 'border-red-500' : ''}
+                    rows={4}
+                  />
+                  {errors.careerGoals && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.careerGoals}
+                    </p>
+                  )}
+                </div>
+
+                <div>
                   <Label htmlFor='weeklyCommitment'>
-                    Are you able to commit at least 40 hours per week to
-                    participate fully in the fellowship? *
+                    Weekly Time Commitment *
                   </Label>
                   <Select
+                    value={formData.weeklyCommitment}
                     onValueChange={(value) =>
-                      handleSelectChangeWithValidation(
-                        'weeklyCommitment',
-                        value
-                      )
+                      setFormData((prev) => ({
+                        ...prev,
+                        weeklyCommitment: value,
+                      }))
                     }
                   >
                     <SelectTrigger
                       className={
-                        getFieldError('weeklyCommitment')
-                          ? 'border-red-500 focus:border-red-500'
-                          : ''
+                        errors.weeklyCommitment ? 'border-red-500' : ''
                       }
                     >
-                      <SelectValue placeholder='Select your commitment level' />
+                      <SelectValue placeholder='How many hours per week can you commit?' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='yes'>Yes</SelectItem>
-                      <SelectItem value='no'>No</SelectItem>
+                      <SelectItem value='10-15'>
+                        10-15 hours per week
+                      </SelectItem>
+                      <SelectItem value='15-20'>
+                        15-20 hours per week
+                      </SelectItem>
+                      <SelectItem value='20-25'>
+                        20-25 hours per week
+                      </SelectItem>
+                      <SelectItem value='25+'>25+ hours per week</SelectItem>
                     </SelectContent>
                   </Select>
-                  {getFieldError('weeklyCommitment') && (
-                    <p className='text-sm text-red-600'>
-                      {getFieldError('weeklyCommitment')}
+                  {errors.weeklyCommitment && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.weeklyCommitment}
                     </p>
                   )}
                 </div>
 
-                {/* Referral Source */}
-                <div className='space-y-2'>
+                <div>
                   <Label htmlFor='referralSource'>
                     How did you hear about us? *
                   </Label>
                   <Select
-                    onValueChange={(value) => {
-                      handleSelectChangeWithValidation('referralSource', value);
-                      if (value !== 'other') {
-                        setFormData((prev) => ({
-                          ...prev,
-                          referralSourceOther: '',
-                        }));
-                      }
-                    }}
+                    value={formData.referralSource}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        referralSource: value,
+                      }))
+                    }
                   >
                     <SelectTrigger
-                      className={
-                        getFieldError('referralSource')
-                          ? 'border-red-500 focus:border-red-500'
-                          : ''
-                      }
+                      className={errors.referralSource ? 'border-red-500' : ''}
                     >
-                      <SelectValue placeholder='Select how you heard about us' />
+                      <SelectValue placeholder='Select referral source' />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='linkedin'>LinkedIn</SelectItem>
-                      <SelectItem value='twitter'>Twitter</SelectItem>
-                      <SelectItem value='instagram'>Instagram</SelectItem>
-                      <SelectItem value='facebook'>Facebook</SelectItem>
-                      <SelectItem value='friend-referral'>
-                        Friend Referral
-                      </SelectItem>
-                      <SelectItem value='google-search'>
-                        Google Search
-                      </SelectItem>
-                      <SelectItem value='job-board'>Job Board</SelectItem>
-                      <SelectItem value='university'>
-                        University/School
-                      </SelectItem>
-                      <SelectItem value='other'>Other</SelectItem>
+                      {referralSources.map((source) => (
+                        <SelectItem key={source} value={source}>
+                          {source}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  {getFieldError('referralSource') && (
-                    <p className='text-sm text-red-600'>
-                      {getFieldError('referralSource')}
+                  {errors.referralSource && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.referralSource}
                     </p>
                   )}
                 </div>
 
-                {/* Other Referral Source */}
-                {formData.referralSource === 'other' && (
-                  <div className='space-y-2'>
+                {formData.referralSource === 'Other' && (
+                  <div>
                     <Label htmlFor='referralSourceOther'>
-                      Please specify how you heard about us *
+                      Please specify *
                     </Label>
                     <Input
                       id='referralSourceOther'
-                      name='referralSourceOther'
                       value={formData.referralSourceOther}
-                      onChange={handleInputChangeWithValidation}
-                      placeholder='Please specify...'
-                      required
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          referralSourceOther: e.target.value,
+                        }))
+                      }
+                      placeholder='Please specify how you heard about us'
                       className={
-                        getFieldError('referralSourceOther')
-                          ? 'border-red-500 focus:border-red-500'
-                          : ''
+                        errors.referralSourceOther ? 'border-red-500' : ''
                       }
                     />
-                    {getFieldError('referralSourceOther') && (
-                      <p className='text-sm text-red-600'>
-                        {getFieldError('referralSourceOther')}
+                    {errors.referralSourceOther && (
+                      <p className='text-red-500 text-sm mt-1'>
+                        {errors.referralSourceOther}
                       </p>
                     )}
                   </div>
                 )}
 
-                {/* CV Upload */}
-                <div className='space-y-2'>
+                <div>
                   <Label htmlFor='cv'>Upload CV/Resume *</Label>
-                  <Input
-                    id='cv'
-                    type='file'
-                    onChange={handleFileChange}
-                    accept='.pdf,.doc,.docx'
-                    required
-                    className='file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100'
-                  />
-                  {cvFile && (
-                    <p className='text-sm text-green-600'>
-                      Selected: {cvFile.name} (
-                      {(cvFile.size / 1024 / 1024).toFixed(2)} MB)
-                    </p>
-                  )}
-                  <p className='text-xs text-gray-500'>
-                    Supported formats: PDF, Word documents. Max size: 5MB
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Final Review Step */}
-            {currentStep === 'final-review' && (
-              <div className='space-y-6'>
-                <div className='text-center mb-8'>
-                  <CardTitle className='text-3xl mb-2'>
-                    Review Your Application
-                  </CardTitle>
-                  <CardDescription className='text-lg'>
-                    Please review all information before submitting
-                  </CardDescription>
-                </div>
-
-                <div className='space-y-6'>
-                  {/* Personal Information */}
-                  <div className='bg-gray-50 rounded-lg p-6'>
-                    <h3 className='text-lg font-semibold border-b pb-2 mb-4'>
-                      Personal Information
-                    </h3>
-                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm'>
-                      <p>
-                        <span className='font-medium'>Name:</span>{' '}
-                        {formData.firstName} {formData.lastName}
-                      </p>
-                      <p>
-                        <span className='font-medium'>Email:</span>{' '}
-                        {formData.email}
-                      </p>
-                      <p>
-                        <span className='font-medium'>Phone:</span>{' '}
-                        {formData.phoneNumber}
-                      </p>
-                      <p className='md:col-span-2'>
-                        <span className='font-medium'>Education:</span>{' '}
-                        {formData.educationalBackground}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Track Selection */}
-                  <div className='bg-gray-50 rounded-lg p-6'>
-                    <h3 className='text-lg font-semibold border-b pb-2 mb-4'>
-                      Selected Track
-                    </h3>
-                    <p className='text-sm'>
-                      <span className='font-medium'>Track:</span>{' '}
-                      {tracks.find((t) => t.trackId === formData.trackId)?.name}
-                    </p>
-                    <p className='text-sm mt-2'>
-                      <span className='font-medium'>Cohort:</span>{' '}
-                      {activeCohort?.name}
-                    </p>
-                  </div>
-
-                  {/* Experience & Background */}
-                  <div className='bg-gray-50 rounded-lg p-6'>
-                    <h3 className='text-lg font-semibold border-b pb-2 mb-4'>
-                      Experience & Background
-                    </h3>
-                    <div className='space-y-3 text-sm'>
-                      <p>
-                        <span className='font-medium'>
-                          Years of Experience:
-                        </span>{' '}
-                        {formData.yearsOfExperience}
-                      </p>
-                      {formData.githubLink && (
-                        <p>
-                          <span className='font-medium'>GitHub:</span>{' '}
-                          <a
-                            href={formData.githubLink}
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            className='text-blue-600 hover:underline'
-                          >
-                            {formData.githubLink}
-                          </a>
-                        </p>
-                      )}
-                      <p>
-                        <span className='font-medium'>Portfolio/Project:</span>{' '}
-                        <a
-                          href={formData.portfolioLink}
-                          target='_blank'
-                          rel='noopener noreferrer'
-                          className='text-blue-600 hover:underline'
-                        >
-                          {formData.portfolioLink}
-                        </a>
-                      </p>
-                      <p>
-                        <span className='font-medium'>Weekly Commitment:</span>{' '}
-                        {formData.weeklyCommitment}
-                      </p>
-                      <p>
-                        <span className='font-medium'>
-                          How you heard about us:
-                        </span>{' '}
-                        {formData.referralSource === 'other' &&
-                        formData.referralSourceOther
-                          ? `Other (${formData.referralSourceOther})`
-                          : formData.referralSource}
-                      </p>
-                      <p>
-                        <span className='font-medium'>CV:</span> {cvFile?.name}
-                      </p>
-                      <div>
-                        <span className='font-medium'>
-                          Career Goals (Next 2 Years):
-                        </span>
-                        <p className='mt-1 text-gray-700 bg-white p-3 rounded border'>
-                          {formData.careerGoals}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className='pt-6'>
-                  <Button
-                    onClick={handleSubmit}
-                    className='w-full py-3 text-lg'
-                    disabled={loading}
-                    size='lg'
-                  >
-                    {loading ? (
-                      <>
-                        <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
-                        Submitting Application...
-                      </>
-                    ) : (
-                      'Submit Application'
+                  <div className='mt-2'>
+                    <Input
+                      id='cv'
+                      type='file'
+                      accept='.pdf,.doc,.docx'
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 5 * 1024 * 1024) {
+                            // 5MB limit
+                            toast.error('File size must be less than 5MB');
+                            return;
+                          }
+                          setSelectedFile(file);
+                        }
+                      }}
+                      className={errors.cv ? 'border-red-500' : ''}
+                    />
+                    {errors.cv && (
+                      <p className='text-red-500 text-sm mt-1'>{errors.cv}</p>
                     )}
-                  </Button>
-                  <p className='text-xs text-gray-500 text-center mt-2'>
-                    By submitting this application, you agree to our terms and
-                    conditions
-                  </p>
+                    <p className='text-sm text-gray-500 mt-1'>
+                      Accepted formats: PDF, DOC, DOCX (Max size: 5MB)
+                    </p>
+                    {selectedFile && (
+                      <p className='text-sm text-green-600 mt-1'>
+                        ✓ {selectedFile.name} selected
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Navigation Buttons */}
-            {currentStep !== 'final-review' && (
-              <div className='flex justify-between pt-8 border-t'>
-                <Button
-                  type='button'
-                  variant='outline'
-                  onClick={prevStep}
-                  disabled={currentStep === 'about'}
-                  className='flex items-center'
-                >
-                  <ChevronLeft className='h-4 w-4 mr-1' />
-                  Previous
-                </Button>
+            <div className='flex justify-between pt-6 border-t'>
+              <Button
+                variant='outline'
+                onClick={handlePrevious}
+                disabled={currentStep === 1}
+                className='flex items-center gap-2'
+              >
+                <ChevronLeft className='h-4 w-4' />
+                Previous
+              </Button>
 
+              {currentStep < 4 ? (
                 <Button
-                  type='button'
-                  onClick={nextStep}
-                  disabled={!isStepValid()}
-                  className='flex items-center'
+                  onClick={handleNext}
+                  className='flex items-center gap-2'
                 >
                   Next
-                  <ChevronRight className='h-4 w-4 ml-1' />
+                  <ChevronRight className='h-4 w-4' />
                 </Button>
-              </div>
-            )}
-
-            {currentStep === 'final-review' && (
-              <div className='flex justify-between pt-8 border-t'>
+              ) : (
                 <Button
-                  type='button'
-                  variant='outline'
-                  onClick={prevStep}
-                  className='flex items-center'
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className='flex items-center gap-2'
                 >
-                  <ChevronLeft className='h-4 w-4 mr-1' />
-                  Previous
+                  {submitting ? (
+                    <>
+                      <Loader2 className='h-4 w-4 animate-spin' />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className='h-4 w-4' />
+                      Submit Application
+                    </>
+                  )}
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
+
+        {/* Selected Track Summary */}
+        {currentStep === 4 && getSelectedTrack() && (
+          <Card className='max-w-2xl mx-auto mt-6'>
+            <CardHeader>
+              <CardTitle className='flex items-center gap-2'>
+                <Target className='h-5 w-5' />
+                Application Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className='space-y-4'>
+                <div>
+                  <h4 className='font-medium text-gray-900'>Selected Track</h4>
+                  <div className='flex items-center gap-2 mt-1'>
+                    <Badge
+                      style={{ backgroundColor: getSelectedTrack()?.color }}
+                    >
+                      {getSelectedTrack()?.name}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <h4 className='font-medium text-gray-900'>
+                    Technical Skills
+                  </h4>
+                  <div className='flex flex-wrap gap-1 mt-1'>
+                    {formData.tools.slice(0, 10).map((tool) => (
+                      <Badge key={tool} variant='outline' className='text-xs'>
+                        {tool}
+                      </Badge>
+                    ))}
+                    {formData.tools.length > 10 && (
+                      <Badge variant='outline' className='text-xs'>
+                        +{formData.tools.length - 10} more
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h4 className='font-medium text-gray-900'>Time Commitment</h4>
+                  <p className='text-sm text-gray-600'>
+                    {formData.weeklyCommitment}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

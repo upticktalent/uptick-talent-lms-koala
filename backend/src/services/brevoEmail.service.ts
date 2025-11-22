@@ -563,6 +563,29 @@ class BrevoEmailService {
     });
   }
 
+  async sendPasswordResetEmail(
+    userEmail: string,
+    userName: string,
+    newPassword: string,
+    userId?: string,
+  ): Promise<void> {
+    await this.sendTemplatedEmail({
+      templateType: "password_reset",
+      recipient: {
+        email: userEmail,
+        name: userName,
+        id: userId,
+        type: "user",
+      },
+      variables: {
+        temporaryPassword: newPassword,
+      },
+      metadata: {
+        userId,
+      },
+    });
+  }
+
   // ==================== INTERVIEW EMAIL METHODS ====================
 
   async sendInterviewScheduledConfirmation(

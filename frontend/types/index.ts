@@ -1,36 +1,67 @@
+export interface ICohortAssignment {
+  cohort: string;
+  tracks: string[];
+}
+
 export interface IUser {
   _id: string;
   firstName: string;
   lastName: string;
   email: string;
-  role: 'admin' | 'mentor' | 'student';
-  profilePicture?: string;
+  phoneNumber: string;
+  gender: 'male' | 'female';
+  country: string;
+  state: string;
+  role: 'applicant' | 'student' | 'mentor' | 'admin';
+
+  // For mentors: tracks they can review
+  assignedTracks?: string[] | ITrack[];
+
+  // For students: current cohort and track they're enrolled in
+  currentTrack?: string | ITrack;
+  currentCohort?: string;
+
+  // Legacy fields for backward compatibility
+  studentCohort?: string;
+  studentTrack?: string;
+  mentorAssignments?: ICohortAssignment[];
+
   isActive: boolean;
+  isPasswordDefault: boolean;
+  createdBy?: string;
+  lastLogin?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface IApplicant {
+export interface IApplication {
   _id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  education: string;
-  experience: string;
-  motivation: string;
-  status:
-    | 'pending'
-    | 'shortlisted'
-    | 'assessment_submitted'
-    | 'under_review'
-    | 'interview_scheduled'
-    | 'accepted'
-    | 'rejected';
-  preferredTrack?: string;
-  resumeUrl?: string;
-  portfolioUrl?: string;
+  applicant: string | IUser;
+  cohort: string | ICohort;
+  track: string | ITrack;
+  cvUrl: string;
+  tools: string[];
+  status: 'pending' | 'under-review' | 'accepted' | 'rejected' | 'shortlisted';
+  reviewedBy?: string | IUser;
+  reviewedAt?: string;
+  reviewNotes?: string;
+  rejectionReason?: string;
+
+  // Enhanced application fields
+  educationalBackground: string;
+  yearsOfExperience: string;
+  githubLink?: string;
+  portfolioLink?: string;
+  careerGoals: string;
+  weeklyCommitment: string;
+  referralSource: string;
+  referralSourceOther?: string;
+
+  // Legacy fields for backward compatibility
+  motivation?: string;
+  educationalQualification?: string;
+
+  submittedAt: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -92,19 +123,27 @@ export interface IResource {
   description?: string;
 }
 
+export interface ICohortTrack {
+  track: string | ITrack;
+  mentors: string[] | IUser[];
+  maxStudents?: number;
+  currentStudents: number;
+}
+
 export interface ICohort {
   _id: string;
   name: string;
-  description?: string;
+  cohortNumber: string;
+  description: string;
   startDate: string;
   endDate: string;
-  isActive: boolean;
-  tracks: ITrack[];
-  students: IUser[];
-  cohortNumber: string | number;
+  applicationDeadline: string;
   maxStudents: number;
   currentStudents: number;
-  status: string;
+  tracks: ICohortTrack[];
+  status: 'upcoming' | 'active' | 'completed' | 'cancelled';
+  isAcceptingApplications: boolean;
+  isCurrentlyActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -218,12 +257,167 @@ export interface ApplicationForm {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
-  address: string;
-  education: string;
-  experience: string;
-  motivation: string;
-  preferredTrack: string;
-  resume?: File;
-  portfolio?: string;
+  phoneNumber: string;
+  gender: 'male' | 'female';
+  country: string;
+  state: string;
+  educationalBackground: string;
+  yearsOfExperience: string;
+  tools: string[];
+  githubLink?: string;
+  portfolioLink?: string;
+  careerGoals: string;
+  weeklyCommitment: string;
+  referralSource: string;
+  referralSourceOther?: string;
+  track: string;
+  cv?: File;
+}
+
+// LMS Types for Streams and Tasks
+export interface IStream {
+  _id: string;
+  cohort: string | ICohort;
+  track: string | ITrack;
+  title: string;
+  content: string;
+  type: 'announcement' | 'lesson' | 'update';
+  createdBy: string | IUser;
+  isPublished: boolean;
+  scheduledFor?: string;
+  attachments: IStreamAttachment[];
+  reactions: IStreamReaction[];
+  comments: IStreamComment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IStreamAttachment {
+  _id: string;
+  title: string;
+  url: string;
+  type: 'link' | 'file' | 'video' | 'image';
+  size?: number;
+  uploadedAt: string;
+}
+
+export interface IStreamReaction {
+  _id: string;
+  user: string | IUser;
+  type: 'like' | 'love' | 'helpful' | 'confused';
+  createdAt: string;
+}
+
+export interface IStreamComment {
+  _id: string;
+  user: string | IUser;
+  content: string;
+  replies: IStreamCommentReply[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IStreamCommentReply {
+  _id: string;
+  user: string | IUser;
+  content: string;
+  createdAt: string;
+}
+
+export interface ITask {
+  _id: string;
+  cohort: string | ICohort;
+  track: string | ITrack;
+  title: string;
+  description: string;
+  type: 'assignment' | 'project' | 'quiz' | 'reading';
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimatedHours: number;
+  maxScore: number;
+  dueDate: string;
+  createdBy: string | IUser;
+  requirements: string[];
+  resources: ITaskResource[];
+  submissions: ITaskSubmission[];
+  isPublished: boolean;
+  allowLateSubmissions: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ITaskResource {
+  _id: string;
+  title: string;
+  description?: string;
+  type: 'link' | 'file' | 'video' | 'reading';
+  url: string;
+  isRequired: boolean;
+}
+
+export interface ITaskSubmission {
+  _id: string;
+  task: string | ITask;
+  student: string | IUser;
+  content?: string;
+  attachments: ITaskSubmissionAttachment[];
+  status: 'draft' | 'submitted' | 'graded' | 'returned';
+  score?: number;
+  maxScore: number;
+  feedback?: string;
+  gradedBy?: string | IUser;
+  submittedAt?: string;
+  gradedAt?: string;
+  isLate: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ITaskSubmissionAttachment {
+  _id: string;
+  filename: string;
+  originalName: string;
+  url: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+}
+
+// Material Types
+export interface IMaterial {
+  _id: string;
+  cohort: string | ICohort;
+  track: string | ITrack;
+  title: string;
+  description?: string;
+  type: 'document' | 'video' | 'link' | 'slides' | 'book' | 'article';
+  url: string;
+  category: 'lesson' | 'resource' | 'reference' | 'supplementary';
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  estimatedReadTime?: number;
+  isRequired: boolean;
+  isPublished: boolean;
+  order: number;
+  tags: string[];
+  accessCount: number;
+  createdBy: string | IUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Interview Types
+export interface IInterviewSlot {
+  _id: string;
+  cohort: string | ICohort;
+  track: string | ITrack;
+  mentor: string | IUser;
+  date: string;
+  startTime: string;
+  endTime: string;
+  isBooked: boolean;
+  application?: string | IApplication;
+  meetingLink?: string;
+  notes?: string;
+  status: 'available' | 'booked' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
 }

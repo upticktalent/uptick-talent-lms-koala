@@ -328,6 +328,8 @@ export const reviewApplication = asyncHandler(
         user.password = hashedPassword;
         user.role = "student";
         user.isPasswordDefault = true;
+        user.currentTrack = application.track._id;
+        user.currentCohort = (application.cohort as any).cohortNumber;
         await user.save();
 
         // Send acceptance email with credentials
@@ -338,10 +340,22 @@ export const reviewApplication = asyncHandler(
           tempPassword,
         );
 
-        // Update cohort student count
+        // Update cohort track student count (new cohort-centric approach)
         const cohortDoc = await Cohort.findById(cohort._id);
         if (cohortDoc) {
+          // Update overall cohort student count
           cohortDoc.currentStudents += 1;
+
+          // Update specific track student count within the cohort
+          const trackIndex = cohortDoc.tracks.findIndex(
+            (ct: any) =>
+              ct.track.toString() === application.track._id.toString(),
+          );
+
+          if (trackIndex !== -1) {
+            cohortDoc.tracks[trackIndex].currentStudents += 1;
+          }
+
           await cohortDoc.save();
         }
       }

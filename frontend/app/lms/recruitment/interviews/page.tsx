@@ -10,14 +10,14 @@ import { RoleGuard } from '@/middleware/roleGuard';
 import Link from 'next/link';
 import { Calendar, Clock, Users, MoreHorizontal, Filter } from 'lucide-react';
 import Loader from '@/components/Loader';
-import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
+import { CustomPagination as Pagination } from '@/components/shared/CustomPagination';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -25,14 +25,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function InterviewsPage() {
@@ -84,10 +84,8 @@ export default function InterviewsPage() {
     try {
       const response = await trackService.getActiveTracks();
 
-      if (response.data.success) {
-        // getActiveTracks returns data directly as an array
-        const tracksData = response.data.data;
-        setTracks(Array.isArray(tracksData) ? tracksData : []);
+      if (response.success && response.data) {
+        setTracks(Array.isArray(response.data) ? response.data : []);
       } else {
         setTracks([]);
       }
@@ -126,12 +124,13 @@ export default function InterviewsPage() {
     }
   };
 
-
-
   // Pagination logic
   const totalItems = interviews.length;
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedInterviews = interviews.slice(startIndex, startIndex + pageSize);
+  const paginatedInterviews = interviews.slice(
+    startIndex,
+    startIndex + pageSize
+  );
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -186,7 +185,7 @@ export default function InterviewsPage() {
               onValueChange={(value) => setStatusFilter(value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder='Filter by status' />
               </SelectTrigger>
               <SelectContent>
                 {statuses.map((status) => (
@@ -203,10 +202,10 @@ export default function InterviewsPage() {
               onValueChange={(value) => setTrackFilter(value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Filter by track" />
+                <SelectValue placeholder='Filter by track' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Tracks</SelectItem>
+                <SelectItem value='all'>All Tracks</SelectItem>
                 {Array.isArray(tracks) &&
                   tracks.map((track) => (
                     <SelectItem key={track._id} value={track._id}>
@@ -298,75 +297,109 @@ export default function InterviewsPage() {
         </div>
 
         {/* Interviews Table */}
-        <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
+        <div className='bg-white rounded-xl border-2 border-slate-200 overflow-hidden'>
           {paginatedInterviews.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className='p-8 text-center text-gray-500'>
               <p>No interviews found matching your criteria.</p>
             </div>
           ) : (
             <Table>
-              <TableHeader className="bg-gray-50/50">
+              <TableHeader className='bg-gray-50/50'>
                 <TableRow>
-                  <TableHead className="py-4 font-semibold text-gray-900">Applicant</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Interviewer</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Date & Time</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Status</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900'>
+                    Applicant
+                  </TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900'>
+                    Interviewer
+                  </TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900'>
+                    Date & Time
+                  </TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900'>
+                    Status
+                  </TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900 text-right'>
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedInterviews.map((interview: any) => (
-                  <TableRow key={interview._id} className="hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="py-4">
+                  <TableRow
+                    key={interview._id}
+                    className='hover:bg-gray-50/50 transition-colors'
+                  >
+                    <TableCell className='py-4'>
                       <div>
-                        <div className="font-semibold text-gray-900 capitalize">
-                          {interview.application?.applicant?.firstName} {interview.application?.applicant?.lastName}
+                        <div className='font-semibold text-gray-900 capitalize'>
+                          {interview.application?.applicant?.firstName}{' '}
+                          {interview.application?.applicant?.lastName}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className='text-sm text-gray-500'>
                           Interview #{interview._id.slice(-6)}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="text-sm text-gray-700">
-                        {interview.interviewer?.firstName} {interview.interviewer?.lastName}
+                    <TableCell className='py-4'>
+                      <div className='text-sm text-gray-700'>
+                        {interview.interviewer?.firstName}{' '}
+                        {interview.interviewer?.lastName}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="text-sm text-gray-700">
+                    <TableCell className='py-4'>
+                      <div className='text-sm text-gray-700'>
                         {formatDateTime(`${interview.scheduledDate}`)}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
+                    <TableCell className='py-4'>
                       <Badge className={getStatusColor(interview.status)}>
                         {interview.status.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-4 text-right">
+                    <TableCell className='py-4 text-right'>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button
+                            variant='ghost'
+                            className='h-8 w-8 p-0 cursor-pointer'
+                          >
+                            <span className='sr-only'>Open menu</span>
+                            <MoreHorizontal className='h-4 w-4' />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[160px] bg-white">
+                        <DropdownMenuContent
+                          align='end'
+                          className='w-[160px] bg-white'
+                        >
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <Link href={`/lms/recruitment/interviews/${interview._id}`} className="w-full cursor-pointer">
-                            <DropdownMenuItem className="cursor-pointer">
-                              {interview.status === 'scheduled' ? 'Manage' : 'View Details'}
+                          <Link
+                            href={`/lms/recruitment/interviews/${interview._id}`}
+                            className='w-full cursor-pointer'
+                          >
+                            <DropdownMenuItem className='cursor-pointer'>
+                              {interview.status === 'scheduled'
+                                ? 'Manage'
+                                : 'View Details'}
                             </DropdownMenuItem>
                           </Link>
                           {interview.status === 'scheduled' && (
-                            <Link href={`/lms/recruitment/interviews/${interview._id}/edit`} className="w-full cursor-pointer">
-                              <DropdownMenuItem className="cursor-pointer">
+                            <Link
+                              href={`/lms/recruitment/interviews/${interview._id}/edit`}
+                              className='w-full cursor-pointer'
+                            >
+                              <DropdownMenuItem className='cursor-pointer'>
                                 Edit
                               </DropdownMenuItem>
                             </Link>
                           )}
                           {interview.meetingLink && (
-                            <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className="w-full cursor-pointer">
-                              <DropdownMenuItem className="cursor-pointer">
+                            <a
+                              href={interview.meetingLink}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                              className='w-full cursor-pointer'
+                            >
+                              <DropdownMenuItem className='cursor-pointer'>
                                 Join Meeting
                               </DropdownMenuItem>
                             </a>

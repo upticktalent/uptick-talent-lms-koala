@@ -371,3 +371,230 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
     message: "User deleted successfully",
   });
 });
+
+// Student-specific endpoints
+
+// Get all students with filtering options
+export const getStudents = asyncHandler(async (req: Request, res: Response) => {
+  const { cohortId, trackId, page = 1, limit = 10 } = req.query;
+
+  // Build filter query for students only
+  const filter: any = { role: "student" };
+
+  if (cohortId) {
+    filter.currentCohort = cohortId;
+  }
+
+  if (trackId) {
+    filter.currentTrack = trackId;
+  }
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const students = await User.find(filter)
+    .populate("currentTrack", "name trackId description color")
+    .populate("assignedTracks", "name trackId")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(Number(limit));
+
+  const total = await User.countDocuments(filter);
+
+  res.status(200).json({
+    success: true,
+    message: "Students retrieved successfully",
+    data: {
+      students,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        pages: Math.ceil(total / Number(limit)),
+      },
+    },
+  });
+});
+
+// Get student details by ID
+export const getStudentDetails = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid student ID",
+      });
+    }
+
+    const student = await User.findOne({ _id: id, role: "student" })
+      .populate("currentTrack", "name trackId description color")
+      .populate("assignedTracks", "name trackId")
+      .populate("createdBy", "firstName lastName email");
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Student details retrieved successfully",
+      data: student,
+    });
+  },
+);
+
+// Assign track to student (cohort-centric)
+export const assignTrackToStudent = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { trackId, cohortId } = req.body;
+
+    if (!isValidObjectId(id) || !isValidObjectId(trackId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid student or track ID",
+      });
+    }
+
+    // Validate track exists
+    const track = await Track.findById(trackId);
+    if (!track) {
+      return res.status(404).json({
+        success: false,
+        message: "Track not found",
+      });
+    }
+
+    // Update student with current track and cohort
+    const student = await User.findOneAndUpdate(
+      { _id: id, role: "student" },
+      {
+        currentTrack: trackId,
+        currentCohort: cohortId,
+        $addToSet: { assignedTracks: trackId }, // Add to assigned tracks if not already present
+      },
+      { new: true },
+    )
+      .populate("currentTrack", "name trackId description color")
+      .populate("assignedTracks", "name trackId");
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Track assigned to student successfully",
+      data: student,
+    });
+  },
+);
+
+// Get students by cohort
+export const getStudentsByCohort = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { cohortId } = req.params;
+    const { page = 1, limit = 10, trackId } = req.query;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(cohortId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort ID",
+      });
+    }
+
+    const filter: any = { role: "student", assignedCohort: cohortId };
+
+    if (trackId) {
+      if (!isValidObjectId(trackId as string)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid track ID",
+        });
+      }
+      filter.assignedTracks = trackId;
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const students = await User.find(filter)
+      .populate("assignedTracks", "name trackId")
+      .populate("assignedCohort", "name cohortNumber")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await User.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      message: "Students retrieved successfully",
+      data: {
+        students,
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          pages: Math.ceil(total / Number(limit)),
+        },
+      },
+    });
+  },
+);
+
+// Reset user password (admin only)
+export const resetUserPassword = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const adminId = req.user._id;
+
+    // Validate ObjectId format
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user ID",
+      });
+    }
+
+    // Find the user
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Generate new password
+    const newPassword = generatePassword();
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update user password
+    user.password = hashedPassword;
+    user.isPasswordDefault = true;
+    await user.save();
+
+    // Send password reset email
+    await brevoEmailService.sendPasswordResetEmail(
+      user.email,
+      `${user.firstName} ${user.lastName}`,
+      newPassword
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successfully",
+      data: {
+        generatedPassword: newPassword, // Include in response for admin
+      },
+    });
+  },
+);

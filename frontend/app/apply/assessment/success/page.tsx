@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import {
   Card,
   CardContent,
@@ -12,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 
-export default function AssessmentSuccessPage() {
+function AssessmentSuccessContent() {
   const searchParams = useSearchParams();
   const applicationId = searchParams.get('id');
 
@@ -57,5 +58,24 @@ export default function AssessmentSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AssessmentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className='min-h-screen bg-gray-50 flex items-center justify-center p-4'>
+          <Card className='w-full max-w-md text-center'>
+            <CardContent className='p-8'>
+              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto'></div>
+              <p className='mt-4 text-gray-600'>Loading...</p>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <AssessmentSuccessContent />
+    </Suspense>
   );
 }

@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export interface ICohortTrack {
+  track: mongoose.Types.ObjectId;
+  mentors: mongoose.Types.ObjectId[];
+  maxStudents?: number;
+  currentStudents: number;
+}
+
 export interface ICohort extends Document {
   _id: string;
   name: string;
@@ -10,11 +17,20 @@ export interface ICohort extends Document {
   applicationDeadline: Date;
   maxStudents: number;
   currentStudents: number;
-  tracks: mongoose.Types.ObjectId[];
+  tracks: ICohortTrack[];
   status: "upcoming" | "active" | "completed" | "cancelled";
   isAcceptingApplications: boolean;
+  isCurrentlyActive: boolean;
+  hasTrack(trackId: string): Boolean;
+  getMentorsForTrack(trackId: string): mongoose.Types.ObjectId[];
+  addMentorToTrack(trackId: string, mentorId: string): Promise<ICohort>;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ICohortModel extends mongoose.Model<ICohort> {
+  getCurrentActive(): Promise<ICohort | null>;
+  setCurrentlyActive(cohortId: string): Promise<ICohort | null>;
 }
 
 const CohortSchema = new Schema(
@@ -52,6 +68,7 @@ const CohortSchema = new Schema(
       type: Number,
       required: [true, "Maximum students is required"],
       min: [1, "Maximum students must be at least 1"],
+      default: 500,
     },
     currentStudents: {
       type: Number,
@@ -60,9 +77,26 @@ const CohortSchema = new Schema(
     },
     tracks: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "Track",
-        required: true,
+        track: {
+          type: Schema.Types.ObjectId,
+          ref: "Track",
+          required: true,
+        },
+        mentors: [
+          {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+          },
+        ],
+        maxStudents: {
+          type: Number,
+          min: [1, "Track max students must be at least 1"],
+        },
+        currentStudents: {
+          type: Number,
+          default: 0,
+          min: [0, "Current students cannot be negative"],
+        },
       },
     ],
     status: {
@@ -76,6 +110,10 @@ const CohortSchema = new Schema(
     isAcceptingApplications: {
       type: Boolean,
       default: true,
+    },
+    isCurrentlyActive: {
+      type: Boolean,
+      default: false,
     },
   },
   {
@@ -96,50 +134,101 @@ CohortSchema.pre("save", function (next) {
   next();
 });
 
-// Ensure only one active cohort exists
+// Ensure only one currently active cohort exists
 CohortSchema.pre("save", async function (next) {
-  if (this.status === "active") {
-    // Check if there's already an active cohort (excluding current document)
+  if (this.isCurrentlyActive) {
+    // Check if there's already a currently active cohort (excluding current document)
     const existingActiveCohort = await mongoose.model("Cohort").findOne({
-      status: "active",
+      isCurrentlyActive: true,
       _id: { $ne: this._id },
     });
 
     if (existingActiveCohort) {
-      next(new Error("Only one cohort can be active at a time"));
+      next(new Error("Only one cohort can be currently active at a time"));
       return;
     }
   }
   next();
 });
 
-// Static method to get the current active cohort
-CohortSchema.statics.getCurrentActive = function () {
-  return this.findOne({ status: "active" }).populate(
-    "tracks",
-    "name description",
+// Instance method to check if cohort has a specific track
+CohortSchema.methods.hasTrack = function (trackId: string): Boolean {
+  return this.tracks.some(
+    (cohortTrack: ICohortTrack) => cohortTrack.track.toString() === trackId,
   );
 };
 
-// Static method to activate a cohort (deactivates others)
-CohortSchema.statics.activateCohort = async function (cohortId: string) {
-  // First, set all other cohorts to upcoming/completed based on dates
+// Instance method to get mentors for a specific track
+CohortSchema.methods.getMentorsForTrack = function (
+  trackId: string,
+): mongoose.Types.ObjectId[] {
+  const cohortTrack = this.tracks.find(
+    (ct: ICohortTrack) => ct.track.toString() === trackId,
+  );
+  return cohortTrack ? cohortTrack.mentors : [];
+};
+
+// Instance method to add mentor to a track
+CohortSchema.methods.addMentorToTrack = async function (
+  this: ICohort,
+  trackId: string,
+  mentorId: string,
+): Promise<ICohort> {
+  const trackIndex = this.tracks.findIndex(
+    (ct: ICohortTrack) => ct.track.toString() === trackId,
+  );
+
+  if (trackIndex === -1) {
+    throw new Error("Track not found in cohort");
+  }
+
+  if (
+    !this.tracks[trackIndex].mentors.includes(
+      new mongoose.Types.ObjectId(mentorId),
+    )
+  ) {
+    this.tracks[trackIndex].mentors.push(new mongoose.Types.ObjectId(mentorId));
+    await this.save();
+  }
+
+  return this;
+};
+
+// Static method to get the current active cohort
+CohortSchema.statics.getCurrentActive = function (): Promise<ICohort | null> {
+  return this.findOne({ isCurrentlyActive: true })
+    .populate("tracks.track", "name trackId description color")
+    .populate("tracks.mentors", "firstName lastName email");
+};
+
+// Static method to set a cohort as currently active (deactivates others)
+CohortSchema.statics.setCurrentlyActive = async function (
+  cohortId: string,
+): Promise<ICohort | null> {
+  // First, deactivate all other cohorts
   await this.updateMany(
-    { status: "active", _id: { $ne: cohortId } },
-    { status: "upcoming" },
+    { isCurrentlyActive: true, _id: { $ne: cohortId } },
+    { isCurrentlyActive: false },
   );
 
   // Then activate the specified cohort
   return this.findByIdAndUpdate(
     cohortId,
-    { status: "active" },
+    { isCurrentlyActive: true },
     { new: true },
-  ).populate("tracks", "name description");
+  )
+    .populate("tracks.track", "name trackId description color")
+    .populate("tracks.mentors", "firstName lastName email");
 };
 
 // Index for performance
 CohortSchema.index({ status: 1 });
 CohortSchema.index({ startDate: 1 });
 CohortSchema.index({ isAcceptingApplications: 1 });
+CohortSchema.index({ isCurrentlyActive: 1 });
+CohortSchema.index({ "tracks.track": 1 });
 
-export const Cohort = mongoose.model<ICohort>("Cohort", CohortSchema);
+export const Cohort = mongoose.model<ICohort, ICohortModel>(
+  "Cohort",
+  CohortSchema,
+);

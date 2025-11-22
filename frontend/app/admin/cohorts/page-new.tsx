@@ -90,7 +90,6 @@ export default function CohortsPage() {
   const fetchCohorts = async () => {
     try {
       const response: any = await cohortService.getCohorts();
-      console.log(response.data, 'response');
       if (response.success) {
         setCohorts(response.data.cohorts || []);
       } else {
@@ -105,9 +104,10 @@ export default function CohortsPage() {
 
   const fetchTracks = async () => {
     try {
-      const response: any = await trackService.getActiveTracks();
+      const response: ApiResponse<ITrack[]> =
+        await trackService.getActiveTracks();
       if (response.success) {
-        setTracks(response.data.tracks || []);
+        setTracks(response.data || []);
       }
     } catch (error) {
       console.error('Error fetching tracks:', error);

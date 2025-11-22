@@ -11,17 +11,17 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { applicantService } from '@/services/applicantService';
+import { applicationService } from '@/services/applicationService';
 import { handleApiError } from '@/utils/handleApiError';
 import { formatDate } from '@/utils/formatDate';
-import { IApplicant } from '@/types';
+import { IApplication } from '@/types';
 
 export default function ApplicationStatusPage({
   applicantId,
 }: {
   applicantId: string;
 }) {
-  const [applicant, setApplicant] = useState<IApplicant | null>(null);
+  const [applicant, setApplicant] = useState<IApplication | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -33,10 +33,12 @@ export default function ApplicationStatusPage({
 
   const fetchApplicationStatus = async () => {
     try {
-      const response = await applicantService.getApplicationStatus(
+      const response = await applicationService.getApplicationStatus(
         applicantId!
       );
-      setApplicant(response.data.data);
+      if (response.data) {
+        setApplicant(response.data);
+      }
     } catch (err) {
       setError(handleApiError(err));
     } finally {
@@ -164,9 +166,15 @@ export default function ApplicationStatusPage({
             <div className='flex items-center justify-between mb-4'>
               <div>
                 <h3 className='text-lg font-medium text-gray-900'>
-                  {applicant.firstName} {applicant.lastName}
+                  {typeof applicant.applicant === 'object'
+                    ? `${applicant.applicant.firstName} ${applicant.applicant.lastName}`
+                    : 'Applicant'}
                 </h3>
-                <p className='text-gray-600'>{applicant.email}</p>
+                <p className='text-gray-600'>
+                  {typeof applicant.applicant === 'object'
+                    ? applicant.applicant.email
+                    : ''}
+                </p>
               </div>
               <div
                 className={`px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}
@@ -181,7 +189,9 @@ export default function ApplicationStatusPage({
                   Preferred Track:
                 </span>
                 <span className='ml-2 text-sm text-gray-900 capitalize'>
-                  {applicant.preferredTrack?.replace('-', ' ')}
+                  {typeof applicant.track === 'object'
+                    ? applicant.track.name
+                    : 'Not specified'}
                 </span>
               </div>
               <div>

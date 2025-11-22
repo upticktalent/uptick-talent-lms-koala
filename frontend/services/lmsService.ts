@@ -3,20 +3,24 @@ import apiClient from './apiClient';
 export const lmsService = {
   // Dashboard
   getDashboardStats: async () => {
-    return apiClient.get('/lms/dashboard/stats');
+    const response = await apiClient.get('/users/stats'); // Use existing stats endpoint
+    return response.data;
   },
 
   // Cohorts
   getCohorts: async () => {
-    return apiClient.get('/cohorts');
+    const response = await apiClient.get('/cohorts');
+    return response.data;
   },
 
   getActiveCohort: async () => {
-    return apiClient.get('/lms/cohorts/active');
+    const response = await apiClient.get('/cohorts/current-active');
+    return response.data;
   },
 
   getCohortById: async (id: string) => {
-    return apiClient.get(`/cohorts/${id}`);
+    const response = await apiClient.get(`/cohorts/${id}`);
+    return response.data;
   },
 
   createCohort: async (cohortData: {
@@ -29,27 +33,34 @@ export const lmsService = {
     maxStudents: number;
     description?: string;
   }) => {
-    return apiClient.post('/cohorts/create', cohortData);
+    const response = await apiClient.post('/cohorts', cohortData);
+    return response.data;
   },
 
   setActiveCohort: async (cohortId: string) => {
-    return apiClient.patch(`/lms/cohorts/${cohortId}/activate`);
+    const response = await apiClient.patch(`/cohorts/${cohortId}`, {
+      isActive: true,
+    });
+    return response.data;
   },
-  
-  
-  deleteCohort : async (cohortId: string) => {
-    return apiClient.delete(`/cohorts/${cohortId}`);
+
+  deleteCohort: async (cohortId: string) => {
+    const response = await apiClient.delete(`/cohorts/${cohortId}`);
+    return response.data;
   },
-  
-  
-  updateCohort : async (cohortId: string, cohortData: {
-    name: string;
-    tracks: string[];
-    startDate: string;
-    endDate: string;
-    status: string;
-  }) => {
-    return apiClient.put(`/cohorts/${cohortId}`, cohortData);
+
+  updateCohort: async (
+    cohortId: string,
+    cohortData: {
+      name: string;
+      tracks: string[];
+      startDate: string;
+      endDate: string;
+      status: string;
+    }
+  ) => {
+    const response = await apiClient.put(`/cohorts/${cohortId}`, cohortData);
+    return response.data;
   },
 
   // Students
@@ -59,26 +70,66 @@ export const lmsService = {
     page?: number;
     limit?: number;
   }) => {
-    return apiClient.get('/lms/students', { params });
+    const response = await apiClient.get('/users/students', { params });
+    return response.data;
   },
 
   getStudent: async (studentId: string) => {
-    return apiClient.get(`/lms/students/${studentId}`);
+    const response = await apiClient.get(`/users/students/${studentId}`);
+    return response.data;
   },
 
-  // Announcements
-  getAnnouncements: async (trackId?: string) => {
-    return apiClient.get('/lms/announcements', {
-      params: trackId ? { trackId } : {},
+  getStudentsByCohort: async (
+    cohortId: string,
+    params?: {
+      trackId?: string;
+      page?: number;
+      limit?: number;
+    }
+  ) => {
+    const response = await apiClient.get(`/users/students/cohort/${cohortId}`, {
+      params,
     });
+    return response.data;
+  },
+
+  assignTrackToStudent: async (
+    studentId: string,
+    data: {
+      trackId: string;
+      cohortId: string;
+    }
+  ) => {
+    const response = await apiClient.patch(
+      `/users/students/${studentId}/assign-track`,
+      data
+    );
+    return response.data;
+  },
+
+  // Announcements (using streams with type 'announcement')
+  getAnnouncements: async (cohortId: string, trackId?: string) => {
+    const response = await apiClient.get('/streams', {
+      params: {
+        cohortId,
+        trackId,
+        type: 'announcement',
+      },
+    });
+    return response.data;
   },
 
   createAnnouncement: async (data: {
+    cohortId: string;
+    trackId: string;
     title: string;
     content: string;
-    trackId?: string;
-    priority: 'low' | 'medium' | 'high';
+    priority?: 'low' | 'medium' | 'high';
   }) => {
-    return apiClient.post('/lms/announcements', data);
+    const response = await apiClient.post('/streams', {
+      ...data,
+      type: 'announcement',
+    });
+    return response.data;
   },
 };

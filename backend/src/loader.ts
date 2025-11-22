@@ -46,6 +46,18 @@ const servicesLoader = [
     path: joinUrls(constants.urls.directEmail.entry().path),
     handler: [routers.directEmail],
   },
+  {
+    path: joinUrls(constants.urls.streams.entry().path),
+    handler: [routers.stream],
+  },
+  {
+    path: joinUrls(constants.urls.tasks.entry().path),
+    handler: [routers.task],
+  },
+  {
+    path: joinUrls(constants.urls.materials.entry().path),
+    handler: [routers.material],
+  },
 ];
 
 export const loadServices = (app: Express) => {

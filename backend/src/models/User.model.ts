@@ -12,6 +12,8 @@ export interface IUser extends Document {
   password: string;
   role: "applicant" | "student" | "mentor" | "admin";
   assignedTracks?: mongoose.Types.ObjectId[]; // For mentors - tracks they can review
+  currentTrack?: mongoose.Types.ObjectId; // For students - current enrolled track
+  currentCohort?: string; // For students - current enrolled cohort number
   isActive: boolean;
   isPasswordDefault: boolean;
   createdBy?: mongoose.Types.ObjectId; // Who created this user (for admins/mentors)
@@ -87,6 +89,13 @@ const UserSchema: Schema = new Schema(
         ref: "Track",
       },
     ],
+    currentTrack: {
+      type: Schema.Types.ObjectId,
+      ref: "Track",
+    },
+    currentCohort: {
+      type: String, // Cohort number
+    },
     isActive: {
       type: Boolean,
       default: true,

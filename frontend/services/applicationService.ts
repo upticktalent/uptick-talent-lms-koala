@@ -20,7 +20,8 @@ export const applicationService = {
 
   // Get current active cohort (accepting applications)
   getCurrentActiveCohort: async (): Promise<ApiResponse<any>> => {
-    return apiClient.get('/cohorts/current-active');
+    const response = await apiClient.get('/cohorts/current-active');
+    return response.data;
   },
 
   // Get all applications (admin/mentor)
@@ -121,5 +122,23 @@ export const applicationService = {
       params: cohortId ? { cohortId } : {},
       responseType: 'blob',
     });
+  },
+
+  // Legacy methods for backward compatibility
+  getTracks: async (): Promise<ApiResponse<any[]>> => {
+    return apiClient.get('/tracks/active');
+  },
+
+  updateApplicationStatus: async (
+    applicationId: string,
+    status: string
+  ): Promise<ApiResponse<IApplication>> => {
+    return apiClient.patch(`/applications/${applicationId}/review`, { status });
+  },
+
+  getApplicationStatus: async (
+    applicationId: string
+  ): Promise<ApiResponse<IApplication>> => {
+    return apiClient.get(`/applications/${applicationId}`);
   },
 };

@@ -8,6 +8,9 @@ import track from "./track.routes";
 import user from "./user.routes";
 import emailTemplate from "./emailTemplate.routes";
 import directEmail from "./directEmail.routes";
+import stream from "./stream.routes";
+import task from "./task.routes";
+import material from "./material.routes";
 
 export {
   health,
@@ -20,6 +23,9 @@ export {
   user,
   emailTemplate,
   directEmail,
+  stream,
+  task,
+  material,
 };
 
 export default {
@@ -33,4 +39,7 @@ export default {
   user,
   emailTemplate,
   directEmail,
+  stream,
+  task,
+  material,
 };

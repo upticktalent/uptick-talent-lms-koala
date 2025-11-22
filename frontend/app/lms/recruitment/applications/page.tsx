@@ -1,26 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { applicantService } from "@/services/applicantService";
-import { useFetch } from "@/hooks/useFetch";
-import { formatDate } from "@/utils/formatDate";
-import { RoleGuard } from "@/middleware/roleGuard";
-import Link from "next/link";
-import { Search, Clock, CheckCircle, UserCheck, XCircle, AlertCircle, MoreHorizontal } from "lucide-react";
-import Loader from "@/components/Loader";
-import { CustomPagination as Pagination } from "@/components/shared/CustomPagination";
-import { toast } from "sonner";
+import { useState, useTransition } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { applicationService } from '@/services/applicationService';
+import { useFetch } from '@/hooks/useFetch';
+import { formatDate } from '@/utils/formatDate';
+import { RoleGuard } from '@/middleware/roleGuard';
+import Link from 'next/link';
+import {
+  Search,
+  Clock,
+  CheckCircle,
+  UserCheck,
+  XCircle,
+  AlertCircle,
+  MoreHorizontal,
+} from 'lucide-react';
+import Loader from '@/components/Loader';
+import { CustomPagination as Pagination } from '@/components/shared/CustomPagination';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -28,7 +36,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,11 +44,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
 export default function ApplicationsPage() {
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(5);
   const [isPending, startTransition] = useTransition();
@@ -50,21 +58,21 @@ export default function ApplicationsPage() {
     loading,
     error,
     refetch,
-  } = useFetch(() => applicantService.getApplications());
+  } = useFetch(() => applicationService.getApplications());
 
   const statuses = [
-    { value: "all", label: "All Applications" },
-    { value: "pending", label: "Pending" },
-    { value: "shortlisted", label: "Shortlisted" },
-    { value: "under-review", label: "Under Review" },
-    { value: "accepted", label: "Accepted" },
-    { value: "rejected", label: "Rejected" },
+    { value: 'all', label: 'All Applications' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'shortlisted', label: 'Shortlisted' },
+    { value: 'under-review', label: 'Under Review' },
+    { value: 'accepted', label: 'Accepted' },
+    { value: 'rejected', label: 'Rejected' },
   ];
 
   const filteredApplications =
     applications?.applications?.filter((app: any) => {
       const matchesStatus =
-        statusFilter === "all" || app.status === statusFilter;
+        statusFilter === 'all' || app.status === statusFilter;
       const matchesSearch =
         !searchTerm ||
         `${app.applicant.firstName} ${app.applicant.lastName}`
@@ -85,51 +93,54 @@ export default function ApplicationsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "pending":
-        return "bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]";
-      case "shortlisted":
-        return "bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]";
-      case "assessment_submitted":
-        return "bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]";
-      case "under_review":
-        return "bg-[hsl(var(--accent))]/10 text-[hsl(var(--accent-foreground))]";
-      case "interview_scheduled":
-        return "bg-[hsl(var(--accent))]/10 text-[hsl(var(--accent-foreground))]";
-      case "accepted":
-        return "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]";
-      case "rejected":
-        return "bg-[hsl(var(--danger))]/10 text-[hsl(var(--danger))]";
+      case 'pending':
+        return 'bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))]';
+      case 'shortlisted':
+        return 'bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]';
+      case 'assessment_submitted':
+        return 'bg-[hsl(var(--info))]/10 text-[hsl(var(--info))]';
+      case 'under_review':
+        return 'bg-[hsl(var(--accent))]/10 text-[hsl(var(--accent-foreground))]';
+      case 'interview_scheduled':
+        return 'bg-[hsl(var(--accent))]/10 text-[hsl(var(--accent-foreground))]';
+      case 'accepted':
+        return 'bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]';
+      case 'rejected':
+        return 'bg-[hsl(var(--danger))]/10 text-[hsl(var(--danger))]';
       default:
-        return "bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]";
+        return 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]';
     }
   };
 
   const handleShortlist = async (applicantId: string) => {
     try {
       startTransition(async () => {
-        await applicantService.updateApplicationStatus(
+        await applicationService.updateApplicationStatus(
           applicantId,
-          "shortlisted"
+          'shortlisted'
         );
-        toast.success("Applicant shortlisted successfully");
+        toast.success('Applicant shortlisted successfully');
         refetch();
       });
     } catch (err) {
-      toast.error("Failed to shortlist applicant");
-      console.error("Failed to shortlist applicant:", err);
+      toast.error('Failed to shortlist applicant');
+      console.error('Failed to shortlist applicant:', err);
     }
   };
 
   const handleReject = async (applicantId: string) => {
     try {
       startTransition(async () => {
-        await applicantService.updateApplicationStatus(applicantId, "rejected");
-        toast.success("Applicant rejected successfully");
+        await applicationService.updateApplicationStatus(
+          applicantId,
+          'rejected'
+        );
+        toast.success('Applicant rejected successfully');
         refetch();
       });
     } catch (err) {
-      toast.error("Failed to reject applicant");
-      console.error("Failed to reject applicant:", err);
+      toast.error('Failed to reject applicant');
+      console.error('Failed to reject applicant:', err);
     }
   };
 
@@ -141,41 +152,41 @@ export default function ApplicationsPage() {
 
   if (error) {
     return (
-      <div className="text-center text-red-600 p-4">
+      <div className='text-center text-red-600 p-4'>
         Failed to load applications: {error}
       </div>
     );
   }
 
   return (
-    <RoleGuard allowedRoles={["admin", "mentor"]}>
-      <div className="space-y-6">
+    <RoleGuard allowedRoles={['admin', 'mentor']}>
+      <div className='space-y-6'>
         {/* Header */}
-        <div className="text-center sm:text-left">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+        <div className='text-center sm:text-left'>
+          <h1 className='text-2xl sm:text-3xl font-bold text-gray-900'>
             Applications
           </h1>
-          <p className="text-gray-600 mt-2 text-sm sm:text-base">
+          <p className='text-gray-600 mt-2 text-sm sm:text-base'>
             Review and manage applicant submissions
           </p>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <div className="flex-1 min-w-0 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[hsl(var(--muted-foreground))]" />
+        <div className='flex flex-col sm:flex-row gap-3 sm:gap-4'>
+          <div className='flex-1 min-w-0 relative'>
+            <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[hsl(var(--muted-foreground))]' />
             <Input
-              type="text"
-              placeholder="Search by name or email..."
+              type='text'
+              placeholder='Search by name or email...'
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full pl-10"
+              className='w-full pl-10'
             />
           </div>
-          <div className="w-full sm:w-48 lg:w-64">
+          <div className='w-full sm:w-48 lg:w-64'>
             <Select
               value={statusFilter}
               onValueChange={(value) => {
@@ -184,7 +195,7 @@ export default function ApplicationsPage() {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder='Filter by status' />
               </SelectTrigger>
               <SelectContent>
                 {statuses.map((status) => (
@@ -198,51 +209,51 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4'>
           {statuses.slice(1).map((status) => {
             const count =
               applications?.applications?.filter(
                 (app: any) => app.status === status.value
               ).length || 0;
-            
+
             // Define icon and color for each status
             const getStatusConfig = (value: string) => {
               switch (value) {
-                case "pending":
+                case 'pending':
                   return {
                     icon: Clock,
-                    bgColor: "bg-amber-50",
-                    color: "text-amber-500",
+                    bgColor: 'bg-amber-50',
+                    color: 'text-amber-500',
                   };
-                case "shortlisted":
+                case 'shortlisted':
                   return {
                     icon: UserCheck,
-                    bgColor: "bg-blue-50",
-                    color: "text-blue-500",
+                    bgColor: 'bg-blue-50',
+                    color: 'text-blue-500',
                   };
-                case "under-review":
+                case 'under-review':
                   return {
                     icon: AlertCircle,
-                    bgColor: "bg-purple-50",
-                    color: "text-purple-500",
+                    bgColor: 'bg-purple-50',
+                    color: 'text-purple-500',
                   };
-                case "accepted":
+                case 'accepted':
                   return {
                     icon: CheckCircle,
-                    bgColor: "bg-green-50",
-                    color: "text-green-500",
+                    bgColor: 'bg-green-50',
+                    color: 'text-green-500',
                   };
-                case "rejected":
+                case 'rejected':
                   return {
                     icon: XCircle,
-                    bgColor: "bg-red-50",
-                    color: "text-red-500",
+                    bgColor: 'bg-red-50',
+                    color: 'text-red-500',
                   };
                 default:
                   return {
                     icon: Clock,
-                    bgColor: "bg-gray-50",
-                    color: "text-gray-500",
+                    bgColor: 'bg-gray-50',
+                    color: 'text-gray-500',
                   };
               }
             };
@@ -253,15 +264,13 @@ export default function ApplicationsPage() {
             return (
               <div
                 key={status.value}
-                className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow"
+                className='bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow'
               >
                 <div>
-                  <p className="text-sm font-medium text-slate-500 mb-1">
+                  <p className='text-sm font-medium text-slate-500 mb-1'>
                     {status.label}
                   </p>
-                  <h3 className="text-3xl font-bold text-slate-900">
-                    {count}
-                  </h3>
+                  <h3 className='text-3xl font-bold text-slate-900'>{count}</h3>
                 </div>
                 <div className={`p-3 rounded-full ${config.bgColor}`}>
                   <Icon className={`w-6 h-6 ${config.color}`} />
@@ -272,79 +281,106 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Applications List */}
-        <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden">
+        <div className='bg-white rounded-xl border-2 border-slate-200 overflow-hidden'>
           {paginatedApplications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
+            <div className='p-8 text-center text-gray-500'>
               <p>No applications found matching your criteria.</p>
             </div>
           ) : (
             <Table>
-              <TableHeader className="bg-gray-50/50">
+              <TableHeader className='bg-gray-50/50'>
                 <TableRow>
-                  <TableHead className="py-4 font-semibold text-gray-900">Applicant</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Track</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Status</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Applied</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900'>
+                    Applicant
+                  </TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900'>
+                    Track
+                  </TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900'>
+                    Status
+                  </TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900'>
+                    Applied
+                  </TableHead>
+                  <TableHead className='py-4 font-semibold text-gray-900 text-right'>
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedApplications.map((application: any) => (
-                  <TableRow key={application._id} className="hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="py-4">
+                  <TableRow
+                    key={application._id}
+                    className='hover:bg-gray-50/50 transition-colors'
+                  >
+                    <TableCell className='py-4'>
                       <div>
-                        <div className="font-semibold text-gray-900 capitalize">
-                          {application.applicant.firstName} {application.applicant.lastName}
+                        <div className='font-semibold text-gray-900 capitalize'>
+                          {application.applicant.firstName}{' '}
+                          {application.applicant.lastName}
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className='text-sm text-gray-500'>
                           {application.applicant.email}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="capitalize font-medium text-gray-700">{application.track.name}</div>
+                    <TableCell className='py-4'>
+                      <div className='capitalize font-medium text-gray-700'>
+                        {application.track.name}
+                      </div>
                     </TableCell>
-                    <TableCell className="py-4">
+                    <TableCell className='py-4'>
                       <span
                         className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(
                           application.status
                         )}`}
                       >
-                        {application.status.replace(/_/g, " ").toUpperCase()}
+                        {application.status.replace(/_/g, ' ').toUpperCase()}
                       </span>
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="text-sm text-gray-500">{formatDate(application.createdAt)}</div>
+                    <TableCell className='py-4'>
+                      <div className='text-sm text-gray-500'>
+                        {formatDate(application.createdAt)}
+                      </div>
                     </TableCell>
-                    <TableCell className="py-4 text-right">
+                    <TableCell className='py-4 text-right'>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button
+                            variant='ghost'
+                            className='h-8 w-8 p-0 cursor-pointer'
+                          >
+                            <span className='sr-only'>Open menu</span>
+                            <MoreHorizontal className='h-4 w-4' />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[160px] bg-white">
+                        <DropdownMenuContent
+                          align='end'
+                          className='w-[160px] bg-white'
+                        >
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <Link href={`/lms/recruitment/applications/${application._id}`} className="w-full cursor-pointer">
-                            <DropdownMenuItem className="cursor-pointer">
+                          <Link
+                            href={`/lms/recruitment/applications/${application._id}`}
+                            className='w-full cursor-pointer'
+                          >
+                            <DropdownMenuItem className='cursor-pointer'>
                               View Details
                             </DropdownMenuItem>
                           </Link>
-                          {application.status === "pending" && (
+                          {application.status === 'pending' && (
                             <>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleShortlist(application._id)}
                                 disabled={isPending}
-                                className="cursor-pointer"
+                                className='cursor-pointer'
                               >
                                 Shortlist
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleReject(application._id)}
                                 disabled={isPending}
-                                className="text-red-600 focus:text-red-600 cursor-pointer"
+                                className='text-red-600 focus:text-red-600 cursor-pointer'
                               >
                                 Reject
                               </DropdownMenuItem>
