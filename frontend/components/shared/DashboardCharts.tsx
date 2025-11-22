@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import {
@@ -26,30 +27,38 @@ interface DashboardChartsProps {
 }
 
 export function DashboardCharts({ applications }: DashboardChartsProps) {
-  const applicationStatusData = Object.entries(applications?.reduce((acc: any, app: any) => {
-    const status = app?.status || "Unknown";
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {}) || {}).map(([name, value]) => {
-    const lowerName = name.toLowerCase();
-    let color = "#9CA3AF"; // default gray
-    if (lowerName === 'pending') color = "#EAB308"; // yellow
-    if (lowerName === 'shortlisted') color = "#3B82F6"; // blue
-    if (lowerName === 'rejected') color = "#EF4444"; // red
-    
-    return {
-      name: name.charAt(0).toUpperCase() + name.slice(1),
-      value: value as number,
-      color
-    };
-  }).filter(item => item.value > 0);
+  const applicationStatusData = Object.entries(
+    applications?.reduce((acc: any, app: any) => {
+      const status = app?.status || "Unknown";
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {}) || {}
+  )
+    .map(([name, value]) => {
+      const lowerName = name.toLowerCase();
+      let color = "#9CA3AF";
+      if (lowerName === "pending") color = "#EAB308";
+      if (lowerName === "shortlisted") color = "#3B82F6";
+      if (lowerName === "rejected") color = "#EF4444";
+      if (lowerName === "accepted") color = "#10B981";
+      if (lowerName === "under review") color = "#8B5CF6";
+
+      return {
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value: value as number,
+        color,
+      };
+    })
+    .filter((item) => item.value > 0);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Applications by Status</CardTitle>
-          <CardDescription>Distribution of application statuses</CardDescription>
+          <CardDescription>
+            Distribution of application statuses
+          </CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -81,12 +90,15 @@ export function DashboardCharts({ applications }: DashboardChartsProps) {
         </CardHeader>
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart 
-              data={Object.entries(applications?.reduce((acc: any, app: any) => {
-                const track = app?.track?.name || app?.preferredTrack || "Unknown";
-                acc[track] = (acc[track] || 0) + 1;
-                return acc;
-              }, {}) || {}).map(([name, value]) => ({ name, value }))}
+            <BarChart
+              data={Object.entries(
+                applications?.reduce((acc: any, app: any) => {
+                  const track =
+                    app?.track?.name || app?.preferredTrack || "Unknown";
+                  acc[track] = (acc[track] || 0) + 1;
+                  return acc;
+                }, {}) || {}
+              ).map(([name, value]) => ({ name, value }))}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />

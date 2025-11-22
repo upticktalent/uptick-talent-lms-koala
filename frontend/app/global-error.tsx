@@ -25,20 +25,18 @@ export default function GlobalError({
                 <AlertCircle className="w-12 h-12 text-red-600" />
               </div>
             </div>
-            
+
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900">Critical Error</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                Critical Error
+              </h1>
               <p className="text-gray-600">
                 A critical error occurred in the application layout.
               </p>
             </div>
 
             <div className="flex justify-center pt-4">
-              <Button 
-                onClick={reset} 
-                variant="default"
-                className="gap-2"
-              >
+              <Button onClick={reset} variant="default" className="gap-2">
                 <RefreshCw className="w-4 h-4" />
                 Try again
               </Button>

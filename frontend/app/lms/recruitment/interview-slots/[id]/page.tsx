@@ -1,46 +1,50 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { interviewSlotService } from '@/services/interviewSlotService';
-import { useFetch } from '@/hooks/useFetch';
-import { formatDate, formatTime } from '@/utils/formatDate';
-import { RoleGuard } from '@/middleware/roleGuard';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Clock, 
-  Users, 
-  Edit, 
-  Trash2, 
-  MoreHorizontal, 
-  CheckCircle2, 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { interviewSlotService } from "@/services/interviewSlotService";
+import { useFetch } from "@/hooks/useFetch";
+import { formatDate, formatTime } from "@/utils/formatDate";
+import { RoleGuard } from "@/middleware/roleGuard";
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Users,
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  CheckCircle2,
   XCircle,
   User,
   Mail,
   Phone,
   Briefcase,
-  FileText
-} from 'lucide-react';
+  FileText,
+} from "lucide-react";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from 'next/link';
-import { toast } from 'sonner';
-import { Separator } from '@/components/ui/separator';
-import Loader from '@/components/Loader';
+import Link from "next/link";
+import { toast } from "sonner";
+import { Separator } from "@/components/ui/separator";
+import Loader from "@/components/Loader";
 
 export default function InterviewSlotDetailPage() {
   const params = useParams<{ id: string }>();
@@ -53,41 +57,56 @@ export default function InterviewSlotDetailPage() {
   const slot = data?.slot;
 
   const getAvailabilityColor = (slot: any) => {
-    if (!slot.isAvailable) return 'bg-slate-100 text-slate-700 border-slate-200';
+    if (!slot.isAvailable)
+      return "bg-slate-100 text-slate-700 border-slate-200";
     if (slot.bookedCount >= slot.maxInterviews)
-      return 'bg-red-50 text-red-700 border-red-200';
-    if (slot.bookedCount > 0) return 'bg-amber-50 text-amber-700 border-amber-200';
-    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      return "bg-red-50 text-red-700 border-red-200";
+    if (slot.bookedCount > 0)
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    return "bg-emerald-50 text-emerald-700 border-emerald-200";
   };
 
   const getAvailabilityText = (slot: any) => {
-    if (!slot.isAvailable) return 'Unavailable';
-    if (slot.bookedCount >= slot.maxInterviews) return 'Fully Booked';
-    if (slot.bookedCount > 0) return 'Partially Booked';
-    return 'Available';
+    if (!slot.isAvailable) return "Unavailable";
+    if (slot.bookedCount >= slot.maxInterviews) return "Fully Booked";
+    if (slot.bookedCount > 0) return "Partially Booked";
+    return "Available";
   };
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to delete this interview slot? This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
-
     setIsDeleting(true);
     try {
       await interviewSlotService.deleteSlot(params.id);
-      toast.success('Interview slot deleted successfully!');
-      router.push('/lms/recruitment/interview-slots');
+      toast.success("Interview slot deleted successfully!");
+      router.push("/lms/recruitment/interview-slots");
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || 'Failed to delete interview slot'
+        error.response?.data?.message || "Failed to delete interview slot"
       );
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  // Confirm dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmDescription, setConfirmDescription] = useState<
+    string | undefined
+  >(undefined);
+  const [confirmAction, setConfirmAction] = useState<
+    (() => void | Promise<void>) | null
+  >(null);
+
+  const requestConfirm = (
+    title: string,
+    description: string | undefined,
+    action: () => void | Promise<void>
+  ) => {
+    setConfirmTitle(title);
+    setConfirmDescription(description);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
   };
 
   const handleToggleStatus = async () => {
@@ -97,32 +116,35 @@ export default function InterviewSlotDetailPage() {
       });
       toast.success(
         `Interview slot ${
-          slot.isAvailable ? 'disabled' : 'enabled'
+          slot.isAvailable ? "disabled" : "enabled"
         } successfully!`
       );
       refetch();
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || 'Failed to update interview slot'
+        error.response?.data?.message || "Failed to update interview slot"
       );
     }
   };
 
   if (loading) {
-    return (
-      <Loader/>
-    );
+    return <Loader />;
   }
 
   if (error || !slot) {
     return (
-      <div className='flex flex-col items-center justify-center min-h-[60vh] gap-4'>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="bg-red-50 p-4 rounded-full">
           <XCircle className="w-8 h-8 text-red-500" />
         </div>
-        <div className='text-center'>
-          <h3 className="text-lg font-semibold text-gray-900">Slot Not Found</h3>
-          <p className="text-muted-foreground">The interview slot you are looking for does not exist or failed to load.</p>
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Slot Not Found
+          </h3>
+          <p className="text-muted-foreground">
+            The interview slot you are looking for does not exist or failed to
+            load.
+          </p>
         </div>
         <Link href="/lms/recruitment/interview-slots">
           <Button variant="outline">Return to Slots</Button>
@@ -138,20 +160,26 @@ export default function InterviewSlotDetailPage() {
   );
 
   return (
-    <RoleGuard allowedRoles={['admin', 'mentor']}>
-      <div className='max-w-5xl mx-auto space-y-8 pb-10'>
+    <RoleGuard allowedRoles={["admin", "mentor"]}>
+      <div className="max-w-5xl mx-auto space-y-8 pb-10">
         {/* Header Section */}
-        <div className='flex flex-col md:flex-row md:items-start justify-between gap-4'>
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="space-y-1">
-            <Link href='/lms/recruitment/interview-slots' className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-2">
-              <ArrowLeft className='w-4 h-4 mr-1' />
+            <Link
+              href="/lms/recruitment/interview-slots"
+              className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-2"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
               Back to Slots
             </Link>
             <div className="flex items-center gap-3">
-              <h1 className='text-2xl font-bold text-gray-900 tracking-tight'>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
                 Interview Slot Details
               </h1>
-              <Badge variant="outline" className={`${getAvailabilityColor(slot)} border`}>
+              <Badge
+                variant="outline"
+                className={`${getAvailabilityColor(slot)} border`}
+              >
                 {getAvailabilityText(slot)}
               </Badge>
             </div>
@@ -160,18 +188,20 @@ export default function InterviewSlotDetailPage() {
               <span>{formatDate(slot.date)}</span>
               <span className="text-slate-300">•</span>
               <Clock className="w-4 h-4" />
-              <span>{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>
+              <span>
+                {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+              </span>
             </div>
           </div>
 
-          <div className='flex items-center gap-2'>
+          <div className="flex items-center gap-2">
             <Link href={`/lms/recruitment/interview-slots/${params.id}/edit`}>
-              <Button variant='outline' size="sm">
-                <Edit className='w-4 h-4 mr-2' />
+              <Button variant="outline" size="sm">
+                <Edit className="w-4 h-4 mr-2" />
                 Edit
               </Button>
             </Link>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="h-9 w-9">
@@ -180,49 +210,65 @@ export default function InterviewSlotDetailPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={handleToggleStatus}>
-                  {slot.isAvailable ? 'Disable Slot' : 'Enable Slot'}
+                  {slot.isAvailable ? "Disable Slot" : "Enable Slot"}
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={handleDelete} 
+                <DropdownMenuItem
+                  onClick={handleDelete}
                   className="text-red-600 focus:text-red-600 focus:bg-red-50"
                   disabled={isDeleting || slot.bookedCount > 0}
                 >
                   Delete Slot
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                    <DropdownMenuItem onClick={() => requestConfirm('Delete slot', 'Are you sure you want to delete this interview slot? This action cannot be undone.', () => handleDelete())} className="text-red-600 focus:text-red-600 focus:bg-red-50" disabled={isDeleting || slot.bookedCount > 0}>
+                      Delete Slot
+                    </DropdownMenuItem>
         </div>
 
-        <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Slot Overview */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-semibold">Overview</CardTitle>
+                <CardTitle className="text-base font-semibold">
+                  Overview
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-y-6 gap-x-4">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Duration</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Duration
+                    </p>
                     <p className="font-medium">{slotDurationMinutes} minutes</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Capacity</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Capacity
+                    </p>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{slot.bookedCount} / {slot.maxInterviews}</span>
+                      <span className="font-medium">
+                        {slot.bookedCount} / {slot.maxInterviews}
+                      </span>
                       <div className="h-2 w-24 bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary transition-all" 
-                          style={{ width: `${(slot.bookedCount / slot.maxInterviews) * 100}%` }}
+                        <div
+                          className="h-full bg-primary transition-all"
+                          style={{
+                            width: `${
+                              (slot.bookedCount / slot.maxInterviews) * 100
+                            }%`,
+                          }}
                         />
                       </div>
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Interview Type</p>
-                    <p className="font-medium capitalize">{slot.interviewType || 'Standard'}</p>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Interview Type
+                    </p>
+                    <p className="font-medium capitalize">
+                      {slot.interviewType || "Standard"}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-1">Status</p>
@@ -232,7 +278,9 @@ export default function InterviewSlotDetailPage() {
                       ) : (
                         <XCircle className="w-4 h-4 text-slate-400" />
                       )}
-                      <span className="font-medium">{slot.isAvailable ? 'Active' : 'Inactive'}</span>
+                      <span className="font-medium">
+                        {slot.isAvailable ? "Active" : "Inactive"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -243,10 +291,16 @@ export default function InterviewSlotDetailPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-base font-semibold">Scheduled Interviews</CardTitle>
-                  <CardDescription>Candidates booked for this time slot</CardDescription>
+                  <CardTitle className="text-base font-semibold">
+                    Scheduled Interviews
+                  </CardTitle>
+                  <CardDescription>
+                    Candidates booked for this time slot
+                  </CardDescription>
                 </div>
-                <Badge variant="secondary">{slot.interviews?.length || 0} Booked</Badge>
+                <Badge variant="secondary">
+                  {slot.interviews?.length || 0} Booked
+                </Badge>
               </CardHeader>
               <CardContent>
                 {slot.interviews && slot.interviews.length > 0 ? (
@@ -258,11 +312,13 @@ export default function InterviewSlotDetailPage() {
                       >
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-white border flex items-center justify-center text-slate-500 font-medium">
-                            {interview.applicationId?.firstName?.[0]}{interview.applicationId?.lastName?.[0]}
+                            {interview.applicationId?.firstName?.[0]}
+                            {interview.applicationId?.lastName?.[0]}
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">
-                              {interview.applicationId?.firstName} {interview.applicationId?.lastName}
+                              {interview.applicationId?.firstName}{" "}
+                              {interview.applicationId?.lastName}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {interview.applicationId?.email}
@@ -270,11 +326,18 @@ export default function InterviewSlotDetailPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="capitalize bg-white">
+                          <Badge
+                            variant="outline"
+                            className="capitalize bg-white"
+                          >
                             {interview.status}
                           </Badge>
-                          <Link href={`/lms/recruitment/interviews/${interview._id}`}>
-                            <Button variant="ghost" size="sm">View</Button>
+                          <Link
+                            href={`/lms/recruitment/interviews/${interview._id}`}
+                          >
+                            <Button variant="ghost" size="sm">
+                              View
+                            </Button>
                           </Link>
                         </div>
                       </div>
@@ -303,7 +366,8 @@ export default function InterviewSlotDetailPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3 pb-4 border-b">
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-lg">
-                    {slot.interviewer?.firstName?.[0]}{slot.interviewer?.lastName?.[0]}
+                    {slot.interviewer?.firstName?.[0]}
+                    {slot.interviewer?.lastName?.[0]}
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">
@@ -317,12 +381,16 @@ export default function InterviewSlotDetailPage() {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-3 text-muted-foreground">
                     <Mail className="w-4 h-4" />
-                    <span className="text-gray-700 truncate">{slot.interviewer?.email}</span>
+                    <span className="text-gray-700 truncate">
+                      {slot.interviewer?.email}
+                    </span>
                   </div>
                   {slot.interviewer?.phoneNumber && (
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <Phone className="w-4 h-4" />
-                      <span className="text-gray-700">{slot.interviewer.phoneNumber}</span>
+                      <span className="text-gray-700">
+                        {slot.interviewer.phoneNumber}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -341,13 +409,19 @@ export default function InterviewSlotDetailPage() {
                 {slot.tracks && slot.tracks.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {slot.tracks.map((track: any) => (
-                      <Badge key={track._id} variant="secondary" className="font-normal">
+                      <Badge
+                        key={track._id}
+                        variant="secondary"
+                        className="font-normal"
+                      >
                         {track.name}
                       </Badge>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">No specific tracks assigned</p>
+                  <p className="text-sm text-muted-foreground italic">
+                    No specific tracks assigned
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -378,6 +452,17 @@ export default function InterviewSlotDetailPage() {
             </div>
           </div>
         </div>
+        <ConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title={confirmTitle}
+          description={confirmDescription}
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={async () => {
+            if (confirmAction) await confirmAction()
+          }}
+        />
       </div>
     </RoleGuard>
   );

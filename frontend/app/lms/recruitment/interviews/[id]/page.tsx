@@ -1,24 +1,27 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { interviewService } from '@/services/interviewService';
-import { useFetch } from '@/hooks/useFetch';
-import { formatDate, formatDateTime } from '@/utils/formatDate';
-import { RoleGuard } from '@/middleware/roleGuard';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { interviewService } from "@/services/interviewService";
+import { useFetch } from "@/hooks/useFetch";
+import { formatDate, formatDateTime } from "@/utils/formatDate";
+import { RoleGuard } from "@/middleware/roleGuard";
 import {
   ArrowLeft,
   Calendar,
@@ -29,10 +32,10 @@ import {
   XCircle,
   RotateCcw,
   ExternalLink,
-} from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
-import Loader from '@/components/Loader';
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import Loader from "@/components/Loader";
 
 export default function InterviewDetailPage() {
   type RouteParam = {
@@ -40,27 +43,27 @@ export default function InterviewDetailPage() {
   };
   const router = useRouter();
   const { id } = useParams() as RouteParam;
-  const [activeTab, setActiveTab] = useState('details');
+  const [activeTab, setActiveTab] = useState("details");
   const [isLoading, setIsLoading] = useState(false);
 
   // Review form state
   const [reviewData, setReviewData] = useState({
-    feedback: '',
-    status: 'accepted' as 'accepted' | 'rejected',
+    feedback: "",
+    status: "accepted" as "accepted" | "rejected",
     rating: 5,
-    notes: '',
+    notes: "",
   });
 
   // Reschedule form state
   const [rescheduleData, setRescheduleData] = useState({
-    interviewDate: '',
-    interviewTime: '',
-    reason: '',
+    interviewDate: "",
+    interviewTime: "",
+    reason: "",
   });
 
   // Cancel form state
   const [cancelData, setCancelData] = useState({
-    reason: '',
+    reason: "",
   });
 
   const { data, loading, error, refetch } = useFetch(() =>
@@ -70,27 +73,27 @@ export default function InterviewDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'interviewed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'rescheduled':
-        return 'bg-yellow-100 text-yellow-800';
+      case "scheduled":
+        return "bg-blue-100 text-blue-800";
+      case "interviewed":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      case "rescheduled":
+        return "bg-yellow-100 text-yellow-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getResultColor = (status: string) => {
     switch (status) {
-      case 'accepted':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
+      case "accepted":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -100,28 +103,28 @@ export default function InterviewDetailPage() {
 
     try {
       if (!reviewData.feedback.trim()) {
-        toast.error('Please provide feedback');
+        toast.error("Please provide feedback");
         return;
       }
 
       const response = await interviewService.completeInterview(id, reviewData);
 
       // Show appropriate success message based on status
-      if (reviewData.status === 'accepted' && response.data?.data) {
+      if (reviewData.status === "accepted" && response.data?.data) {
         const { applicantName, trackName } = response.data.data;
         toast.success(`${applicantName} has been accepted into ${trackName}!`);
-      } else if (reviewData.status === 'rejected') {
+      } else if (reviewData.status === "rejected") {
         toast.success(
-          'Interview review completed. Applicant has been notified.'
+          "Interview review completed. Applicant has been notified."
         );
       } else {
-        toast.success('Interview review completed successfully!');
+        toast.success("Interview review completed successfully!");
       }
 
       refetch();
-      setActiveTab('details');
+      setActiveTab("details");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to complete review');
+      toast.error(error.response?.data?.message || "Failed to complete review");
     } finally {
       setIsLoading(false);
     }
@@ -133,7 +136,7 @@ export default function InterviewDetailPage() {
 
     try {
       if (!rescheduleData.interviewDate || !rescheduleData.interviewTime) {
-        toast.error('Please provide new date and time');
+        toast.error("Please provide new date and time");
         return;
       }
 
@@ -141,17 +144,17 @@ export default function InterviewDetailPage() {
         `${rescheduleData.interviewDate}T${rescheduleData.interviewTime}`
       );
       if (newDateTime < new Date()) {
-        toast.error('New interview date and time must be in the future');
+        toast.error("New interview date and time must be in the future");
         return;
       }
 
       await interviewService.rescheduleInterview(id, rescheduleData);
-      toast.success('Interview rescheduled successfully!');
+      toast.success("Interview rescheduled successfully!");
       refetch();
-      setActiveTab('details');
+      setActiveTab("details");
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || 'Failed to reschedule interview'
+        error.response?.data?.message || "Failed to reschedule interview"
       );
     } finally {
       setIsLoading(false);
@@ -164,17 +167,17 @@ export default function InterviewDetailPage() {
 
     try {
       if (!cancelData.reason.trim()) {
-        toast.error('Please provide a reason for cancellation');
+        toast.error("Please provide a reason for cancellation");
         return;
       }
 
       await interviewService.cancelInterview(id, cancelData);
-      toast.success('Interview cancelled successfully!');
+      toast.success("Interview cancelled successfully!");
       refetch();
-      setActiveTab('details');
+      setActiveTab("details");
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || 'Failed to cancel interview'
+        error.response?.data?.message || "Failed to cancel interview"
       );
     } finally {
       setIsLoading(false);
@@ -182,38 +185,57 @@ export default function InterviewDetailPage() {
   };
 
   if (loading) {
-    return <Loader text='Loading interview details...' />;
+    return <Loader text="Loading interview details..." />;
   }
 
   if (error || !interview) {
     return (
-      <div className='text-center text-red-600'>
+      <div className="text-center text-red-600">
         Interview not found or failed to load
       </div>
     );
   }
 
   return (
-    <RoleGuard allowedRoles={['admin', 'mentor']}>
-      <div className='max-w-4xl mx-auto space-y-6'>
-        {/* Header */}
-        <div className='flex items-center gap-4'>
-          <Link href='/lms/recruitment/interviews'>
-            <Button variant='secondary' size='sm'>
-              <ArrowLeft className='w-4 h-4 mr-2' />
-              Back to Interviews
-            </Button>
-          </Link>
-          <div className='flex-1'>
-            <h1 className='text-2xl font-bold text-gray-900'>
-              Interview ({interview.application.applicant.firstName}{' '}
-              {interview.application.applicant.lastName})
-            </h1>
-            <p className='text-gray-600'>
-              Manage interview details and conduct review
-            </p>
+    <RoleGuard allowedRoles={["admin", "mentor"]}>
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header — minimal & responsive */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-3 w-full">
+            <Link href="/lms/recruitment/interviews" className="shrink-0">
+              <Button variant="secondary" size="sm" className="px-2">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+
+            <div className="min-w-0">
+              <h1 className="text-xl font-semibold text-gray-900 truncate">
+                {interview.application?.applicant?.firstName
+                  ? `${interview.application.applicant.firstName} ${interview.application.applicant.lastName}`
+                  : "Interview"}
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5 truncate">
+                Interview #{String(interview._id).slice(-6)} •{" "}
+                {formatDateTime(`${interview.scheduledDate}`)}
+              </p>
+            </div>
           </div>
-          <div className='flex gap-2'>
+
+          <div className="flex items-center gap-2">
+            {interview.meetingLink && (
+              <a
+                href={interview.meetingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto"
+              >
+                <Button size="sm" variant="ghost" className="px-3">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Join Meeting
+                </Button>
+              </a>
+            )}
+
             <Badge className={getStatusColor(interview.status)}>
               {interview.status.toUpperCase()}
             </Badge>
@@ -221,101 +243,109 @@ export default function InterviewDetailPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className='grid w-full grid-cols-4'>
-            <TabsTrigger value='details'>Details</TabsTrigger>
+          <TabsList className="flex gap-2 overflow-x-auto py-1">
             <TabsTrigger
-              value='review'
-              disabled={interview.status !== 'scheduled'}
+              value="details"
+              className="whitespace-nowrap px-3 py-2 text-sm"
+            >
+              Details
+            </TabsTrigger>
+            <TabsTrigger
+              value="review"
+              disabled={interview.status !== "scheduled"}
+              className="whitespace-nowrap px-3 py-2 text-sm"
             >
               Complete Review
             </TabsTrigger>
             <TabsTrigger
-              value='reschedule'
-              disabled={interview.status !== 'scheduled'}
+              value="reschedule"
+              disabled={interview.status !== "scheduled"}
+              className="whitespace-nowrap px-3 py-2 text-sm"
             >
               Reschedule
             </TabsTrigger>
             <TabsTrigger
-              value='cancel'
-              disabled={interview.status !== 'scheduled'}
+              value="cancel"
+              disabled={interview.status !== "scheduled"}
+              className="whitespace-nowrap px-3 py-2 text-sm"
             >
               Cancel
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value='details'>
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+          <TabsContent value="details">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Interview Information */}
               <Card>
                 <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Calendar className='w-5 h-5' />
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
                     Interview Information
                   </CardTitle>
                 </CardHeader>
-                <CardContent className='space-y-4'>
+                <CardContent className="space-y-4">
                   <div>
-                    <Label className='text-sm font-medium text-gray-700'>
+                    <Label className="text-sm font-medium text-gray-700">
                       Date & Time
                     </Label>
-                    <p className='text-sm text-gray-900'>
+                    <p className="text-sm text-gray-900">
                       {formatDateTime(`${interview.scheduledDate}`)}
                     </p>
                   </div>
 
                   {interview.meetingLink && (
                     <div>
-                      <Label className='text-sm font-medium text-gray-700'>
+                      <Label className="text-sm font-medium text-gray-700">
                         Meeting Link
                       </Label>
-                      <div className='flex items-center gap-2'>
+                      <div className="flex items-center gap-2">
                         <a
                           href={interview.meetingLink}
-                          target='_blank'
-                          rel='noopener noreferrer'
-                          className='text-sm text-blue-600 hover:underline flex items-center gap-1'
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
                         >
-                          Join Meeting <ExternalLink className='w-3 h-3' />
+                          Join Meeting <ExternalLink className="w-3 h-3" />
                         </a>
                       </div>
                     </div>
                   )}
 
                   <div>
-                    <Label className='text-sm font-medium text-gray-700'>
+                    <Label className="text-sm font-medium text-gray-700">
                       Location
                     </Label>
-                    <p className='text-sm text-gray-900'>
-                      {interview.location || 'Online'}
+                    <p className="text-sm text-gray-900">
+                      {interview.location || "Online"}
                     </p>
                   </div>
 
                   <div>
-                    <Label className='text-sm font-medium text-gray-700'>
+                    <Label className="text-sm font-medium text-gray-700">
                       Status
                     </Label>
-                    <p className='text-sm text-gray-900 capitalize'>
+                    <p className="text-sm text-gray-900 capitalize">
                       {interview.status}
                     </p>
                   </div>
 
                   {interview.rating && (
                     <div>
-                      <Label className='text-sm font-medium text-gray-700'>
+                      <Label className="text-sm font-medium text-gray-700">
                         Rating
                       </Label>
-                      <p className='text-sm text-gray-900'>
+                      <p className="text-sm text-gray-900">
                         ⭐ {interview.rating}
                       </p>
                     </div>
                   )}
 
                   {interview.application?.status &&
-                    ['accepted', 'rejected'].includes(
+                    ["accepted", "rejected"].includes(
                       interview.application.status
                     ) && (
                       <div>
-                        <Label className='text-sm font-medium text-gray-700'>
+                        <Label className="text-sm font-medium text-gray-700">
                           Application Result
                         </Label>
                         <Badge
@@ -329,20 +359,20 @@ export default function InterviewDetailPage() {
                     )}
 
                   <div>
-                    <Label className='text-sm font-medium text-gray-700'>
+                    <Label className="text-sm font-medium text-gray-700">
                       Created
                     </Label>
-                    <p className='text-sm text-gray-900'>
+                    <p className="text-sm text-gray-900">
                       {formatDate(interview.createdAt)}
                     </p>
                   </div>
 
                   {interview.updatedAt !== interview.createdAt && (
                     <div>
-                      <Label className='text-sm font-medium text-gray-700'>
+                      <Label className="text-sm font-medium text-gray-700">
                         Last Updated
                       </Label>
-                      <p className='text-sm text-gray-900'>
+                      <p className="text-sm text-gray-900">
                         {formatDate(interview.updatedAt)}
                       </p>
                     </div>
@@ -353,27 +383,27 @@ export default function InterviewDetailPage() {
               {/* Participant Information */}
               <Card>
                 <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Users className='w-5 h-5' />
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
                     Participants
                   </CardTitle>
                 </CardHeader>
-                <CardContent className='space-y-4'>
+                <CardContent className="space-y-4">
                   {/* Applicant */}
                   <div>
-                    <Label className='text-sm font-medium text-gray-700'>
+                    <Label className="text-sm font-medium text-gray-700">
                       Applicant
                     </Label>
-                    <div className='mt-1 p-3 bg-gray-50 rounded-md'>
-                      <p className='font-medium text-gray-900'>
-                        {interview.application?.applicant?.firstName}{' '}
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                      <p className="font-medium text-gray-900">
+                        {interview.application?.applicant?.firstName}{" "}
                         {interview.application?.applicant?.lastName}
                       </p>
-                      <p className='text-sm text-gray-600'>
+                      <p className="text-sm text-gray-600">
                         {interview.application?.applicant?.email}
                       </p>
                       {interview?.application?.track && (
-                        <p className='text-sm text-gray-600'>
+                        <p className="text-sm text-gray-600">
                           Track: {interview?.application?.track?.name}
                         </p>
                       )}
@@ -382,15 +412,15 @@ export default function InterviewDetailPage() {
 
                   {/* Interviewer */}
                   <div>
-                    <Label className='text-sm font-medium text-gray-700'>
+                    <Label className="text-sm font-medium text-gray-700">
                       Interviewer
                     </Label>
-                    <div className='mt-1 p-3 bg-gray-50 rounded-md'>
-                      <p className='font-medium text-gray-900'>
-                        {interview.interviewer?.firstName}{' '}
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                      <p className="font-medium text-gray-900">
+                        {interview.interviewer?.firstName}{" "}
                         {interview.interviewer?.lastName}
                       </p>
-                      <p className='text-sm text-gray-600'>
+                      <p className="text-sm text-gray-600">
                         {interview.interviewer?.email}
                       </p>
                     </div>
@@ -400,19 +430,19 @@ export default function InterviewDetailPage() {
 
               {/* Notes & Feedback */}
               {(interview.notes || interview.feedback) && (
-                <div className='lg:col-span-2'>
+                <div className="lg:col-span-2">
                   <Card>
                     <CardHeader>
                       <CardTitle>Notes & Feedback</CardTitle>
                     </CardHeader>
-                    <CardContent className='space-y-4'>
+                    <CardContent className="space-y-4">
                       {interview.notes && (
                         <div>
-                          <Label className='text-sm font-medium text-gray-700'>
+                          <Label className="text-sm font-medium text-gray-700">
                             Initial Notes
                           </Label>
-                          <div className='mt-1 p-3 bg-gray-50 rounded-md'>
-                            <p className='text-sm text-gray-900'>
+                          <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                            <p className="text-sm text-gray-900">
                               {interview.notes}
                             </p>
                           </div>
@@ -421,11 +451,11 @@ export default function InterviewDetailPage() {
 
                       {interview.feedback && (
                         <div>
-                          <Label className='text-sm font-medium text-gray-700'>
+                          <Label className="text-sm font-medium text-gray-700">
                             Interview Feedback
                           </Label>
-                          <div className='mt-1 p-3 bg-blue-50 rounded-md'>
-                            <p className='text-sm text-gray-900'>
+                          <div className="mt-1 p-3 bg-blue-50 rounded-md">
+                            <p className="text-sm text-gray-900">
                               {interview.feedback}
                             </p>
                           </div>
@@ -438,11 +468,11 @@ export default function InterviewDetailPage() {
             </div>
           </TabsContent>
 
-          <TabsContent value='review'>
+          <TabsContent value="review">
             <Card>
               <CardHeader>
-                <CardTitle className='flex items-center gap-2'>
-                  <CheckCircle className='w-5 h-5' />
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
                   Complete Interview Review
                 </CardTitle>
                 <CardDescription>
@@ -450,11 +480,11 @@ export default function InterviewDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCompleteReview} className='space-y-6'>
-                  <div className='space-y-2'>
-                    <Label htmlFor='feedback'>Interview Feedback</Label>
+                <form onSubmit={handleCompleteReview} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback">Interview Feedback</Label>
                     <Textarea
-                      id='feedback'
+                      id="feedback"
                       value={reviewData.feedback}
                       onChange={(e) =>
                         setReviewData((prev) => ({
@@ -462,49 +492,49 @@ export default function InterviewDetailPage() {
                           feedback: e.target.value,
                         }))
                       }
-                      placeholder='Provide detailed feedback about the interview...'
+                      placeholder="Provide detailed feedback about the interview..."
                       rows={4}
                     />
                   </div>
 
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <div className='space-y-2'>
-                      <Label htmlFor='status'>
-                        Interview Decision{' '}
-                        <span className='text-red-500'>*</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="status">
+                        Interview Decision{" "}
+                        <span className="text-red-500">*</span>
                       </Label>
                       <select
-                        id='status'
+                        id="status"
                         value={reviewData.status}
                         required
                         onChange={(e) =>
                           setReviewData((prev) => ({
                             ...prev,
-                            status: e.target.value as 'accepted' | 'rejected',
+                            status: e.target.value as "accepted" | "rejected",
                           }))
                         }
-                        className='w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value='accepted'>
+                        <option value="accepted">
                           Accept (Promote to Student)
                         </option>
-                        <option value='rejected'>Reject</option>
+                        <option value="rejected">Reject</option>
                       </select>
-                      {reviewData.status === 'accepted' && (
-                        <p className='text-xs text-green-600'>
+                      {reviewData.status === "accepted" && (
+                        <p className="text-xs text-green-600">
                           This applicant will be promoted to student role and
                           granted access to the program.
                         </p>
                       )}
                     </div>
 
-                    <div className='space-y-2'>
-                      <Label htmlFor='rating'>Rating (1-5)</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="rating">Rating (1-5)</Label>
                       <Input
-                        id='rating'
-                        type='number'
-                        min='1'
-                        max='5'
+                        id="rating"
+                        type="number"
+                        min="1"
+                        max="5"
                         value={reviewData.rating}
                         onChange={(e) =>
                           setReviewData((prev) => ({
@@ -516,12 +546,12 @@ export default function InterviewDetailPage() {
                     </div>
                   </div>
 
-                  <div className='space-y-2'>
-                    <Label htmlFor='reviewNotes'>
+                  <div className="space-y-2">
+                    <Label htmlFor="reviewNotes">
                       Additional Notes (Optional)
                     </Label>
                     <Textarea
-                      id='reviewNotes'
+                      id="reviewNotes"
                       value={reviewData.notes}
                       onChange={(e) =>
                         setReviewData((prev) => ({
@@ -529,19 +559,19 @@ export default function InterviewDetailPage() {
                           notes: e.target.value,
                         }))
                       }
-                      placeholder='Any additional notes or observations...'
+                      placeholder="Any additional notes or observations..."
                       rows={3}
                     />
                   </div>
 
-                  <div className='flex gap-3'>
-                    <Button type='submit' disabled={isLoading}>
-                      {isLoading ? 'Completing Review...' : 'Complete Review'}
+                  <div className="flex gap-3">
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading ? "Completing Review..." : "Complete Review"}
                     </Button>
                     <Button
-                      type='button'
-                      variant='secondary'
-                      onClick={() => setActiveTab('details')}
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setActiveTab("details")}
                     >
                       Cancel
                     </Button>
@@ -551,11 +581,11 @@ export default function InterviewDetailPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value='reschedule'>
+          <TabsContent value="reschedule">
             <Card>
               <CardHeader>
-                <CardTitle className='flex items-center gap-2'>
-                  <RotateCcw className='w-5 h-5' />
+                <CardTitle className="flex items-center gap-2">
+                  <RotateCcw className="w-5 h-5" />
                   Reschedule Interview
                 </CardTitle>
                 <CardDescription>
@@ -563,15 +593,15 @@ export default function InterviewDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleReschedule} className='space-y-6'>
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <div className='space-y-2'>
-                      <Label htmlFor='newDate'>
-                        New Date <span className='text-red-500'>*</span>
+                <form onSubmit={handleReschedule} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="newDate">
+                        New Date <span className="text-red-500">*</span>
                       </Label>
                       <Input
-                        id='newDate'
-                        type='date'
+                        id="newDate"
+                        type="date"
                         value={rescheduleData.interviewDate}
                         onChange={(e) =>
                           setRescheduleData((prev) => ({
@@ -579,18 +609,18 @@ export default function InterviewDetailPage() {
                             interviewDate: e.target.value,
                           }))
                         }
-                        min={new Date().toISOString().split('T')[0]}
+                        min={new Date().toISOString().split("T")[0]}
                         required
                       />
                     </div>
 
-                    <div className='space-y-2'>
-                      <Label htmlFor='newTime'>
-                        New Time <span className='text-red-500'>*</span>
+                    <div className="space-y-2">
+                      <Label htmlFor="newTime">
+                        New Time <span className="text-red-500">*</span>
                       </Label>
                       <Input
-                        id='newTime'
-                        type='time'
+                        id="newTime"
+                        type="time"
                         value={rescheduleData.interviewTime}
                         onChange={(e) =>
                           setRescheduleData((prev) => ({
@@ -603,12 +633,12 @@ export default function InterviewDetailPage() {
                     </div>
                   </div>
 
-                  <div className='space-y-2'>
-                    <Label htmlFor='rescheduleReason'>
+                  <div className="space-y-2">
+                    <Label htmlFor="rescheduleReason">
                       Reason for Rescheduling (Optional)
                     </Label>
                     <Textarea
-                      id='rescheduleReason'
+                      id="rescheduleReason"
                       value={rescheduleData.reason}
                       onChange={(e) =>
                         setRescheduleData((prev) => ({
@@ -616,19 +646,19 @@ export default function InterviewDetailPage() {
                           reason: e.target.value,
                         }))
                       }
-                      placeholder='Explain why the interview is being rescheduled...'
+                      placeholder="Explain why the interview is being rescheduled..."
                       rows={3}
                     />
                   </div>
 
-                  <div className='flex gap-3'>
-                    <Button type='submit' disabled={isLoading}>
-                      {isLoading ? 'Rescheduling...' : 'Reschedule Interview'}
+                  <div className="flex gap-3">
+                    <Button type="submit" disabled={isLoading}>
+                      {isLoading ? "Rescheduling..." : "Reschedule Interview"}
                     </Button>
                     <Button
-                      type='button'
-                      variant='secondary'
-                      onClick={() => setActiveTab('details')}
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setActiveTab("details")}
                     >
                       Cancel
                     </Button>
@@ -638,11 +668,11 @@ export default function InterviewDetailPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value='cancel'>
+          <TabsContent value="cancel">
             <Card>
               <CardHeader>
-                <CardTitle className='flex items-center gap-2'>
-                  <XCircle className='w-5 h-5' />
+                <CardTitle className="flex items-center gap-2">
+                  <XCircle className="w-5 h-5" />
                   Cancel Interview
                 </CardTitle>
                 <CardDescription>
@@ -650,14 +680,14 @@ export default function InterviewDetailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCancel} className='space-y-6'>
-                  <div className='space-y-2'>
-                    <Label htmlFor='cancelReason'>
-                      Reason for Cancellation{' '}
-                      <span className='text-red-500'>*</span>
+                <form onSubmit={handleCancel} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="cancelReason">
+                      Reason for Cancellation{" "}
+                      <span className="text-red-500">*</span>
                     </Label>
                     <Textarea
-                      id='cancelReason'
+                      id="cancelReason"
                       value={cancelData.reason}
                       onChange={(e) =>
                         setCancelData((prev) => ({
@@ -665,32 +695,32 @@ export default function InterviewDetailPage() {
                           reason: e.target.value,
                         }))
                       }
-                      placeholder='Explain why the interview is being cancelled...'
+                      placeholder="Explain why the interview is being cancelled..."
                       rows={4}
                       required
                     />
                   </div>
 
-                  <div className='p-4 bg-red-50 rounded-md'>
-                    <p className='text-sm text-red-800'>
+                  <div className="p-4 bg-red-50 rounded-md">
+                    <p className="text-sm text-red-800">
                       <strong>Warning:</strong> Cancelling this interview will
                       permanently change its status. Both the applicant and
                       interviewer will be notified of the cancellation.
                     </p>
                   </div>
 
-                  <div className='flex gap-3'>
+                  <div className="flex gap-3">
                     <Button
-                      type='submit'
-                      variant='destructive'
+                      type="submit"
+                      variant="destructive"
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Cancelling...' : 'Cancel Interview'}
+                      {isLoading ? "Cancelling..." : "Cancel Interview"}
                     </Button>
                     <Button
-                      type='button'
-                      variant='secondary'
-                      onClick={() => setActiveTab('details')}
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setActiveTab("details")}
                     >
                       Keep Interview
                     </Button>

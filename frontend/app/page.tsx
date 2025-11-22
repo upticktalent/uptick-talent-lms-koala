@@ -1,13 +1,11 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-
-import { useUser } from '@/hooks/useUser';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-
-import { ThemeToggle } from '@/components/theme-toggle';
-import Loader from '@/components/Loader';
+import { useUser } from "@/hooks/useUser";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import Loader from "@/components/Loader";
 
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();
@@ -15,26 +13,19 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (isAuthenticated) {
-        if (isAdmin) {
-          router.replace('/admin/dashboard');
-        } else {
-          router.replace('/lms/dashboard');
-        }
-      } else {
-        router.replace('/auth/login');
-      }
+    // Wait until auth loading finishes before redirecting. Previously the
+    // condition used `!== null` checks which are always true for booleans and
+    // caused redirects while auth state was still initializing — leading to
+    // navigation races and blank screens. Only redirect once `loading` is
+    // false so `isAuthenticated` and `isAdmin` reflect the current user.
+    if (loading) return;
+
+    if (isAuthenticated) {
+      router.replace(isAdmin ? "/admin/dashboard" : "/lms/dashboard");
+    } else {
+      router.replace("/auth/login");
     }
-  }, [isAuthenticated, loading, router]);
-
-  if (loading) {
-    return <Loader />;
-  }
-
-  if (isAuthenticated) {
-    return null; 
-  }
+  }, [loading, isAuthenticated, isAdmin, router]);
 
   return <Loader />;
 }

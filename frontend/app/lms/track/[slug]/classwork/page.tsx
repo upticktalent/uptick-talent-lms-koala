@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, ClipboardList, BookOpen, MoreVertical, UserSquare2, Link as LinkIcon, File as FileIcon, Pencil, Trash2 } from "lucide-react";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -147,10 +148,8 @@ export default function ClassworkPage() {
   };
 
   const handleDeleteTopic = (topicId: string) => {
-    if (confirm("Are you sure you want to delete this topic?")) {
         setTopics(topics.filter(t => t.id !== topicId));
         if (selectedTopicFilter === topicId) setSelectedTopicFilter("all");
-    }
   };
 
   // Item Handlers
@@ -228,14 +227,25 @@ export default function ClassworkPage() {
   };
 
   const handleDeleteItem = (topicId: string, itemId: string) => {
-    if (confirm("Are you sure you want to delete this item?")) {
-        setTopics(topics.map(topic => {
-            if (topic.id === topicId) {
-                return { ...topic, items: topic.items.filter(i => i.id !== itemId) };
-            }
-            return topic;
-        }));
-    }
+    setTopics(topics.map(topic => {
+        if (topic.id === topicId) {
+            return { ...topic, items: topic.items.filter(i => i.id !== itemId) };
+        }
+        return topic;
+    }));
+  };
+
+  // Confirm dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmDescription, setConfirmDescription] = useState<string | undefined>(undefined);
+  const [confirmAction, setConfirmAction] = useState<(() => void | Promise<void>) | null>(null);
+
+  const requestConfirm = (title: string, description: string | undefined, action: () => void | Promise<void>) => {
+    setConfirmTitle(title);
+    setConfirmDescription(description);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
   };
 
   const toggleItemExpansion = (itemId: string) => {
@@ -312,7 +322,7 @@ export default function ClassworkPage() {
                                     <DropdownMenuItem onClick={() => openEditTopicDialog(topic)}>
                                         <Pencil className="w-4 h-4 mr-2" /> Rename
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDeleteTopic(topic.id)} className="text-red-600 focus:text-red-600">
+                                    <DropdownMenuItem onClick={() => requestConfirm('Delete topic', 'Are you sure you want to delete this topic?', () => handleDeleteTopic(topic.id))} className="text-red-600 focus:text-red-600">
                                         <Trash2 className="w-4 h-4 mr-2" /> Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -366,7 +376,7 @@ export default function ClassworkPage() {
                                                         <DropdownMenuItem onClick={() => openEditItemDialog(topic.id, item)}>
                                                             <Pencil className="w-4 h-4 mr-2" /> Edit
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onClick={() => handleDeleteItem(topic.id, item.id)} className="text-red-600 focus:text-red-600">
+                                                        <DropdownMenuItem onClick={() => requestConfirm('Delete item', 'Are you sure you want to delete this item?', () => handleDeleteItem(topic.id, item.id))} className="text-red-600 focus:text-red-600">
                                                             <Trash2 className="w-4 h-4 mr-2" /> Delete
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
@@ -406,6 +416,17 @@ export default function ClassworkPage() {
                                                     {item.type === 'task' ? 'View instructions' : 'View material'}
                                                 </Button>
                                             </div>
+                                            <ConfirmDialog
+                                                open={confirmOpen}
+                                                onOpenChange={setConfirmOpen}
+                                                title={confirmTitle}
+                                                description={confirmDescription}
+                                                confirmLabel="Delete"
+                                                cancelLabel="Cancel"
+                                                onConfirm={async () => {
+                                                    if (confirmAction) await confirmAction()
+                                                }}
+                                            />
                                         </div>
                                     )}
                                 </div>
@@ -445,6 +466,142 @@ export default function ClassworkPage() {
       {/* Create/Edit Item Dialog */}
       <CreateClassworkItemDialog 
         open={isCreateItemOpen} 
+        onOpenChange={setIsCreateItemOpen}
+        type={activeItemType}
+        initialData={itemInitialData}
+        onCreate={handleCreateOrUpdateItem}
+      />
+    </div>
+  );
+}
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    openEditItemDialog(topic.id, item)
+                                  }
+                                >
+                                  <Pencil className="w-4 h-4 mr-2" /> Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    requestConfirm(
+                                      "Delete item",
+                                      "Are you sure you want to delete this item?",
+                                      () => handleDeleteItem(topic.id, item.id)
+                                    )
+                                  }
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Expanded Content */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pl-4 sm:pl-[4.5rem]">
+                          <div className="text-sm text-gray-600 mb-4 whitespace-pre-wrap">
+                            {item.description || "No description."}
+                          </div>
+
+                          {/* Attachments Display */}
+                          {item.attachments && item.attachments.length > 0 && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                              {item.attachments.map((att) => (
+                                <div
+                                  key={att.id}
+                                  className="flex items-center gap-3 p-2 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer"
+                                >
+                                  <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center shrink-0 text-gray-500">
+                                    {att.type === "link" ? (
+                                      <LinkIcon className="w-5 h-5" />
+                                    ) : att.type === "image" ? (
+                                      <div className="w-full h-full overflow-hidden rounded">
+                                        <img
+                                          src={att.url}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <FileIcon className="w-5 h-5" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-blue-600 truncate">
+                                      {att.name || "Attachment"}
+                                    </div>
+                                    <div className="text-xs text-gray-500 uppercase">
+                                      {att.type}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="border-t border-gray-100 pt-3 flex justify-start">
+                            <Button
+                              variant="link"
+                              className="p-0 h-auto text-sm text-gray-600 hover:text-blue-600"
+                            >
+                              {item.type === "task"
+                                ? "View instructions"
+                                : "View material"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Create/Edit Topic Dialog */}
+      <Dialog open={isCreateTopicOpen} onOpenChange={closeTopicDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingTopicId ? "Rename Topic" : "Create Topic"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="topic-title">Topic Title</Label>
+              <Input
+                id="topic-title"
+                placeholder="e.g., Week 2"
+                value={topicTitle}
+                onChange={(e) => setTopicTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreateOrUpdateTopic();
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeTopicDialog}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateOrUpdateTopic}
+              disabled={!topicTitle.trim()}
+            >
+              {editingTopicId ? "Rename" : "Add Topic"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create/Edit Item Dialog */}
+      <CreateClassworkItemDialog
+        open={isCreateItemOpen}
         onOpenChange={setIsCreateItemOpen}
         type={activeItemType}
         initialData={itemInitialData}

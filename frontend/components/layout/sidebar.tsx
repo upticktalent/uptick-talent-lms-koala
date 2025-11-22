@@ -72,27 +72,31 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
       href: "/lms/emails",
       icon: Mail,
       show: canManageRecruitment,
-    }, {
-      name: 'Stream',
-      href:'/lms/stream',
-      icon:BookOpen,
-      show:isStudent
-    }, {
-      name:'Classwork',
-      href:'/lms/classwork',
-      icon:BookOpen,
-      show:isStudent
-    }, {
-      name: 'People',
-      href:'/lms/people',
-      icon:Users,
-      show:isStudent
-    }, {
-      name:'Grades',
-      href:'/lms/grades',
-      icon:GraduationCap,
-      show:isStudent
-    }
+    },
+    {
+      name: "Stream",
+      href: "/lms/stream",
+      icon: BookOpen,
+      show: isStudent,
+    },
+    {
+      name: "Classwork",
+      href: "/lms/classwork",
+      icon: BookOpen,
+      show: isStudent,
+    },
+    {
+      name: "People",
+      href: "/lms/people",
+      icon: Users,
+      show: isStudent,
+    },
+    {
+      name: "Grades",
+      href: "/lms/grades",
+      icon: GraduationCap,
+      show: isStudent,
+    },
   ];
 
   useEffect(() => {
@@ -119,31 +123,29 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar (clean & minimal) */}
       <aside
         className={cn(
-          "sticky top-0 h-screen w-64 flex-col hidden lg:flex bg-[hsl(var(--card))] border-r border-[hsl(var(--border))]",
+          "sticky top-0 h-screen w-56 hidden lg:flex flex-col bg-[hsl(var(--card))] border-r border-[hsl(var(--border))]",
           className
         )}
       >
         <div className="flex flex-col flex-1 min-h-0">
           {/* Header */}
-          <div className="flex items-center h-16 mt-2">
-            <div className="flex items-start">
-              <div className="relative">
-                <Image
-                  src="/uptick-logo.png"
-                  alt="Uptick Talent"
-                  width={100}
-                  height={100}
-                  className="object-contain"
-                />
-              </div>
+          <div className="flex items-center h-14 px-4">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/uptick-logo.png"
+                alt="Uptick"
+                width={50}
+                height={50}
+                className="object-contain rounded"
+              />
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 py-6 space-y-1">
+          <nav className="flex-1 px-2 py-4 space-y-1">
             {navigation.map((item) => {
               if (!item.show) return null;
 
@@ -154,9 +156,11 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
               if (hasChildren) {
                 return (
                   <div key={item.name} className="space-y-1">
-                    <div className="flex items-center px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] uppercase  tracking-wider">
-                      <Icon className="h-4 w-4 mr-3" />
-                      {item.name}
+                    <div className="px-3 py-1 text-xs font-medium text-gray-500">
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-gray-400" />
+                        <span>{item.name}</span>
+                      </div>
                     </div>
                     <div className="space-y-1">
                       {item.children!.map((child) => {
@@ -168,24 +172,21 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
                             key={child.href}
                             href={child.href}
                             className={cn(
-                              "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ml-2",
+                              "flex items-center px-3 py-2 text-sm rounded transition-colors",
                               isChildActive
-                                ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                                : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] "
+                                ? "bg-blue-50 text-blue-700"
+                                : "text-gray-700 hover:bg-gray-100"
                             )}
                           >
                             <ChildIcon
                               className={cn(
-                                "h-4 w-4 mr-3 transition-colors",
+                                "h-5 w-5 mr-3",
                                 isChildActive
                                   ? "text-blue-600"
                                   : "text-gray-400"
                               )}
                             />
-                            {child.name}
-                            {isChildActive && (
-                              <ChevronRight className="h-3 w-3 ml-auto text-blue-600" />
-                            )}
+                            <span className="truncate">{child.name}</span>
                           </Link>
                         );
                       })}
@@ -199,60 +200,50 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                    "flex items-center px-3 py-2 text-sm rounded transition-colors",
                     isActive
-                      ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] "
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-gray-700 hover:bg-gray-100"
                   )}
                 >
                   <Icon
                     className={cn(
-                      "h-4 w-4 mr-3 transition-colors",
-                      isActive
-                        ? "text-blue-600"
-                        : "text-gray-400 group-hover:text-gray-600"
+                      "h-5 w-5 mr-3",
+                      isActive ? "text-blue-600" : "text-gray-400"
                     )}
                   />
-                  {item.name}
-                  {isActive && (
-                    <ChevronRight className="h-3 w-3 ml-auto text-blue-600" />
-                  )}
+                  <span className="truncate">{item.name}</span>
                 </Link>
               );
             })}
           </nav>
 
           {/* User info */}
-          <div className="p-4 border-t border-[hsl(var(--border))]">
+          <div className="px-4 py-3 border-t border-[hsl(var(--border))]">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-xs font-medium text-white">
-                  {user?.firstName?.[0]}
-                  {user?.lastName?.[0]}
-                </span>
+              <div className="w-9 h-9 bg-linear-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
+                {user?.firstName?.[0]}
+                {user?.lastName?.[0]}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[hsl(var(--foreground))] truncate">
+                <p className="text-sm font-medium text-gray-900 truncate">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] capitalize">
-                  {user?.role}
-                </p>
+                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
               </div>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer (simplified) */}
       <div
         className={cn(
-          "md:hidden fixed inset-0 z-50 flex",
+          "md:hidden fixed inset-0 z-100 flex",
           open ? "pointer-events-auto" : "pointer-events-none"
         )}
         aria-hidden={!open}
       >
-        {/* Backdrop */}
         <div
           className={cn(
             "fixed inset-0 bg-black/40 transition-opacity duration-200",
@@ -263,25 +254,22 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
 
         <div
           className={cn(
-            "relative w-80 h-full bg-[hsl(var(--card))] shadow-xl transform transition-transform duration-300 ease-in-out border-r border-[hsl(var(--border))]",
+            "relative w-72 h-full bg-[hsl(var(--card))] shadow-xl transform transition-transform duration-300 ease-in-out border-r border-[hsl(var(--border))]",
             open ? "translate-x-0" : "-translate-x-full"
           )}
         >
-          {/* Mobile header */}
-          <div className="flex items-center justify-between h-16 mt-2 border-b border-[hsl(var(--border))]">
-            <div className="flex items-start">
-              <div className="relative">
-                <Image
-                  src="/uptick-logo.png"
-                  alt="Uptick Talent"
-                  width={100}
-                  height={100}
-                  className="object-contain"
-                />
-              </div>
+          <div className="flex items-center justify-between h-14 px-4 ">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/uptick-logo.png"
+                alt="Uptick"
+                width={50}
+                height={50}
+                className="object-contain"
+              />
             </div>
             <button
-              className="p-2 rounded-md text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] transition-colors cursor-pointer"
+              className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
               onClick={() => onClose && onClose()}
               aria-label="Close sidebar"
             >
@@ -289,8 +277,7 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
             </button>
           </div>
 
-          {/* Mobile navigation */}
-          <nav className="px-3 py-6 space-y-1 overflow-auto h-[calc(100%-64px)]">
+          <nav className="px-3 py-4 space-y-1 overflow-auto h-[calc(100%-56px)]">
             {navigation.map((item) => {
               if (!item.show) return null;
 
@@ -301,39 +288,27 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
               if (hasChildren) {
                 return (
                   <div key={item.name} className="space-y-1">
-                    <div className="flex items-center px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] uppercase text-xs tracking-wider">
-                      <Icon className="h-4 w-4 mr-3" />
+                    <div className="px-3 py-1 text-xs font-medium text-gray-500 flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-gray-400" />
                       {item.name}
                     </div>
                     <div className="space-y-1">
                       {item.children!.map((child) => {
-                        const ChildIcon = child.icon;
                         const isChildActive = isActiveChild(child.href);
-
                         return (
                           <Link
                             key={child.href}
                             href={child.href}
                             onClick={() => onClose && onClose()}
                             className={cn(
-                              "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ml-2",
+                              "flex items-center px-3 py-2 text-sm rounded transition-colors",
                               isChildActive
-                                ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                                : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                                ? "bg-blue-50 text-blue-700"
+                                : "text-gray-700 hover:bg-gray-100"
                             )}
                           >
-                            <ChildIcon
-                              className={cn(
-                                "h-4 w-4 mr-3",
-                                isChildActive
-                                  ? "text-blue-600"
-                                  : "text-gray-400"
-                              )}
-                            />
-                            {child.name}
-                            {isChildActive && (
-                              <ChevronRight className="h-3 w-3 ml-auto text-blue-600" />
-                            )}
+                            <child.icon className="h-5 w-5 mr-3 text-gray-400" />
+                            <span className="truncate">{child.name}</span>
                           </Link>
                         );
                       })}
@@ -348,22 +323,19 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={() => onClose && onClose()}
                   className={cn(
-                    "group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                    "flex items-center px-3 py-2 text-sm rounded transition-colors",
                     isActive
-                      ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                      : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-gray-700 hover:bg-gray-100"
                   )}
                 >
                   <Icon
                     className={cn(
-                      "h-4 w-4 mr-3",
+                      "h-5 w-5 mr-3",
                       isActive ? "text-blue-600" : "text-gray-400"
                     )}
                   />
-                  {item.name}
-                  {isActive && (
-                    <ChevronRight className="h-3 w-3 ml-auto text-blue-600" />
-                  )}
+                  <span className="truncate">{item.name}</span>
                 </Link>
               );
             })}

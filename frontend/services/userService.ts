@@ -1,10 +1,27 @@
-import apiClient from './apiClient';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import apiClient from "./apiClient";
 
 export const userService = {
   // Get all users with optional role filtering (no pagination)
-  getAllUsers: async () => {
-      return apiClient.get(`/users`);
-    },
+  getAllUsers: async (params?: {
+    role?: string | string[];
+    isActive?: boolean;
+  }) => {
+    const queryParams = new URLSearchParams();
+
+    if (params?.role) {
+      const roles = Array.isArray(params.role)
+        ? params.role.join(",")
+        : params.role;
+      queryParams.append("role", roles);
+    }
+
+    if (params?.isActive !== undefined) {
+      queryParams.append("isActive", params.isActive.toString());
+    }
+
+    return apiClient.get(`/users?${queryParams.toString()}`);
+  },
   // Get users with pagination
   getUsers: async (params?: {
     role?: string | string[];
@@ -16,21 +33,21 @@ export const userService = {
 
     if (params?.role) {
       const roles = Array.isArray(params.role)
-        ? params.role.join(',')
+        ? params.role.join(",")
         : params.role;
-      queryParams.append('role', roles);
+      queryParams.append("role", roles);
     }
 
     if (params?.isActive !== undefined) {
-      queryParams.append('isActive', params.isActive.toString());
+      queryParams.append("isActive", params.isActive.toString());
     }
 
     if (params?.page) {
-      queryParams.append('page', params.page.toString());
+      queryParams.append("page", params.page.toString());
     }
 
     if (params?.limit) {
-      queryParams.append('limit', params.limit.toString());
+      queryParams.append("limit", params.limit.toString());
     }
 
     return apiClient.get(`/users?${queryParams.toString()}`);
@@ -38,7 +55,7 @@ export const userService = {
 
   // Get mentors only
   getMentors: async () => {
-    return apiClient.get('/users/mentors');
+    return apiClient.get("/users/mentors");
   },
 
   // Get user by ID
@@ -58,7 +75,7 @@ export const userService = {
     role: string;
     assignedTracks?: string[];
   }) => {
-    return apiClient.post('/users', userData);
+    return apiClient.post("/users", userData);
   },
 
   // Update user

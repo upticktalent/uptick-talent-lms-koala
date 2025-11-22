@@ -4,12 +4,12 @@ import { ITrack } from '@/types';
 export const trackService = {
   // Get all tracks
   getTracks: async () => {
-    return apiClient.get('/tracks');
+    return apiClient.get("/tracks");
   },
 
   // Get active tracks only
   getActiveTracks: async () => {
-    return apiClient.get('/tracks/active');
+    return apiClient.get("/tracks/active");
   },
 
   // Get track by slug
@@ -29,12 +29,17 @@ export const trackService = {
 
   // Create track (admin)
   createTrack: async (trackData: Partial<ITrack>) => {
-    return apiClient.post('/tracks/create', trackData);
+    return apiClient.post("/tracks/create", trackData);
   },
 
   // Update track (admin)
   updateTrack: async (trackId: string, trackData: Partial<ITrack>) => {
     return apiClient.patch(`/tracks/${trackId}`, trackData);
+  },
+
+  // Delete track (admin)
+  deleteTrack: async (trackId: string) => {
+    return apiClient.delete(`/tracks/${trackId}`);
   },
 
   // Get track participants
