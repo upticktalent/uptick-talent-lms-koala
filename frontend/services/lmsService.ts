@@ -1,18 +1,18 @@
-import apiClient from './apiClient';
+import apiClient from "./apiClient";
 
 export const lmsService = {
   // Dashboard
   getDashboardStats: async () => {
-    return apiClient.get('/lms/dashboard/stats');
+    return apiClient.get("/lms/dashboard/stats");
   },
 
   // Cohorts
   getCohorts: async () => {
-    return apiClient.get('/cohorts');
+    return apiClient.get("/cohorts");
   },
 
   getActiveCohort: async () => {
-    return apiClient.get('/lms/cohorts/active');
+    return apiClient.get("/lms/cohorts/active");
   },
 
   getCohortById: async (id: string) => {
@@ -30,27 +30,28 @@ export const lmsService = {
     maxStudents: number;
     description?: string;
   }) => {
-    return apiClient.post('/cohorts/create', cohortData);
+    return apiClient.post("/cohorts/create", cohortData);
   },
 
   setActiveCohort: async (cohortId: string) => {
     return apiClient.patch(`/lms/cohorts/${cohortId}/activate`);
   },
-  
-  
-  deleteCohort : async (cohortId: string) => {
+
+  deleteCohort: async (cohortId: string) => {
     return apiClient.delete(`/cohorts/${cohortId}`);
   },
-  
-  
-  updateCohort : async (cohortId: string, cohortData: {
-    name: string;
-    tracks: string[];
-    startDate: string;
-    endDate: string;
-    applicationDeadline: string;
-    status: string;
-  }) => {
+
+  updateCohort: async (
+    cohortId: string,
+    cohortData: {
+      name: string;
+      tracks: string[];
+      startDate: string;
+      endDate: string;
+      applicationDeadline: string;
+      status: string;
+    }
+  ) => {
     return apiClient.put(`/cohorts/${cohortId}`, cohortData);
   },
 
@@ -61,7 +62,7 @@ export const lmsService = {
     page?: number;
     limit?: number;
   }) => {
-    return apiClient.get('/users/students', { params });
+    return apiClient.get("/users/students", { params });
   },
 
   getStudent: async (studentId: string) => {
@@ -70,7 +71,7 @@ export const lmsService = {
 
   // Announcements
   getAnnouncements: async (trackId?: string) => {
-    return apiClient.get('/lms/announcements', {
+    return apiClient.get("/lms/announcements", {
       params: trackId ? { trackId } : {},
     });
   },
@@ -79,9 +80,9 @@ export const lmsService = {
     title: string;
     content: string;
     trackId?: string;
-    priority: 'low' | 'medium' | 'high';
+    priority: "low" | "medium" | "high";
   }) => {
-    return apiClient.post('/lms/announcements', data);
+    return apiClient.post("/lms/announcements", data);
   },
 
   // Cohort Mentors
@@ -89,8 +90,15 @@ export const lmsService = {
     return apiClient.get(`/cohorts/${cohortId}/mentors`);
   },
 
-  assignMentorToCohort: async (cohortId: string, mentorId: string, trackId?: string) => {
-    return apiClient.post(`/cohorts/${cohortId}/mentors`, { mentorId, trackId });
+  assignMentorToCohort: async (
+    cohortId: string,
+    mentorId: string,
+    trackId?: string
+  ) => {
+    return apiClient.post(`/cohorts/${cohortId}/mentors`, {
+      mentorId,
+      trackId,
+    });
   },
 
   removeMentorFromCohort: async (cohortId: string, mentorId: string) => {
