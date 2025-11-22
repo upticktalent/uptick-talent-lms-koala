@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,8 +12,9 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
+import Loader from '@/components/Loader';
 
-export default function AssessmentSuccessPage() {
+function AssessmentSuccessContent() {
   const searchParams = useSearchParams();
   const applicationId = searchParams.get('id');
 
@@ -57,5 +59,13 @@ export default function AssessmentSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AssessmentSuccessPage() {
+  return (
+    <Suspense fallback={<Loader />}>
+      <AssessmentSuccessContent />
+    </Suspense>
   );
 }

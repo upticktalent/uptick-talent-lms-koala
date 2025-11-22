@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,8 +12,9 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Mail, Clock } from 'lucide-react';
+import Loader from '@/components/Loader';
 
-export default function ApplicationSuccessPage() {
+function ApplicationSuccessContent() {
   const searchParams = useSearchParams();
   const applicationId = searchParams.get('id');
 
@@ -143,5 +145,13 @@ export default function ApplicationSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function ApplicationSuccessPage() {
+  return (
+    <Suspense fallback={<Loader />}>
+      <ApplicationSuccessContent />
+    </Suspense>
   );
 }
