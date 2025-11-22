@@ -130,12 +130,11 @@ export default function CohortsPage() {
         cohortNumber: Number(newCohort.cohortNumber),
         startDate: new Date(newCohort.startDate).toISOString(),
         endDate: new Date(newCohort.endDate).toISOString(),
-        applicationDeadline: new Date(
-          newCohort.applicationDeadline
-        ).toISOString(),
+        applicationDeadline: newCohort.applicationDeadline,
         tracks: newCohort.tracks.length > 0 ? newCohort.tracks : [""],
         status: newCohort.status,
       };
+
       console.log(payload);
 
       await lmsService.createCohort(payload);
@@ -186,9 +185,7 @@ export default function CohortsPage() {
           selectedCohort.tracks?.length > 0 ? selectedCohort.tracks : [""],
         startDate: new Date(selectedCohort.startDate).toISOString(),
         endDate: new Date(selectedCohort.endDate).toISOString(),
-        applicationDeadline: new Date(
-          selectedCohort.applicationDeadline
-        ).toISOString(),
+        applicationDeadline: selectedCohort.applicationDeadline,
         status: selectedCohort.status,
       };
 
@@ -228,8 +225,6 @@ export default function CohortsPage() {
 
   // Open Edit Dialog - FIXED: Better handling of cohort data
   const openEditDialog = (cohort: any) => {
-    console.log("Editing cohort:", cohort); // Debug log
-
     setSelectedCohort({
       ...cohort,
       startDate: cohort.startDate ? cohort.startDate.split("T")[0] : "",

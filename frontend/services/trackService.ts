@@ -34,7 +34,7 @@ export const trackService = {
 
   // Update track (admin)
   updateTrack: async (trackId: string, trackData: Partial<ITrack>) => {
-    return apiClient.patch(`/tracks/${trackId}`, trackData);
+    return apiClient.put(`/tracks/${trackId}`, trackData);
   },
 
   // Delete track (admin)

@@ -219,10 +219,15 @@ export default function InterviewSlotDetailPage() {
                 >
                   Delete Slot
                 </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => requestConfirm('Delete slot', 'Are you sure you want to delete this interview slot? This action cannot be undone.', () => handleDelete())} className="text-red-600 focus:text-red-600 focus:bg-red-50" disabled={isDeleting || slot.bookedCount > 0}>
-                      Delete Slot
-                    </DropdownMenuItem>
-        </div>
+                <DropdownMenuItem onClick={() => requestConfirm('Delete slot', 'Are you sure you want to delete this interview slot? This action cannot be undone.', () => handleDelete())} className="text-red-600 focus:text-red-600 focus:bg-red-50" disabled={isDeleting || slot.bookedCount > 0}>
+                  Delete Slot
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          </div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Column */}
