@@ -568,126 +568,6 @@ export default function LMSDashboard() {
               <TabsTrigger value='recruitment'>Recruitment</TabsTrigger>
             )}
           </TabsList>
-          {/* Recruitment Tab Content */}
-          {(user?.role === 'admin' || user?.role === 'mentor') && (
-            <TabsContent value='recruitment' className='space-y-4'>
-              <div className='flex items-center justify-between'>
-                <h2 className='text-2xl font-bold'>Recruitment Overview</h2>
-                <Button
-                  onClick={() =>
-                    (window.location.href = '/lms/recruitment/applications')
-                  }
-                >
-                  <FileText className='w-4 h-4 mr-2' />
-                  View All Applications
-                </Button>
-              </div>
-
-              <div className='grid gap-4 md:grid-cols-4'>
-                <Card>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
-                      Total Applications
-                    </CardTitle>
-                    <FileText className='h-4 w-4 text-muted-foreground' />
-                  </CardHeader>
-                  <CardContent>
-                    <div className='text-2xl font-bold'>
-                      {recruitmentData.totalApplications}
-                    </div>
-                    <p className='text-xs text-muted-foreground'>
-                      For current cohort
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
-                      Pending Review
-                    </CardTitle>
-                    <Clock className='h-4 w-4 text-muted-foreground' />
-                  </CardHeader>
-                  <CardContent>
-                    <div className='text-2xl font-bold'>
-                      {recruitmentData.pendingApplications}
-                    </div>
-                    <p className='text-xs text-muted-foreground'>
-                      Need attention
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
-                      Shortlisted
-                    </CardTitle>
-                    <Users className='h-4 w-4 text-muted-foreground' />
-                  </CardHeader>
-                  <CardContent>
-                    <div className='text-2xl font-bold'>
-                      {recruitmentData.shortlistedApplications}
-                    </div>
-                    <p className='text-xs text-muted-foreground'>
-                      Ready for assessment
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
-                      Accepted
-                    </CardTitle>
-                    <CheckCircle className='h-4 w-4 text-muted-foreground' />
-                  </CardHeader>
-                  <CardContent>
-                    <div className='text-2xl font-bold'>
-                      {recruitmentData.acceptedApplications}
-                    </div>
-                    <p className='text-xs text-muted-foreground'>
-                      Enrolled students
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                  <CardDescription>
-                    Manage recruitment for the current cohort
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className='grid gap-4 md:grid-cols-3'>
-                  <Button
-                    variant='outline'
-                    onClick={() =>
-                      (window.location.href = '/lms/recruitment/applications')
-                    }
-                  >
-                    <FileText className='w-4 h-4 mr-2' />
-                    Review Applications
-                  </Button>
-                  <Button
-                    variant='outline'
-                    onClick={() => (window.location.href = '/lms/assessments')}
-                  >
-                    <CheckCircle className='w-4 h-4 mr-2' />
-                    Manage Assessments
-                  </Button>
-                  <Button
-                    variant='outline'
-                    onClick={() => (window.location.href = '/lms/cohorts')}
-                  >
-                    <Users className='w-4 h-4 mr-2' />
-                    Cohort Settings
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}{' '}
           {canCreateContent && (
             <div className='flex gap-2'>
               {activeTab === 'streams' && (
@@ -1279,6 +1159,129 @@ export default function LMSDashboard() {
             )}
           </div>
         </TabsContent>
+
+        {/* Recruitment Tab Content */}
+        {(user?.role === 'admin' || user?.role === 'mentor') && (
+          <TabsContent value='recruitment' className='mt-6'>
+            <div className='space-y-4'>
+              <div className='flex items-center justify-between'>
+                <h2 className='text-2xl font-bold'>Recruitment Overview</h2>
+                <Button
+                  onClick={() =>
+                    (window.location.href = '/lms/recruitment/applications')
+                  }
+                >
+                  <FileText className='w-4 h-4 mr-2' />
+                  View All Applications
+                </Button>
+              </div>
+
+              <div className='grid gap-4 md:grid-cols-4'>
+                <Card>
+                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                    <CardTitle className='text-sm font-medium'>
+                      Total Applications
+                    </CardTitle>
+                    <FileText className='h-4 w-4 text-muted-foreground' />
+                  </CardHeader>
+                  <CardContent>
+                    <div className='text-2xl font-bold'>
+                      {recruitmentData.totalApplications}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      For current cohort
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                    <CardTitle className='text-sm font-medium'>
+                      Pending Review
+                    </CardTitle>
+                    <Clock className='h-4 w-4 text-muted-foreground' />
+                  </CardHeader>
+                  <CardContent>
+                    <div className='text-2xl font-bold'>
+                      {recruitmentData.pendingApplications}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      Need attention
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                    <CardTitle className='text-sm font-medium'>
+                      Shortlisted
+                    </CardTitle>
+                    <Users className='h-4 w-4 text-muted-foreground' />
+                  </CardHeader>
+                  <CardContent>
+                    <div className='text-2xl font-bold'>
+                      {recruitmentData.shortlistedApplications}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      Ready for assessment
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                    <CardTitle className='text-sm font-medium'>
+                      Accepted
+                    </CardTitle>
+                    <CheckCircle className='h-4 w-4 text-muted-foreground' />
+                  </CardHeader>
+                  <CardContent>
+                    <div className='text-2xl font-bold'>
+                      {recruitmentData.acceptedApplications}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      Enrolled students
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                  <CardDescription>
+                    Manage recruitment for the current cohort
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className='grid gap-4 md:grid-cols-3'>
+                  <Button
+                    variant='outline'
+                    onClick={() =>
+                      (window.location.href = '/lms/recruitment/applications')
+                    }
+                  >
+                    <FileText className='w-4 h-4 mr-2' />
+                    Review Applications
+                  </Button>
+                  <Button
+                    variant='outline'
+                    onClick={() => (window.location.href = '/lms/assessments')}
+                  >
+                    <CheckCircle className='w-4 h-4 mr-2' />
+                    Manage Assessments
+                  </Button>
+                  <Button
+                    variant='outline'
+                    onClick={() => (window.location.href = '/lms/cohorts')}
+                  >
+                    <Users className='w-4 h-4 mr-2' />
+                    Cohort Settings
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

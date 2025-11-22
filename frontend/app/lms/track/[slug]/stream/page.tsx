@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { trackService } from "@/services/trackService";
+import { cohortService } from "@/services/cohortService";
 import { useFetch } from "@/hooks/useFetch";
 import { MessageSquare, MoreVertical, FileText, Info, Eye, Trash2 } from "lucide-react";
 import Loader from "@/components/Loader";
@@ -36,8 +37,12 @@ export default function StreamPage() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const { data: track, loading } = useFetch(() => trackService.getTrackByTrackId(slug));
-
+    const { data: track, isLoading } = useFetch(
+    `track-${params.slug}`,
+    () => cohortService.getTrackInActiveCohort(params.slug),
+    [params.slug]
+  );
+console.log(track)
   const [streamItems, setStreamItems] = useState<StreamItem[]>([
     {
         id: '1',
@@ -73,7 +78,7 @@ export default function StreamPage() {
     }
   };
 
-  if (loading) return <Loader />;
+  if (isLoading) return <Loader />;
   if (!track) return null;
 
   return (

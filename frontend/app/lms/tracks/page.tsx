@@ -42,6 +42,7 @@ import {
 import Link from "next/link";
 import { useFetch } from "@/hooks/useFetch";
 import { trackService } from "@/services/trackService";
+import { cohortService } from "@/services/cohortService";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -82,11 +83,11 @@ export default function TracksPage() {
   const router = useRouter()
   const { isAdmin } = useUser();
   const {
-    data,
+    response: currentCohort,
     loading,
     error,
     refetch,
-  } = useFetch(trackService.getTracks);
+  } = useFetch(cohortService.getCurrentActiveCohort);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTrack, setNewTrack] = useState({
@@ -95,23 +96,31 @@ export default function TracksPage() {
     description: "",
     isActive: true,
   });
-  const tracks = data?.tracks
+  
+  console.log('Cohort Data:', currentCohort);
+  
+  // Extract tracks from current active cohort
+  
+  const cohortTracks = currentCohort?.tracks || [];
   const [isCreating, setIsCreating] = useState(false);
 
-  const filteredTracks =
-    tracks?.filter((track: any) =>
-      track.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
-
-  // Calculate stats
-  const totalTracks = tracks?.length || 0;
-  const activeTracks =
-    tracks?.filter((t: any) => t.isActive).length || 0;
-  const totalStudents =
-    tracks?.reduce(
-      (acc: number, curr: any) => acc + (curr.students?.length || 0),
-      0
-    ) || 0;
+  const filteredTracks = cohortTracks?.filter((cohortTrack: any) =>
+    cohortTrack.track?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+  
+  console.log('Filtered Tracks:', filteredTracks);
+  
+  // Calculate stats based on cohort tracks
+  const totalTracks = cohortTracks?.length || 0;
+  const activeTracks = cohortTracks?.filter((ct: any) => ct.track?.isActive).length || 0;
+  const totalStudents = cohortTracks?.reduce(
+    (acc: number, curr: any) => acc + (curr.currentStudents || 0),
+    0
+  ) || 0;
+  const totalMentors = cohortTracks?.reduce(
+    (acc: number, curr: any) => acc + (curr.mentors?.length || 0),
+    0
+  ) || 0;
 
   const handleCreateTrack = async () => {
     try {
@@ -154,12 +163,21 @@ export default function TracksPage() {
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Tracks</h1>
         <p className="text-gray-600 mt-2">
-          Manage learning tracks and curriculum
+          {currentCohort ? (
+            <>
+              Managing tracks for <span className="font-semibold text-blue-600">{currentCohort.name}</span>
+              <span className="text-sm text-gray-500 ml-2">
+                ({new Date(currentCohort.startDate).toLocaleDateString()} - {new Date(currentCohort.endDate).toLocaleDateString()})
+              </span>
+            </>
+          ) : (
+            "No active cohort found"
+          )}
         </p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Tracks"
           value={totalTracks}
@@ -177,6 +195,12 @@ export default function TracksPage() {
           value={totalStudents}
           icon={Users}
           color="#8B5CF6" // Violet
+        />
+        <StatCard
+          title="Total Mentors"
+          value={totalMentors}
+          icon={UserCheck}
+          color="#F59E0B" // Amber
         />
       </div>
 
@@ -272,78 +296,107 @@ export default function TracksPage() {
           </TableHeader>
           <TableBody>
             {filteredTracks.length > 0 ? (
-              filteredTracks.map((track: any) => (
-                <TableRow key={track._id} className="hover:bg-gray-50" onClick={() => router.push(`/lms/track/${track.trackId}/stream`)}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-         
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {track.name}
-                        </div>
-                        <div className="text-sm text-gray-500 truncate max-w-[200px]">
-                          {track.description}
+              filteredTracks.map((cohortTrack: any) => {
+                const track = cohortTrack.track;
+                return (
+                  <TableRow key={cohortTrack._id || track?._id} className="hover:bg-gray-50" onClick={() => router.push(`/lms/track/${track?.trackId}/stream`)}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {track?.name || 'Unknown Track'}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate max-w-[200px]">
+                            {track?.description || 'No description available'}
+                          </div>
+                          <div className="text-xs text-blue-600 mt-1">
+                            Cohort: {currentCohort?.name}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={track.isActive ? "default" : "secondary"}
-                      className={
-                        track.isActive
-                          ? "bg-green-100 text-green-800 hover:bg-green-200"
-                          : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                      }
-                    >
-                      {track.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Users className="w-4 h-4" />
-                      <span>{track.students?.length || 0}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <UserCheck className="w-4 h-4" />
-                      <span>{track.mentors?.length || 0}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <Link href={`/lms/track/${track.trackId}`}>
-                          <DropdownMenuItem className="cursor-pointer">
-                            View Details
-                          </DropdownMenuItem>
-                        </Link>
-                        {isAdmin && (
-                          <>
-                            <DropdownMenuItem className="cursor-pointer">
-                              Edit Track
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600 cursor-pointer">
-                              Delete Track
-                            </DropdownMenuItem>
-                          </>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={track?.isActive ? "default" : "secondary"}
+                        className={
+                          track?.isActive
+                            ? "bg-green-100 text-green-800 hover:bg-green-200"
+                            : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                        }
+                      >
+                        {track?.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Users className="w-4 h-4" />
+                        <span className="font-medium">{cohortTrack.currentStudents || 0}</span>
+                        {cohortTrack.maxStudents && (
+                          <span className="text-xs text-gray-400">
+                            / {cohortTrack.maxStudents}
+                          </span>
                         )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <UserCheck className="w-4 h-4" />
+                        <span className="font-medium">{cohortTrack.mentors?.length || 0}</span>
+                        {cohortTrack.mentors?.length > 0 && (
+                          <div className="text-xs text-gray-500 ml-1">
+                            {cohortTrack.mentors.slice(0, 2).map((mentor: any, index: number) => (
+                              <span key={mentor._id || index}>
+                                {mentor.firstName} {mentor.lastName}
+                                {index < Math.min(cohortTrack.mentors.length - 1, 1) && ", "}
+                              </span>
+                            ))}
+                            {cohortTrack.mentors.length > 2 && (
+                              <span> +{cohortTrack.mentors.length - 2} more</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <Link href={`/lms/track/${track?.trackId}`}>
+                            <DropdownMenuItem className="cursor-pointer">
+                              View Details
+                            </DropdownMenuItem>
+                          </Link>
+                          {isAdmin && (
+                            <>
+                              <DropdownMenuItem className="cursor-pointer">
+                                Edit Track
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="cursor-pointer">
+                                Manage Mentors
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600 cursor-pointer">
+                                Remove from Cohort
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  No tracks found.
+                  {currentCohort ? 
+                    "No tracks found in the current active cohort." : 
+                    "No active cohort found. Please create or activate a cohort first."
+                  }
                 </TableCell>
               </TableRow>
             )}

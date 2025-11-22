@@ -16,15 +16,15 @@ export function useFetch<T = any>(
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+const [responseData, setResponse]=useState<any>(null);
   const execute = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await fetchFunction();
+      setResponse(response)
       const result: ApiResponse<T> = response.data;
-
-      if (result.success) {
+      if (result.success||response.success) {
         setData(result.data || null);
       } else {
         setError(result.error || "An error occurred");
@@ -47,6 +47,7 @@ export function useFetch<T = any>(
   }, []);
 
   return {
+    response:responseData?.data,
     data,
     loading,
     error,

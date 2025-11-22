@@ -79,7 +79,7 @@ export const userService = {
     id: string,
     userData: Partial<IUser>
   ): Promise<ApiResponse<IUser>> => {
-    const response = await apiClient.patch(`/users/${id}`, userData);
+    const response = await apiClient.put(`/users/${id}`, userData);
     return response.data;
   },
 

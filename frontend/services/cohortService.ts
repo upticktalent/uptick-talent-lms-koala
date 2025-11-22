@@ -120,4 +120,10 @@ export const cohortService = {
     const response = await apiClient.get(`/cohorts/${cohortId}/stats`);
     return response.data;
   },
+
+  // Get track details within current active cohort
+  getTrackInActiveCohort: async (trackId: string): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get(`/cohorts/track/${trackId}`);
+    return response.data;
+  },
 };

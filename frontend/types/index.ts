@@ -44,6 +44,7 @@ export interface IApplication {
   status: 'pending' | 'under-review' | 'accepted' | 'rejected' | 'shortlisted';
   reviewedBy?: string | IUser;
   reviewedAt?: string;
+  generatedPassword?: string;
   reviewNotes?: string;
   rejectionReason?: string;
 
@@ -92,11 +93,11 @@ export interface IAssessmentQuestion {
 export interface ITrack {
   _id: string;
   name: string;
-  slug: string;
   description: string;
   color: string;
   icon?: string;
   isActive: boolean;
+  trackId: string;
   mentors: IUser[];
   students: IUser[];
   curriculum: ICurriculumItem[];

@@ -2,15 +2,20 @@
 
 import { useParams } from "next/navigation";
 import { trackService } from "@/services/trackService";
+import { cohortService } from "@/services/cohortService";
 import { useFetch } from "@/hooks/useFetch";
 import Loader from "@/components/Loader";
 
 export default function PeoplePage() {
   const params = useParams();
   const slug = params.slug as string;
-  const { data: track, loading } = useFetch(() => trackService.getTrackBySlug(slug));
+  const { data: track, isLoading } = useFetch(
+    `track-${params.slug}`,
+    () => cohortService.getTrackInActiveCohort(params.slug),
+    [params.slug]
+  );
 
-  if (loading) return <Loader />;
+  if (isLoading) return <Loader />;
   if (!track) return null;
 
   return (

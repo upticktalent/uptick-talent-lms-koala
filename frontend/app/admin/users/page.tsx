@@ -262,6 +262,8 @@ export default function UsersPage() {
   };
 
   const getFilteredUsers = () => {
+    console.log(users);
+    
     let filtered = users;
 
     // Filter by tab

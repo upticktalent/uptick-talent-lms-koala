@@ -351,7 +351,7 @@ export default function AdminTracksPage() {
                       />
                       <div>
                         <p className="font-medium">{track.name}</p>
-                        <p className="text-sm text-gray-500">Slug: {track.slug}</p>
+                        <p className="text-sm text-gray-500">Slug: {track?.trackId}</p>
                       </div>
                     </div>
                   </TableCell>
