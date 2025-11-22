@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
-@import 'tailwindcss';
+@import url("https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap");
+@import "tailwindcss";
 
 @theme {
   /* Uptick Talent Color System */
-  --color-primary: #4F46E5;
+  --color-primary: #4f46e5;
   --color-primary-foreground: #ffffff;
   --color-secondary: #f1f5f9;
   --color-secondary-foreground: #0f172a;
@@ -99,7 +99,7 @@
 
 /* Base styles for better typography */
 body {
-  font-family: 'Raleway', 'Inter', system-ui, sans-serif;
+  font-family: "Raleway", "Inter", system-ui, sans-serif;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   transition: background-color 0.2s ease, color 0.2s ease;
@@ -107,11 +107,11 @@ body {
 
 /* Ensure proper font loading */
 .font-raleway {
-  font-family: 'Raleway', system-ui, sans-serif;
+  font-family: "Raleway", system-ui, sans-serif;
 }
 
 .font-inter {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 @layer base {
@@ -122,17 +122,16 @@ body {
   button {
     cursor: pointer;
   }
-  
-  
-  html, body {
-  height: 100%;
-}
 
+  html,
+  body {
+    height: 100%;
+  }
 
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'Raleway', 'Inter', system-ui, sans-serif;
+    font-family: "Raleway", "Inter", system-ui, sans-serif;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -228,20 +227,26 @@ body {
   }
 }
 
-/* Custom scrollbar */
+/* Hide scrollbar globally (cross-browser)
+   - Firefox: `scrollbar-width: none`
+   - IE/Edge: `-ms-overflow-style: none`
+   - WebKit (Chrome/Safari/Edge Chromium): set width/height to 0 */
+html,
+body,
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 0px;
+  height: 0px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground));
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--foreground));
+  background: transparent;
 }

@@ -3,7 +3,15 @@
 import { useUser } from "@/hooks/useUser";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Menu, LogOut, User, ChevronDown, Bell, Settings, UserCog } from "lucide-react";
+import {
+  Menu,
+  LogOut,
+  User,
+  ChevronDown,
+  Bell,
+  Settings,
+  UserCog,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +22,7 @@ import {
 } from "../ui/dropdown-menu";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 interface NavbarProps {
   title?: string;
@@ -35,7 +44,7 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
   };
 
   return (
-    <header className="bg-[hsl(var(--background))] shadow-sm border-b border-[hsl(var(--border))] sticky top-0 z-50">
+    <header className="bg-[hsl(var(--background))]  border-b border-[hsl(var(--border))] sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 sm:px-6 py-3">
         {/* Left Section - Menu Button & Title */}
         <div className="flex items-center gap-2 sm:gap-4">
@@ -69,15 +78,10 @@ export function Navbar({ title, onOpenSidebar }: NavbarProps) {
 
         {/* Right Section - User Info & Actions */}
         <div className="flex items-center gap-2 sm:gap-4">
-
           {/* Notifications Icon - Hidden on mobile */}
-          <button
-            className="hidden sm:flex items-center justify-center p-2 rounded-md text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] transition-colors relative cursor-pointer"
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          <div className="hidden sm:block">
+            <NotificationDropdown />
+          </div>
 
           {user && (
             <DropdownMenu>

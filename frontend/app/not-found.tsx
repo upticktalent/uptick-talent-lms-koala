@@ -11,9 +11,11 @@ export default function NotFound() {
             <FileQuestion className="w-12 h-12 text-gray-600" />
           </div>
         </div>
-        
+
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900">Page Not Found</h1>
+          <h1 className="text-xl font-semibold text-gray-900">
+            Page Not Found
+          </h1>
           <p className="text-gray-600">
             The page you are looking for doesn't exist or has been moved.
           </p>
@@ -26,7 +28,7 @@ export default function NotFound() {
               Go Home
             </Button>
           </Link>
-          
+
           <Link href="javascript:history.back()">
             <Button variant="outline" className="gap-2 w-full sm:w-auto">
               <ArrowLeft className="w-4 h-4" />

@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,7 +31,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MoreVertical, Edit, Users, BookOpen, Eye } from "lucide-react";
+import { Plus, Search, MoreVertical, Edit, Trash2 } from "lucide-react";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import { useFetch } from "@/hooks/useFetch";
 import { trackService } from "@/services/trackService";
 import { toast } from "sonner";
@@ -51,12 +52,7 @@ export default function TracksPage() {
     isActive: true,
   });
 
-  const {
-    data,
-    loading,
-    error,
-    refetch,
-  } = useFetch(trackService.getTracks);
+  const { data, loading, error, refetch } = useFetch(trackService.getTracks);
 
   const tracksData = data?.tracks || [];
 
@@ -73,7 +69,7 @@ export default function TracksPage() {
       }
 
       await trackService.createTrack(newTrack);
-      
+
       toast.success("Track created successfully");
       setIsCreateDialogOpen(false);
       setNewTrack({
@@ -104,10 +100,13 @@ export default function TracksPage() {
         name: selectedTrack.name,
         description: selectedTrack.description,
         isActive: selectedTrack.isActive,
+        id: selectedTrack._id,
       };
 
+      console.log("Payload for update:", payload);
+
       await trackService.updateTrack(selectedTrack._id, payload);
-      
+
       toast.success("Track updated successfully");
       setIsEditDialogOpen(false);
       setSelectedTrack(null);
@@ -118,6 +117,38 @@ export default function TracksPage() {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleDeleteTrack = async (id: string) => {
+    try {
+      await trackService.deleteTrack(id);
+      toast.success("Track deleted successfully");
+      refetch();
+    } catch (error) {
+      console.error("Failed to delete track:", error);
+      toast.error("Failed to delete track");
+    }
+  };
+
+  // Confirm dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmDescription, setConfirmDescription] = useState<
+    string | undefined
+  >(undefined);
+  const [confirmAction, setConfirmAction] = useState<
+    (() => void | Promise<void>) | null
+  >(null);
+
+  const requestConfirm = (
+    title: string,
+    description: string | undefined,
+    action: () => void | Promise<void>
+  ) => {
+    setConfirmTitle(title);
+    setConfirmDescription(description);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
   };
 
   const openEditDialog = (track: any) => {
@@ -131,8 +162,10 @@ export default function TracksPage() {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Tracks</h1>
-        <p className="text-gray-600 text-sm lg:text-base">Manage learning tracks and curriculums</p>
+        <h1 className="text-xl font-semibold text-gray-900">Tracks</h1>
+        <p className="text-gray-600 text-sm lg:text-base">
+          Manage learning tracks and curriculums
+        </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-white p-4 lg:p-6 rounded-lg border shadow-sm">
@@ -149,7 +182,7 @@ export default function TracksPage() {
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2 w-full sm:w-auto">
-              <Plus className="w-4 h-4" /> 
+              <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Create Track</span>
               <span className="sm:hidden">Create</span>
             </Button>
@@ -157,7 +190,9 @@ export default function TracksPage() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Track</DialogTitle>
-              <DialogDescription>Add a new learning track to the system.</DialogDescription>
+              <DialogDescription>
+                Add a new learning track to the system.
+              </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -165,7 +200,9 @@ export default function TracksPage() {
                 <Input
                   id="name"
                   value={newTrack.name}
-                  onChange={(e) => setNewTrack({ ...newTrack, name: e.target.value })}
+                  onChange={(e) =>
+                    setNewTrack({ ...newTrack, name: e.target.value })
+                  }
                   placeholder="e.g. Frontend Development"
                 />
               </div>
@@ -174,7 +211,9 @@ export default function TracksPage() {
                 <Textarea
                   id="description"
                   value={newTrack.description}
-                  onChange={(e) => setNewTrack({ ...newTrack, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewTrack({ ...newTrack, description: e.target.value })
+                  }
                   placeholder="Brief description of the track..."
                 />
               </div>
@@ -182,13 +221,20 @@ export default function TracksPage() {
                 <Switch
                   id="active"
                   checked={newTrack.isActive}
-                  onCheckedChange={(checked) => setNewTrack({ ...newTrack, isActive: checked })}
+                  onCheckedChange={(checked) =>
+                    setNewTrack({ ...newTrack, isActive: checked })
+                  }
                 />
                 <Label htmlFor="active">Active Status</Label>
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button onClick={handleCreateTrack} disabled={isCreating}>
                 {isCreating ? "Creating..." : "Create Track"}
               </Button>
@@ -201,11 +247,15 @@ export default function TracksPage() {
         <Table>
           <TableHeader className="bg-gray-50/50">
             <TableRow>
-              <TableHead className="py-4 font-semibold text-gray-900">Track Name</TableHead>
-              <TableHead className="py-4 font-semibold text-gray-900">Status</TableHead>
-              <TableHead className="py-4 font-semibold text-gray-900">Mentors</TableHead>
-              <TableHead className="py-4 font-semibold text-gray-900">Students</TableHead>
-              <TableHead className="py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
+              <TableHead className="py-4 font-semibold text-gray-900">
+                Track Name
+              </TableHead>
+              <TableHead className="py-4 font-semibold text-gray-900">
+                Status
+              </TableHead>
+              <TableHead className="py-4 font-semibold text-gray-900 text-right">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -214,44 +264,57 @@ export default function TracksPage() {
                 <TableRow key={track._id} className="hover:bg-gray-50/50">
                   <TableCell className="py-4">
                     <div>
-                      <div className="font-semibold text-gray-900">{track.name}</div>
-                      <div className="text-sm text-gray-500 truncate max-w-[300px]">{track.description}</div>
+                      <div className="font-semibold text-gray-900">
+                        {track.name}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate max-w-[300px]">
+                        {track.description}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="py-4">
-                    <Badge variant={track.isActive ? "default" : "secondary"} className={track.isActive ? "bg-green-100 text-green-800 hover:bg-green-100" : "bg-gray-100 text-gray-800 hover:bg-gray-100"}>
+                    <Badge
+                      variant={track.isActive ? "default" : "secondary"}
+                      className={
+                        track.isActive
+                          ? "bg-green-100 text-green-800 hover:bg-green-100"
+                          : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                      }
+                    >
                       {track.isActive ? "Active" : "Inactive"}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <div className="flex items-center gap-1 text-gray-600">
-                      <Users className="w-4 h-4" />
-                      {track.mentors?.length || 0}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <div className="flex items-center gap-1 text-gray-600">
-                      <BookOpen className="w-4 h-4" />
-                      {track.students?.length || 0}
-                    </div>
                   </TableCell>
                   <TableCell className="py-4 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                        >
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/tracks/${track._id}`} className="flex items-center gap-2 cursor-pointer">
-                            <Eye className="h-4 w-4" />
-                            View Details
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openEditDialog(track)} className="flex items-center gap-2 cursor-pointer">
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(track)}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
                           <Edit className="h-4 w-4" />
                           Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() =>
+                            requestConfirm(
+                              "Delete track",
+                              "Are you sure you want to delete this track?",
+                              () => handleDeleteTrack(track._id)
+                            )
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -260,7 +323,10 @@ export default function TracksPage() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-gray-500">
+                <TableCell
+                  colSpan={5}
+                  className="h-24 text-center text-gray-500"
+                >
                   No tracks found.
                 </TableCell>
               </TableRow>
@@ -272,11 +338,16 @@ export default function TracksPage() {
       {/* Mobile View */}
       <div className="block lg:hidden space-y-4">
         {filteredTracks.map((track: any) => (
-          <div key={track._id} className="bg-white rounded-lg border p-4 shadow-sm">
+          <div
+            key={track._id}
+            className="bg-white rounded-lg border p-4 shadow-sm"
+          >
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="font-semibold text-gray-900">{track.name}</h3>
-                <p className="text-sm text-gray-500 line-clamp-2">{track.description}</p>
+                <p className="text-sm text-gray-500 line-clamp-2">
+                  {track.description}
+                </p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -285,27 +356,40 @@ export default function TracksPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link href={`/admin/tracks/${track._id}`} className="flex items-center gap-2">
-                      <Eye className="h-4 w-4" />
-                      View Details
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => openEditDialog(track)} className="flex items-center gap-2">
+                  <DropdownMenuItem
+                    onClick={() => openEditDialog(track)}
+                    className="flex items-center gap-2"
+                  >
                     <Edit className="h-4 w-4" />
                     Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() =>
+                      requestConfirm(
+                        "Delete track",
+                        "Are you sure you want to delete this track?",
+                        () => handleDeleteTrack(track._id)
+                      )
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
             <div className="flex items-center justify-between mt-4">
-              <Badge variant={track.isActive ? "default" : "secondary"} className={track.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+              <Badge
+                variant={track.isActive ? "default" : "secondary"}
+                className={
+                  track.isActive
+                    ? "bg-green-100 text-green-800"
+                    : "bg-gray-100 text-gray-800"
+                }
+              >
                 {track.isActive ? "Active" : "Inactive"}
               </Badge>
-              <div className="flex gap-4 text-sm text-gray-600">
-                <span className="flex items-center gap-1"><Users className="w-4 h-4" /> {track.mentors?.length || 0}</span>
-                <span className="flex items-center gap-1"><BookOpen className="w-4 h-4" /> {track.students?.length || 0}</span>
-              </div>
             </div>
           </div>
         ))}
@@ -324,7 +408,9 @@ export default function TracksPage() {
                 <Input
                   id="edit-name"
                   value={selectedTrack.name}
-                  onChange={(e) => setSelectedTrack({ ...selectedTrack, name: e.target.value })}
+                  onChange={(e) =>
+                    setSelectedTrack({ ...selectedTrack, name: e.target.value })
+                  }
                 />
               </div>
               <div className="grid gap-2">
@@ -332,27 +418,50 @@ export default function TracksPage() {
                 <Textarea
                   id="edit-description"
                   value={selectedTrack.description}
-                  onChange={(e) => setSelectedTrack({ ...selectedTrack, description: e.target.value })}
+                  onChange={(e) =>
+                    setSelectedTrack({
+                      ...selectedTrack,
+                      description: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="flex items-center space-x-2">
                 <Switch
                   id="edit-active"
                   checked={selectedTrack.isActive}
-                  onCheckedChange={(checked) => setSelectedTrack({ ...selectedTrack, isActive: checked })}
+                  onCheckedChange={(checked) =>
+                    setSelectedTrack({ ...selectedTrack, isActive: checked })
+                  }
                 />
                 <Label htmlFor="edit-active">Active Status</Label>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button onClick={handleEditTrack} disabled={isUpdating}>
               {isUpdating ? "Updating..." : "Update Track"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={confirmTitle}
+        description={confirmDescription}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={async () => {
+          if (confirmAction) await confirmAction();
+        }}
+      />
     </div>
   );
 }

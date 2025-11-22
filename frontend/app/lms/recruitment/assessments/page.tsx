@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useTransition } from "react";
@@ -201,7 +202,7 @@ export default function AssessmentsPage() {
               assessments?.assessments?.filter(
                 (assessment: any) => assessment.status === status.value
               ).length || 0;
-            
+
             // Define icon and color for each status
             const getStatusConfig = (value: string) => {
               switch (value) {
@@ -246,7 +247,9 @@ export default function AssessmentsPage() {
                       {count}
                     </div>
                   </div>
-                  <div className={`p-3 rounded-lg ${config.iconColor} ${config.iconBgColor}`}>
+                  <div
+                    className={`p-3 rounded-full  ${config.iconColor} ${config.iconBgColor}`}
+                  >
                     <Icon className="h-7 w-7" />
                   </div>
                 </div>
@@ -265,21 +268,37 @@ export default function AssessmentsPage() {
             <Table>
               <TableHeader className="bg-gray-50/50">
                 <TableRow>
-                  <TableHead className="py-4 font-semibold text-gray-900">Applicant</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Track</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Cohort</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Status</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900">Submitted</TableHead>
-                  <TableHead className="py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">
+                    Applicant
+                  </TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">
+                    Track
+                  </TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">
+                    Cohort
+                  </TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">
+                    Status
+                  </TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900">
+                    Submitted
+                  </TableHead>
+                  <TableHead className="py-4 font-semibold text-gray-900 text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedAssessments.map((assessment: any) => (
-                  <TableRow key={assessment._id} className="hover:bg-gray-50/50 transition-colors">
+                  <TableRow
+                    key={assessment._id}
+                    className="hover:bg-gray-50/50 transition-colors"
+                  >
                     <TableCell className="py-4">
                       <div>
                         <div className="font-semibold text-gray-900 capitalize">
-                          {assessment.application.applicant.firstName} {assessment.application.applicant.lastName}
+                          {assessment.application.applicant.firstName}{" "}
+                          {assessment.application.applicant.lastName}
                         </div>
                         <div className="text-sm text-gray-500">
                           {assessment.application.applicant.email}
@@ -287,10 +306,14 @@ export default function AssessmentsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="capitalize font-medium text-gray-700">{assessment.application.track.name}</div>
+                      <div className="capitalize font-medium text-gray-700">
+                        {assessment.application.track.name}
+                      </div>
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="capitalize font-medium text-gray-700">{assessment.application.cohort.name}</div>
+                      <div className="capitalize font-medium text-gray-700">
+                        {assessment.application.cohort.name}
+                      </div>
                     </TableCell>
                     <TableCell className="py-4">
                       <span
@@ -303,20 +326,31 @@ export default function AssessmentsPage() {
                     </TableCell>
                     <TableCell className="py-4">
                       <div className="text-sm text-gray-500">
-                        {assessment.submittedAt ? formatDate(assessment.submittedAt) : "Not submitted"}
+                        {assessment.submittedAt
+                          ? formatDate(assessment.submittedAt)
+                          : "Not submitted"}
                       </div>
                     </TableCell>
                     <TableCell className="py-4 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
+                          <Button
+                            variant="ghost"
+                            className="h-8 w-8 p-0 cursor-pointer"
+                          >
                             <span className="sr-only">Open menu</span>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[160px] bg-white">
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-[160px] bg-white"
+                        >
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <Link href={`/lms/recruitment/assessments/${assessment._id}`} className="w-full cursor-pointer">
+                          <Link
+                            href={`/lms/recruitment/assessments/${assessment._id}`}
+                            className="w-full cursor-pointer"
+                          >
                             <DropdownMenuItem className="cursor-pointer">
                               View Details
                             </DropdownMenuItem>
@@ -324,15 +358,19 @@ export default function AssessmentsPage() {
                           {assessment.status === "submitted" && (
                             <>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                onClick={() => handleReviewAssessment(assessment._id)}
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleReviewAssessment(assessment._id)
+                                }
                                 disabled={isPending}
                                 className="cursor-pointer"
                               >
                                 Review
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleRejectAssessment(assessment._id)}
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleRejectAssessment(assessment._id)
+                                }
                                 disabled={isPending}
                                 className="text-red-600 focus:text-red-600 cursor-pointer"
                               >

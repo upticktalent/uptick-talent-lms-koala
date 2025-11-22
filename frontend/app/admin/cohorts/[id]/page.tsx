@@ -9,10 +9,33 @@ import { userService } from "@/services/userService";
 import Loader from "@/components/Loader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate } from "@/utils/formatDate";
-import { ArrowLeft, Calendar, Users, BookOpen, MoreVertical, Edit, Trash2, Plus, Settings, CheckCircle, XCircle, UserPlus, UserMinus, Mail, Phone } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Users,
+  BookOpen,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Plus,
+  Settings,
+  CheckCircle,
+  XCircle,
+  UserPlus,
+  UserMinus,
+  Mail,
+  Phone,
+} from "lucide-react";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,7 +62,13 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -79,7 +108,7 @@ export default function CohortDetailPage() {
   const allMentors = allMentorsData?.users || [];
 
   const [activeTab, setActiveTab] = useState("overview");
-  
+
   // Track Assignment State
   const [isAddTrackOpen, setIsAddTrackOpen] = useState(false);
   const [selectedTrackToAdd, setSelectedTrackToAdd] = useState("");
@@ -103,7 +132,10 @@ export default function CohortDetailPage() {
   // Helper to get available mentors (not yet assigned to this cohort)
   // Filtering out mentors who are already in the cohortMentors list
   const availableMentors = allMentors.filter(
-    (mentor: any) => !cohortMentors.some((cm: any) => cm.mentor?._id === mentor._id || cm._id === mentor._id)
+    (mentor: any) =>
+      !cohortMentors.some(
+        (cm: any) => cm.mentor?._id === mentor._id || cm._id === mentor._id
+      )
   );
 
   const handleAddTrack = async () => {
@@ -112,14 +144,14 @@ export default function CohortDetailPage() {
       setIsAddingTrack(true);
       const currentTrackIds = cohort.tracks.map((t: any) => t._id);
       const newTrackIds = [...currentTrackIds, selectedTrackToAdd];
-      
+
       await lmsService.updateCohort(id, {
         ...cohort,
         tracks: newTrackIds,
         startDate: cohort.startDate,
         endDate: cohort.endDate,
         applicationDeadline: cohort.applicationDeadline,
-        status: cohort.status
+        status: cohort.status,
       });
 
       toast.success("Track added to cohort");
@@ -135,18 +167,19 @@ export default function CohortDetailPage() {
   };
 
   const handleRemoveTrack = async (trackId: string) => {
-    if (!confirm("Are you sure you want to remove this track from the cohort?")) return;
     try {
       const currentTrackIds = cohort.tracks.map((t: any) => t._id);
-      const newTrackIds = currentTrackIds.filter((tid: string) => tid !== trackId);
-      
+      const newTrackIds = currentTrackIds.filter(
+        (tid: string) => tid !== trackId
+      );
+
       await lmsService.updateCohort(id, {
         ...cohort,
         tracks: newTrackIds,
         startDate: cohort.startDate,
         endDate: cohort.endDate,
         applicationDeadline: cohort.applicationDeadline,
-        status: cohort.status
+        status: cohort.status,
       });
 
       toast.success("Track removed from cohort");
@@ -161,11 +194,16 @@ export default function CohortDetailPage() {
     if (!selectedMentorToAssign) return;
     try {
       setIsAssigningMentor(true);
-      
+
       // If specific track selected, pass it. If 'all', pass undefined or handle as global assignment
-      const trackId = selectedTrackForMentor === 'all' ? undefined : selectedTrackForMentor;
-      
-      await lmsService.assignMentorToCohort(id, selectedMentorToAssign, trackId);
+      const trackId =
+        selectedTrackForMentor === "all" ? undefined : selectedTrackForMentor;
+
+      await lmsService.assignMentorToCohort(
+        id,
+        selectedMentorToAssign,
+        trackId
+      );
 
       toast.success("Mentor assigned successfully");
       setIsAssignMentorOpen(false);
@@ -181,7 +219,6 @@ export default function CohortDetailPage() {
   };
 
   const handleRemoveMentor = async (mentorId: string) => {
-    if (!confirm("Are you sure you want to remove this mentor from the cohort?")) return;
     try {
       await lmsService.removeMentorFromCohort(id, mentorId);
       toast.success("Mentor removed from cohort");
@@ -193,7 +230,6 @@ export default function CohortDetailPage() {
   };
 
   const handleRemoveStudent = async (studentId: string) => {
-    if (!confirm("Are you sure you want to remove this student from the cohort?")) return;
     try {
       await lmsService.removeStudentFromCohort(id, studentId);
       toast.success("Student removed from cohort");
@@ -205,11 +241,32 @@ export default function CohortDetailPage() {
     }
   };
 
+  // Confirm dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmDescription, setConfirmDescription] = useState<
+    string | undefined
+  >(undefined);
+  const [confirmAction, setConfirmAction] = useState<
+    (() => void | Promise<void>) | null
+  >(null);
+
+  const requestConfirm = (
+    title: string,
+    description: string | undefined,
+    action: () => void | Promise<void>
+  ) => {
+    setConfirmTitle(title);
+    setConfirmDescription(description);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
+  };
+
   const handleActivateCohort = async () => {
     try {
       await lmsService.updateCohort(id, {
         ...cohort,
-        status: 'active',
+        status: "active",
         tracks: cohort.tracks.map((t: any) => t._id),
         startDate: cohort.startDate,
         endDate: cohort.endDate,
@@ -223,10 +280,10 @@ export default function CohortDetailPage() {
   };
 
   const handleDeactivateCohort = async () => {
-     try {
+    try {
       await lmsService.updateCohort(id, {
         ...cohort,
-        status: 'completed',
+        status: "completed",
         tracks: cohort.tracks.map((t: any) => t._id),
         startDate: cohort.startDate,
         endDate: cohort.endDate,
@@ -240,7 +297,10 @@ export default function CohortDetailPage() {
   };
 
   if (cohortLoading) return <Loader />;
-  if (cohortError) return <div className="text-center text-red-500 p-8">Error: {cohortError}</div>;
+  if (cohortError)
+    return (
+      <div className="text-center text-red-500 p-8">Error: {cohortError}</div>
+    );
   if (!cohort) return <div className="text-center p-8">Cohort not found</div>;
 
   return (
@@ -251,67 +311,81 @@ export default function CohortDetailPage() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => router.push('/admin/cohorts')}
+            onClick={() => router.push("/admin/cohorts")}
             className="h-8 w-8"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">{cohort.name}</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                {cohort.name}
+              </h1>
               <Badge
                 variant="secondary"
                 className={
-                  cohort.status === 'active'
+                  cohort.status === "active"
                     ? "bg-green-100 text-green-800 hover:bg-green-100"
-                    : cohort.status === 'upcoming'
+                    : cohort.status === "upcoming"
                     ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
                     : "bg-gray-100 text-gray-800 hover:bg-gray-100"
                 }
               >
-                {cohort.status ? cohort.status.charAt(0).toUpperCase() + cohort.status.slice(1) : "Unknown"}
+                {cohort.status
+                  ? cohort.status.charAt(0).toUpperCase() +
+                    cohort.status.slice(1)
+                  : "Unknown"}
               </Badge>
             </div>
-            <p className="text-sm text-gray-500 mt-1">Cohort #{cohort.cohortNumber}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Cohort #{cohort.cohortNumber}
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
-            {cohort.status !== 'active' && (
-                <Button onClick={handleActivateCohort} className="bg-green-600 hover:bg-green-700">
-                    Activate Cohort
-                </Button>
-            )}
-             {cohort.status === 'active' && (
-                <Button variant="outline" onClick={handleDeactivateCohort} className="text-red-600 border-red-200 hover:bg-red-50">
-                    Deactivate
-                </Button>
-            )}
+          {cohort.status !== "active" && (
+            <Button
+              onClick={handleActivateCohort}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Activate Cohort
+            </Button>
+          )}
+          {cohort.status === "active" && (
+            <Button
+              variant="outline"
+              onClick={handleDeactivateCohort}
+              className="text-red-600 border-red-200 hover:bg-red-50"
+            >
+              Deactivate
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent overflow-x-auto flex-nowrap">
-          <TabsTrigger 
-            value="overview" 
+          <TabsTrigger
+            value="overview"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 whitespace-nowrap"
           >
             Overview
           </TabsTrigger>
-          <TabsTrigger 
-            value="tracks" 
+          <TabsTrigger
+            value="tracks"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 whitespace-nowrap"
           >
             Tracks
           </TabsTrigger>
-          <TabsTrigger 
-            value="students" 
+          <TabsTrigger
+            value="students"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 whitespace-nowrap"
           >
             Students
           </TabsTrigger>
-          <TabsTrigger 
-            value="mentors" 
+          <TabsTrigger
+            value="mentors"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3 whitespace-nowrap"
           >
             Mentors
@@ -323,14 +397,18 @@ export default function CohortDetailPage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="shadow-sm border-slate-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Students
+                </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {cohort.currentStudents} / {cohort.maxStudents}
                 </div>
-                <p className="text-xs text-muted-foreground">Enrolled students</p>
+                <p className="text-xs text-muted-foreground">
+                  Enrolled students
+                </p>
               </CardContent>
             </Card>
             <Card className="shadow-sm border-slate-200">
@@ -349,11 +427,15 @@ export default function CohortDetailPage() {
             </Card>
             <Card className="shadow-sm border-slate-200">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Tracks Offered</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Tracks Offered
+                </CardTitle>
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{cohort.tracks?.length || 0}</div>
+                <div className="text-2xl font-bold">
+                  {cohort.tracks?.length || 0}
+                </div>
                 <p className="text-xs text-muted-foreground">Active tracks</p>
               </CardContent>
             </Card>
@@ -365,7 +447,8 @@ export default function CohortDetailPage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 leading-relaxed">
-                {cohort.description || "No description provided for this cohort."}
+                {cohort.description ||
+                  "No description provided for this cohort."}
               </p>
             </CardContent>
           </Card>
@@ -384,11 +467,16 @@ export default function CohortDetailPage() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Add Track to Cohort</DialogTitle>
-                  <DialogDescription>Select a global track to add to this cohort.</DialogDescription>
+                  <DialogDescription>
+                    Select a global track to add to this cohort.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
                   <Label>Select Track</Label>
-                  <Select value={selectedTrackToAdd} onValueChange={setSelectedTrackToAdd}>
+                  <Select
+                    value={selectedTrackToAdd}
+                    onValueChange={setSelectedTrackToAdd}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Choose a track..." />
                     </SelectTrigger>
@@ -402,8 +490,16 @@ export default function CohortDetailPage() {
                   </Select>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddTrackOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddTrack} disabled={isAddingTrack || !selectedTrackToAdd}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddTrackOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAddTrack}
+                    disabled={isAddingTrack || !selectedTrackToAdd}
+                  >
                     {isAddingTrack ? "Adding..." : "Add Track"}
                   </Button>
                 </DialogFooter>
@@ -426,19 +522,35 @@ export default function CohortDetailPage() {
                   {cohort.tracks && cohort.tracks.length > 0 ? (
                     cohort.tracks.map((track: any) => (
                       <TableRow key={track._id}>
-                        <TableCell className="font-medium">{track.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {track.name}
+                        </TableCell>
                         <TableCell>{track.mentors?.length || 0}</TableCell>
                         <TableCell>{track.students?.length || 0}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="text-red-600" onClick={() => handleRemoveTrack(track._id)}>
-                                <Trash2 className="mr-2 h-4 w-4" /> Remove from Cohort
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() =>
+                                  requestConfirm(
+                                    "Remove track from cohort",
+                                    "Are you sure you want to remove this track from the cohort?",
+                                    () => handleRemoveTrack(track._id)
+                                  )
+                                }
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Remove from
+                                Cohort
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -447,7 +559,10 @@ export default function CohortDetailPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-gray-500">
+                      <TableCell
+                        colSpan={4}
+                        className="h-24 text-center text-gray-500"
+                      >
                         No tracks assigned to this cohort.
                       </TableCell>
                     </TableRow>
@@ -477,7 +592,9 @@ export default function CohortDetailPage() {
                 <TableBody>
                   {studentsLoading ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">Loading students...</TableCell>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        Loading students...
+                      </TableCell>
                     </TableRow>
                   ) : students.length > 0 ? (
                     students.map((student: any) => (
@@ -486,10 +603,15 @@ export default function CohortDetailPage() {
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={student.avatar} />
-                              <AvatarFallback>{student.firstName?.[0]}{student.lastName?.[0]}</AvatarFallback>
+                              <AvatarFallback>
+                                {student.firstName?.[0]}
+                                {student.lastName?.[0]}
+                              </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="font-medium">{student.firstName} {student.lastName}</div>
+                              <div className="font-medium">
+                                {student.firstName} {student.lastName}
+                              </div>
                             </div>
                           </div>
                         </TableCell>
@@ -500,19 +622,34 @@ export default function CohortDetailPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Phone className="w-3 h-3" /> {student.phoneNumber || "N/A"}
+                            <Phone className="w-3 h-3" />{" "}
+                            {student.phoneNumber || "N/A"}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="text-red-600" onClick={() => handleRemoveStudent(student._id)}>
-                                <Trash2 className="mr-2 h-4 w-4" /> Remove from Cohort
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() =>
+                                  requestConfirm(
+                                    "Remove student from cohort",
+                                    "Are you sure you want to remove this student from the cohort?",
+                                    () => handleRemoveStudent(student._id)
+                                  )
+                                }
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Remove from
+                                Cohort
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -521,7 +658,10 @@ export default function CohortDetailPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-gray-500">
+                      <TableCell
+                        colSpan={4}
+                        className="h-24 text-center text-gray-500"
+                      >
                         No students enrolled in this cohort yet.
                       </TableCell>
                     </TableRow>
@@ -536,21 +676,30 @@ export default function CohortDetailPage() {
         <TabsContent value="mentors" className="space-y-6 pt-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h3 className="text-lg font-medium">Assigned Mentors</h3>
-            <Dialog open={isAssignMentorOpen} onOpenChange={setIsAssignMentorOpen}>
+            <Dialog
+              open={isAssignMentorOpen}
+              onOpenChange={setIsAssignMentorOpen}
+            >
               <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2 w-full sm:w-auto">
-                    <UserPlus className="w-4 h-4" /> Assign Mentor
+                  <UserPlus className="w-4 h-4" /> Assign Mentor
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Assign Mentor</DialogTitle>
-                  <DialogDescription>Assign a mentor to this cohort, optionally for a specific track.</DialogDescription>
+                  <DialogDescription>
+                    Assign a mentor to this cohort, optionally for a specific
+                    track.
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label>Select Mentor</Label>
-                    <Select value={selectedMentorToAssign} onValueChange={setSelectedMentorToAssign}>
+                    <Select
+                      value={selectedMentorToAssign}
+                      onValueChange={setSelectedMentorToAssign}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Choose a mentor..." />
                       </SelectTrigger>
@@ -565,7 +714,10 @@ export default function CohortDetailPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label>Assign to Track (Optional)</Label>
-                    <Select value={selectedTrackForMentor} onValueChange={setSelectedTrackForMentor}>
+                    <Select
+                      value={selectedTrackForMentor}
+                      onValueChange={setSelectedTrackForMentor}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="All Tracks" />
                       </SelectTrigger>
@@ -581,15 +733,23 @@ export default function CohortDetailPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAssignMentorOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAssignMentor} disabled={isAssigningMentor || !selectedMentorToAssign}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAssignMentorOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAssignMentor}
+                    disabled={isAssigningMentor || !selectedMentorToAssign}
+                  >
                     {isAssigningMentor ? "Assigning..." : "Assign Mentor"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
-           <Card className="shadow-sm border-slate-200 overflow-hidden">
+          <Card className="shadow-sm border-slate-200 overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -602,8 +762,10 @@ export default function CohortDetailPage() {
                 </TableHeader>
                 <TableBody>
                   {mentorsLoading ? (
-                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center">Loading mentors...</TableCell>
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        Loading mentors...
+                      </TableCell>
                     </TableRow>
                   ) : cohortMentors.length > 0 ? (
                     cohortMentors.map((item: any) => {
@@ -624,10 +786,15 @@ export default function CohortDetailPage() {
                             <div className="flex items-center gap-3">
                               <Avatar className="h-8 w-8">
                                 <AvatarImage src={mentor.avatar} />
-                                <AvatarFallback>{mentor.firstName?.[0]}{mentor.lastName?.[0]}</AvatarFallback>
+                                <AvatarFallback>
+                                  {mentor.firstName?.[0]}
+                                  {mentor.lastName?.[0]}
+                                </AvatarFallback>
                               </Avatar>
                               <div>
-                                <div className="font-medium">{mentor.firstName} {mentor.lastName}</div>
+                                <div className="font-medium">
+                                  {mentor.firstName} {mentor.lastName}
+                                </div>
                               </div>
                             </div>
                           </TableCell>
@@ -640,19 +807,35 @@ export default function CohortDetailPage() {
                             {track ? (
                               <Badge variant="outline">{track.name}</Badge>
                             ) : (
-                              <Badge variant="secondary">Global / All Tracks</Badge>
+                              <Badge variant="secondary">
+                                Global / All Tracks
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                >
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem className="text-red-600" onClick={() => handleRemoveMentor(mentor._id)}>
-                                  <Trash2 className="mr-2 h-4 w-4" /> Remove from Cohort
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={() =>
+                                    requestConfirm(
+                                      "Remove mentor from cohort",
+                                      "Are you sure you want to remove this mentor from the cohort?",
+                                      () => handleRemoveMentor(mentor._id)
+                                    )
+                                  }
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Remove
+                                  from Cohort
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -662,7 +845,10 @@ export default function CohortDetailPage() {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="h-24 text-center text-gray-500">
+                      <TableCell
+                        colSpan={4}
+                        className="h-24 text-center text-gray-500"
+                      >
                         No mentors assigned to this cohort yet.
                       </TableCell>
                     </TableRow>
@@ -673,6 +859,17 @@ export default function CohortDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={confirmTitle}
+        description={confirmDescription}
+        confirmLabel="Yes, remove"
+        cancelLabel="Cancel"
+        onConfirm={async () => {
+          if (confirmAction) await confirmAction();
+        }}
+      />
     </div>
   );
 }

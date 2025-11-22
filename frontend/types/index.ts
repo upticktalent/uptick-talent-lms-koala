@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface IUser {
   _id: string;
   firstName: string;
   lastName: string;
   email: string;
-  role: 'admin' | 'mentor' | 'student';
+  role: "admin" | "mentor" | "student";
   profilePicture?: string;
   isActive: boolean;
   createdAt: string;
@@ -21,13 +22,13 @@ export interface IApplicant {
   experience: string;
   motivation: string;
   status:
-    | 'pending'
-    | 'shortlisted'
-    | 'assessment_submitted'
-    | 'under_review'
-    | 'interview_scheduled'
-    | 'accepted'
-    | 'rejected';
+    | "pending"
+    | "shortlisted"
+    | "assessment_submitted"
+    | "under_review"
+    | "interview_scheduled"
+    | "accepted"
+    | "rejected";
   preferredTrack?: string;
   resumeUrl?: string;
   portfolioUrl?: string;
@@ -42,7 +43,7 @@ export interface IAssessment {
   answers: Record<string, any>;
   score?: number;
   feedback?: string;
-  status: 'pending' | 'submitted' | 'graded';
+  status: "pending" | "submitted" | "graded";
   submittedAt?: string;
   gradedAt?: string;
   createdAt: string;
@@ -52,7 +53,7 @@ export interface IAssessment {
 export interface IAssessmentQuestion {
   _id: string;
   question: string;
-  type: 'multiple-choice' | 'short-answer' | 'essay' | 'code';
+  type: "multiple-choice" | "short-answer" | "essay" | "code";
   options?: string[];
   correctAnswer?: string;
   points: number;
@@ -61,23 +62,15 @@ export interface IAssessmentQuestion {
 export interface ITrack {
   _id: string;
   name: string;
-  slug: string;
   description: string;
-  color: string;
-  icon?: string;
   isActive: boolean;
-  mentors: IUser[];
-  students: IUser[];
-  curriculum: ICurriculumItem[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface ICurriculumItem {
   _id: string;
   title: string;
   description: string;
-  type: 'lesson' | 'assignment' | 'project' | 'assessment';
+  type: "lesson" | "assignment" | "project" | "assessment";
   content?: string;
   resources: IResource[];
   dueDate?: string;
@@ -87,7 +80,7 @@ export interface ICurriculumItem {
 export interface IResource {
   _id: string;
   title: string;
-  type: 'link' | 'file' | 'video';
+  type: "link" | "file" | "video";
   url: string;
   description?: string;
 }
@@ -124,7 +117,7 @@ export interface IClassroom {
 export interface IClassroomMaterial {
   _id: string;
   title: string;
-  type: 'document' | 'video' | 'link' | 'slides';
+  type: "document" | "video" | "link" | "slides";
   url: string;
   description?: string;
   uploadedAt: string;
@@ -159,7 +152,7 @@ export interface IAnnouncement {
   content: string;
   trackId?: string;
   authorId: string;
-  priority: 'low' | 'medium' | 'high';
+  priority: "low" | "medium" | "high";
   isGlobal: boolean;
   createdAt: string;
   updatedAt: string;
@@ -184,9 +177,9 @@ export interface IInterview {
   interviewDate: string;
   interviewTime: string;
   interviewLink?: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+  status: "scheduled" | "completed" | "cancelled" | "rescheduled";
   feedback?: string;
-  result?: 'passed' | 'failed';
+  result?: "passed" | "failed";
   notes?: string;
   interviewerId?: string;
   createdAt: string;

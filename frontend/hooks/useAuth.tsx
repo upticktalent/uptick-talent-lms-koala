@@ -54,10 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      setLoading(true);
       await authService.logout();
     } finally {
       localStorage.removeItem("token");
       setUser(null);
+      setLoading(false);
     }
   };
 

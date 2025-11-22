@@ -1,26 +1,28 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { interviewSlotService } from '@/services/interviewSlotService';
-import { trackService } from '@/services/trackService';
-import { useFetch } from '@/hooks/useFetch';
-import { RoleGuard } from '@/middleware/roleGuard';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { interviewSlotService } from "@/services/interviewSlotService";
+import { trackService } from "@/services/trackService";
+import { useFetch } from "@/hooks/useFetch";
+import { RoleGuard } from "@/middleware/roleGuard";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import Loader from "@/components/Loader";
 
 interface EditForm {
   date: string;
@@ -39,14 +41,14 @@ export default function EditInterviewSlotPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<EditForm>({
-    date: '',
-    startTime: '',
-    endTime: '',
+    date: "",
+    startTime: "",
+    endTime: "",
     duration: 30,
     maxInterviews: 1,
     tracks: [],
-    meetingLink: '',
-    notes: '',
+    meetingLink: "",
+    notes: "",
     isAvailable: true,
   });
 
@@ -68,14 +70,14 @@ export default function EditInterviewSlotPage() {
   useEffect(() => {
     if (slot) {
       setFormData({
-        date: slot.date ? new Date(slot.date).toISOString().split('T')[0] : '',
-        startTime: slot.startTime || '',
-        endTime: slot.endTime || '',
+        date: slot.date ? new Date(slot.date).toISOString().split("T")[0] : "",
+        startTime: slot.startTime || "",
+        endTime: slot.endTime || "",
         duration: slot.duration || 30,
         maxInterviews: slot.maxInterviews || 1,
         tracks: slot.tracks?.map((track: any) => track._id) || [],
-        meetingLink: slot.meetingLink || '',
-        notes: slot.notes || '',
+        meetingLink: slot.meetingLink || "",
+        notes: slot.notes || "",
         isAvailable: slot.isAvailable !== false,
       });
     }
@@ -89,7 +91,7 @@ export default function EditInterviewSlotPage() {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'number' ? parseInt(value) || 0 : value,
+      [name]: type === "number" ? parseInt(value) || 0 : value,
     }));
   };
 
@@ -111,12 +113,12 @@ export default function EditInterviewSlotPage() {
       !formData.endTime ||
       !formData.meetingLink
     ) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
 
     if (formData.tracks.length === 0) {
-      toast.error('Please select at least one track');
+      toast.error("Please select at least one track");
       return;
     }
 
@@ -124,7 +126,7 @@ export default function EditInterviewSlotPage() {
     const startTime = new Date(`1970-01-01T${formData.startTime}`);
     const endTime = new Date(`1970-01-01T${formData.endTime}`);
     if (startTime >= endTime) {
-      toast.error('End time must be after start time');
+      toast.error("End time must be after start time");
       return;
     }
 
@@ -143,11 +145,11 @@ export default function EditInterviewSlotPage() {
       };
 
       await interviewSlotService.updateSlot(params.id, updateData);
-      toast.success('Interview slot updated successfully!');
+      toast.success("Interview slot updated successfully!");
       router.push(`/lms/recruitment/interview-slots/${params.id}`);
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || 'Failed to update interview slot'
+        error.response?.data?.message || "Failed to update interview slot"
       );
     } finally {
       setIsLoading(false);
@@ -155,35 +157,31 @@ export default function EditInterviewSlotPage() {
   };
 
   if (slotLoading || tracksLoading) {
-    return (
-      <div className='flex justify-center items-center min-h-64'>
-        <div className='text-gray-600'>Loading interview slot...</div>
-      </div>
-    );
+    return <Loader text="Loading interview slot..." />;
   }
 
   if (slotError || !slot) {
     return (
-      <div className='text-center text-red-600'>
+      <div className="text-center text-red-600">
         Interview slot not found or failed to load
       </div>
     );
   }
 
   return (
-    <RoleGuard allowedRoles={['admin', 'mentor']}>
-      <div className='max-w-7xl mx-auto space-y-6'>
+    <RoleGuard allowedRoles={["admin", "mentor"]}>
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className='flex items-center gap-4'>
+        <div className="flex items-center gap-4">
           <Link href={`/lms/recruitment/interview-slots`}>
-            <Button variant='secondary' size='sm'>
-              <ArrowLeft className='w-4 h-4 mr-2' />
+            <Button variant="secondary" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Details
             </Button>
           </Link>
         </div>
 
-        <form onSubmit={handleSubmit} className='space-y-6'>
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <Card>
             <CardHeader>
@@ -192,31 +190,31 @@ export default function EditInterviewSlotPage() {
                 Set the date, time, and duration for the interview slot
               </CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor='date'>
-                    Date <span className='text-red-500'>*</span>
+                  <Label htmlFor="date">
+                    Date <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    id='date'
-                    name='date'
-                    type='date'
+                    id="date"
+                    name="date"
+                    type="date"
                     value={formData.date}
                     onChange={handleInputChange}
                     required
-                    min={new Date().toISOString().split('T')[0]}
+                    min={new Date().toISOString().split("T")[0]}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor='startTime'>
-                    Start Time <span className='text-red-500'>*</span>
+                  <Label htmlFor="startTime">
+                    Start Time <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    id='startTime'
-                    name='startTime'
-                    type='time'
+                    id="startTime"
+                    name="startTime"
+                    type="time"
                     value={formData.startTime}
                     onChange={handleInputChange}
                     required
@@ -224,13 +222,13 @@ export default function EditInterviewSlotPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor='endTime'>
-                    End Time <span className='text-red-500'>*</span>
+                  <Label htmlFor="endTime">
+                    End Time <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    id='endTime'
-                    name='endTime'
-                    type='time'
+                    id="endTime"
+                    name="endTime"
+                    type="time"
                     value={formData.endTime}
                     onChange={handleInputChange}
                     required
@@ -238,35 +236,35 @@ export default function EditInterviewSlotPage() {
                 </div>
               </div>
 
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor='duration'>Duration (minutes)</Label>
+                  <Label htmlFor="duration">Duration (minutes)</Label>
                   <Input
-                    id='duration'
-                    name='duration'
-                    type='number'
+                    id="duration"
+                    name="duration"
+                    type="number"
                     value={formData.duration}
                     onChange={handleInputChange}
                     min={15}
                     max={120}
                   />
-                  <p className='text-xs text-gray-500 mt-1'>
+                  <p className="text-xs text-gray-500 mt-1">
                     Duration for each individual interview
                   </p>
                 </div>
 
                 <div>
-                  <Label htmlFor='maxInterviews'>Max Interviews</Label>
+                  <Label htmlFor="maxInterviews">Max Interviews</Label>
                   <Input
-                    id='maxInterviews'
-                    name='maxInterviews'
-                    type='number'
+                    id="maxInterviews"
+                    name="maxInterviews"
+                    type="number"
                     value={formData.maxInterviews}
                     onChange={handleInputChange}
                     min={1}
                     max={10}
                   />
-                  <p className='text-xs text-gray-500 mt-1'>
+                  <p className="text-xs text-gray-500 mt-1">
                     Number of interviews that can be scheduled in this slot
                   </p>
                 </div>
@@ -283,12 +281,12 @@ export default function EditInterviewSlotPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3'>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {Array.isArray(tracks) && tracks.length > 0 ? (
                   tracks.map((track: any) => (
                     <div
                       key={track._id}
-                      className='flex items-center space-x-2 p-3 border rounded-md'
+                      className="flex items-center space-x-2 p-3 border rounded-md"
                     >
                       <Checkbox
                         id={`track-${track._id}`}
@@ -299,12 +297,12 @@ export default function EditInterviewSlotPage() {
                       />
                       <Label
                         htmlFor={`track-${track._id}`}
-                        className='cursor-pointer flex-1'
+                        className="cursor-pointer flex-1"
                       >
                         <div>
-                          <div className='font-medium'>{track.name}</div>
+                          <div className="font-medium">{track.name}</div>
                           {track.description && (
-                            <div className='text-sm text-gray-500'>
+                            <div className="text-sm text-gray-500">
                               {track.description}
                             </div>
                           )}
@@ -313,7 +311,7 @@ export default function EditInterviewSlotPage() {
                     </div>
                   ))
                 ) : (
-                  <p className='text-gray-500 col-span-full'>
+                  <p className="text-gray-500 col-span-full">
                     No tracks available
                   </p>
                 )}
@@ -329,18 +327,18 @@ export default function EditInterviewSlotPage() {
                 Set the meeting link and other details
               </CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className="space-y-4">
               <div>
-                <Label htmlFor='meetingLink'>Meeting Link</Label>
+                <Label htmlFor="meetingLink">Meeting Link</Label>
                 <Input
-                  id='meetingLink'
-                  name='meetingLink'
-                  type='url'
+                  id="meetingLink"
+                  name="meetingLink"
+                  type="url"
                   value={formData.meetingLink}
                   onChange={handleInputChange}
-                  placeholder='https://meet.google.com/xxx-xxx-xxx'
+                  placeholder="https://meet.google.com/xxx-xxx-xxx"
                 />
-                <p className='text-xs text-gray-500 mt-1'>
+                <p className="text-xs text-gray-500 mt-1">
                   Default meeting link for online interviews
                 </p>
               </div>
@@ -355,35 +353,35 @@ export default function EditInterviewSlotPage() {
                 Optional notes and availability settings
               </CardDescription>
             </CardHeader>
-            <CardContent className='space-y-4'>
+            <CardContent className="space-y-4">
               <div>
-                <Label htmlFor='notes'>Notes (Optional)</Label>
+                <Label htmlFor="notes">Notes (Optional)</Label>
                 <Textarea
-                  id='notes'
-                  name='notes'
+                  id="notes"
+                  name="notes"
                   value={formData.notes}
                   onChange={handleInputChange}
-                  placeholder='Any special instructions or notes for this interview slot...'
+                  placeholder="Any special instructions or notes for this interview slot..."
                   rows={3}
                   maxLength={500}
                 />
-                <p className='text-xs text-gray-500 mt-1'>
+                <p className="text-xs text-gray-500 mt-1">
                   {formData.notes?.length || 0}/500 characters
                 </p>
               </div>
 
-              <div className='flex items-center space-x-2'>
+              <div className="flex items-center space-x-2">
                 <Checkbox
-                  id='isAvailable'
+                  id="isAvailable"
                   checked={formData.isAvailable}
                   onCheckedChange={(checked) =>
                     setFormData((prev) => ({ ...prev, isAvailable: !!checked }))
                   }
                 />
-                <Label htmlFor='isAvailable' className='cursor-pointer'>
+                <Label htmlFor="isAvailable" className="cursor-pointer">
                   Available for booking
                 </Label>
-                <p className='text-xs text-gray-500'>
+                <p className="text-xs text-gray-500">
                   Uncheck to temporarily disable this slot
                 </p>
               </div>
@@ -391,23 +389,23 @@ export default function EditInterviewSlotPage() {
           </Card>
 
           {/* Actions */}
-          <div className='flex gap-3'>
-            <Button type='submit' disabled={isLoading}>
+          <div className="flex gap-3">
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? (
                 <>
-                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Updating...
                 </>
               ) : (
                 <>
-                  <Save className='w-4 h-4 mr-2' />
+                  <Save className="w-4 h-4 mr-2" />
                   Update Slot
                 </>
               )}
             </Button>
 
             <Link href={`/lms/recruitment/interview-slots/${params.id}`}>
-              <Button type='button' variant='secondary'>
+              <Button type="button" variant="secondary">
                 Cancel
               </Button>
             </Link>

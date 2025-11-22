@@ -33,7 +33,7 @@ import {
   Activity,
   ArrowRight,
   FileText,
-  Calendar
+  Calendar,
 } from "lucide-react";
 
 import { DashboardCharts } from "@/components/shared/DashboardCharts";
@@ -51,30 +51,30 @@ export default function AdminDashboard() {
 
   const { data: cohorts } = useFetch(() => lmsService.getCohorts());
 
-  const { data: assessmentsData } = useFetch(() => 
+  const { data: assessmentsData } = useFetch(() =>
     assessmentService.getAssessments({ limit: 5 })
   );
   const recentAssessments = assessmentsData?.assessments || [];
 
-  const { data: interviewsData } = useFetch(() => 
-    interviewService.getInterviews({ limit: 5, status: 'scheduled' })
+  const { data: interviewsData } = useFetch(() =>
+    interviewService.getInterviews({ limit: 5, status: "scheduled" })
   );
   const upcomingInterviews = interviewsData?.interviews || [];
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'completed':
-      case 'passed':
-      case 'accepted':
-        return 'text-green-600 bg-green-50 border-green-100';
-      case 'rejected':
-      case 'failed':
-        return 'text-red-600 bg-red-50 border-red-100';
-      case 'pending':
-      case 'scheduled':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-100';
+      case "completed":
+      case "passed":
+      case "accepted":
+        return "text-green-600 bg-green-50 border-green-100";
+      case "rejected":
+      case "failed":
+        return "text-red-600 bg-red-50 border-red-100";
+      case "pending":
+      case "scheduled":
+        return "text-yellow-600 bg-yellow-50 border-yellow-100";
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-100';
+        return "text-gray-600 bg-gray-50 border-gray-100";
     }
   };
 
@@ -82,7 +82,8 @@ export default function AdminDashboard() {
     totalStudents: dashboardStats?.totalStudents || 0,
     totalTracks: tracks?.tracks?.length || 0,
     totalApplications: applications?.length || 0,
-    activeCohorts: cohorts?.cohorts?.filter((c: any) => c.status==='active').length || 0,
+    activeCohorts:
+      cohorts?.cohorts?.filter((c: any) => c.status === "active").length || 0,
     pendingApplications:
       applications?.filter((a: any) => a.status === "pending").length || 0,
     shortlistedApplicants:
@@ -137,7 +138,7 @@ export default function AdminDashboard() {
       description: "Ready for assessment",
       color: "text-pink-600",
       bgColor: "bg-pink-50",
-    }
+    },
   ];
 
   const quickActions = [
@@ -195,7 +196,7 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600 mt-2">
           Welcome to the system administration panel. Manage all aspects of
           Uptick Talent LMS.
@@ -227,8 +228,6 @@ export default function AdminDashboard() {
         })}
       </div>
 
-
-
       {/* Analytics Charts */}
       <DashboardCharts applications={applications} />
 
@@ -237,11 +236,19 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
             <div>
-              <h3 className="font-semibold text-gray-900">Recent Applications</h3>
-              <p className="text-sm text-gray-500">Latest application submissions</p>
+              <h3 className="font-semibold text-gray-900">
+                Recent Applications
+              </h3>
+              <p className="text-sm text-gray-500">
+                Latest application submissions
+              </p>
             </div>
             <Link href="/lms/recruitment/applications">
-              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
                 View All <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
@@ -256,7 +263,8 @@ export default function AdminDashboard() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium text-sm capitalize">
-                        {app?.applicant?.firstName?.[0]}{app?.applicant?.lastName?.[0]}
+                        {app?.applicant?.firstName?.[0]}
+                        {app?.applicant?.lastName?.[0]}
                       </div>
                       <div>
                         <div className="font-medium text-gray-900 capitalize">
@@ -294,11 +302,19 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <div>
-                <h3 className="font-semibold text-gray-900">Recent Assessments</h3>
-                <p className="text-sm text-gray-500">Latest assessment submissions</p>
+                <h3 className="font-semibold text-gray-900">
+                  Recent Assessments
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Latest assessment submissions
+                </p>
               </div>
               <Link href="/lms/recruitment/assessments">
-                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
                   View All <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
@@ -307,21 +323,32 @@ export default function AdminDashboard() {
               {recentAssessments && recentAssessments.length > 0 ? (
                 <div className="space-y-4">
                   {recentAssessments.slice(0, 3).map((assessment: any) => (
-                    <div key={assessment._id} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div
+                      key={assessment._id}
+                      className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-purple-100 rounded-full text-purple-600">
                           <FileText className="w-4 h-4" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            {assessment.application?.applicant?.firstName} {assessment.application?.applicant?.lastName}
+                            {assessment.application?.applicant?.firstName}{" "}
+                            {assessment.application?.applicant?.lastName}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Score: {assessment.score ? `${assessment.score}%` : 'Not graded'}
+                            Score:{" "}
+                            {assessment.score
+                              ? `${assessment.score}%`
+                              : "Not graded"}
                           </p>
                         </div>
                       </div>
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusColor(assessment.status)}`}>
+                      <span
+                        className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusColor(
+                          assessment.status
+                        )}`}
+                      >
                         {assessment.status}
                       </span>
                     </div>
@@ -339,11 +366,19 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <div>
-                <h3 className="font-semibold text-gray-900">Scheduled Interviews</h3>
-                <p className="text-sm text-gray-500">Upcoming interview sessions</p>
+                <h3 className="font-semibold text-gray-900">
+                  Scheduled Interviews
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Upcoming interview sessions
+                </p>
               </div>
               <Link href="/lms/recruitment/interviews">
-                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
                   View All <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
@@ -352,21 +387,38 @@ export default function AdminDashboard() {
               {upcomingInterviews && upcomingInterviews.length > 0 ? (
                 <div className="space-y-4">
                   {upcomingInterviews.slice(0, 3).map((interview: any) => (
-                    <div key={interview._id} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div
+                      key={interview._id}
+                      className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-indigo-100 rounded-full text-indigo-600">
                           <Calendar className="w-4 h-4" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-900">
-                            {interview.application?.applicant?.firstName} {interview.application?.applicant?.lastName}
+                            {interview.application?.applicant?.firstName}{" "}
+                            {interview.application?.applicant?.lastName}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {new Date(interview.scheduledDate).toLocaleDateString()} at {new Date(interview.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(
+                              interview.scheduledDate
+                            ).toLocaleDateString()}{" "}
+                            at{" "}
+                            {new Date(
+                              interview.scheduledDate
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </p>
                         </div>
                       </div>
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusColor(interview.status)}`}>
+                      <span
+                        className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getStatusColor(
+                          interview.status
+                        )}`}
+                      >
                         {interview.status}
                       </span>
                     </div>
@@ -384,4 +436,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

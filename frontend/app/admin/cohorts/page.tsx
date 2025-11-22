@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -40,7 +40,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Calendar, LoaderCircle, MoreVertical, Edit, Trash2, Users, Clock, ChevronDown, X } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Calendar,
+  LoaderCircle,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Users,
+  Clock,
+  ChevronDown,
+  X,
+} from "lucide-react";
 import { useFetch } from "@/hooks/useFetch";
 import { lmsService } from "@/services/lmsService";
 import { trackService } from "@/services/trackService";
@@ -73,25 +85,20 @@ export default function CohortsPage() {
     status: "upcoming",
   });
 
-  const {
-    data,
-    loading,
-    error,
-    refetch,
-  } = useFetch(lmsService.getCohorts);
+  const { data, loading, error, refetch } = useFetch(lmsService.getCohorts);
 
   const { data: tracksData } = useFetch(trackService.getTracks);
   const tracks = tracksData?.tracks || [];
 
   const cohortsData = data?.cohorts || [];
-  console.log(cohortsData)
+  console.log(cohortsData);
 
   const filteredCohorts = cohortsData.filter((cohort: any) =>
     cohort.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalItems = filteredCohorts.length;
-  
+
   const paginatedCohorts = filteredCohorts.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -105,9 +112,15 @@ export default function CohortsPage() {
   const handleCreateCohort = async () => {
     try {
       setIsCreating(true);
-      
+
       // Basic validation
-      if (!newCohort.name || !newCohort.startDate || !newCohort.endDate || !newCohort.cohortNumber || !newCohort.applicationDeadline) {
+      if (
+        !newCohort.name ||
+        !newCohort.startDate ||
+        !newCohort.endDate ||
+        !newCohort.cohortNumber ||
+        !newCohort.applicationDeadline
+      ) {
         toast.error("Please fill in all required fields");
         return;
       }
@@ -117,14 +130,16 @@ export default function CohortsPage() {
         cohortNumber: Number(newCohort.cohortNumber),
         startDate: new Date(newCohort.startDate).toISOString(),
         endDate: new Date(newCohort.endDate).toISOString(),
-        applicationDeadline: new Date(newCohort.applicationDeadline).toISOString(),
-        tracks: newCohort.tracks.length > 0 ? newCohort.tracks : [""], 
+        applicationDeadline: new Date(
+          newCohort.applicationDeadline
+        ).toISOString(),
+        tracks: newCohort.tracks.length > 0 ? newCohort.tracks : [""],
         status: newCohort.status,
       };
-      console.log(payload)
+      console.log(payload);
 
       await lmsService.createCohort(payload);
-      
+
       toast.success("Cohort created successfully");
       setIsCreateDialogOpen(false);
       setNewCohort({
@@ -153,24 +168,32 @@ export default function CohortsPage() {
 
     try {
       setIsUpdating(true);
-      
+
       // Basic validation
-      if (!selectedCohort.name || !selectedCohort.startDate || !selectedCohort.endDate || !selectedCohort.applicationDeadline) {
+      if (
+        !selectedCohort.name ||
+        !selectedCohort.startDate ||
+        !selectedCohort.endDate ||
+        !selectedCohort.applicationDeadline
+      ) {
         toast.error("Please fill in all required fields");
         return;
       }
 
       const payload = {
         name: selectedCohort.name,
-        tracks: selectedCohort.tracks?.length > 0 ? selectedCohort.tracks : [""],
+        tracks:
+          selectedCohort.tracks?.length > 0 ? selectedCohort.tracks : [""],
         startDate: new Date(selectedCohort.startDate).toISOString(),
         endDate: new Date(selectedCohort.endDate).toISOString(),
-        applicationDeadline: new Date(selectedCohort.applicationDeadline).toISOString(),
+        applicationDeadline: new Date(
+          selectedCohort.applicationDeadline
+        ).toISOString(),
         status: selectedCohort.status,
       };
 
       await lmsService.updateCohort(selectedCohort._id, payload);
-      
+
       toast.success("Cohort updated successfully");
       setIsEditDialogOpen(false);
       setSelectedCohort(null);
@@ -190,7 +213,7 @@ export default function CohortsPage() {
     try {
       setIsDeleting(true);
       await lmsService.deleteCohort(selectedCohort._id);
-      
+
       toast.success("Cohort deleted successfully");
       setIsDeleteDialogOpen(false);
       setSelectedCohort(null);
@@ -206,14 +229,20 @@ export default function CohortsPage() {
   // Open Edit Dialog - FIXED: Better handling of cohort data
   const openEditDialog = (cohort: any) => {
     console.log("Editing cohort:", cohort); // Debug log
-    
+
     setSelectedCohort({
       ...cohort,
-      startDate: cohort.startDate ? cohort.startDate.split('T')[0] : "",
-      endDate: cohort.endDate ? cohort.endDate.split('T')[0] : "",
-      applicationDeadline: cohort.applicationDeadline ? cohort.applicationDeadline.split('T')[0] : "",
-      tracks: cohort.tracks ? cohort.tracks.map((t: any) => (typeof t === 'object' && t !== null && t._id ? t._id : t)) : [],
-      status: cohort.status || "upcoming", 
+      startDate: cohort.startDate ? cohort.startDate.split("T")[0] : "",
+      endDate: cohort.endDate ? cohort.endDate.split("T")[0] : "",
+      applicationDeadline: cohort.applicationDeadline
+        ? cohort.applicationDeadline.split("T")[0]
+        : "",
+      tracks: cohort.tracks
+        ? cohort.tracks.map((t: any) =>
+            typeof t === "object" && t !== null && t._id ? t._id : t
+          )
+        : [],
+      status: cohort.status || "upcoming",
     });
     setIsEditDialogOpen(true);
   };
@@ -225,7 +254,11 @@ export default function CohortsPage() {
   };
 
   // Helper to toggle track selection
-  const toggleTrack = (trackId: string, isSelected: boolean, isEditMode: boolean) => {
+  const toggleTrack = (
+    trackId: string,
+    isSelected: boolean,
+    isEditMode: boolean
+  ) => {
     if (isEditMode) {
       const currentTracks = selectedCohort.tracks || [];
       if (isSelected) {
@@ -257,22 +290,23 @@ export default function CohortsPage() {
   if (loading) {
     return <Loader />;
   }
-  
+
   if (error) {
     return (
-      <div className='text-center text-red-600 p-4'>
+      <div className="text-center text-red-600 p-4">
         Failed to load cohorts: {error}
       </div>
     );
   }
-  
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Cohorts</h1>
-        <p className="text-gray-600 text-sm lg:text-base">Manage and view all cohorts</p>
+        <h1 className="text-xl font-semibold text-gray-900">Cohorts</h1>
+        <p className="text-gray-600 text-sm lg:text-base">
+          Manage and view all cohorts
+        </p>
       </div>
 
       {/* Search and Filter */}
@@ -290,7 +324,7 @@ export default function CohortsPage() {
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2 w-full sm:w-auto">
-              <Plus className="w-4 h-4" /> 
+              <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Create Cohort</span>
               <span className="sm:hidden">Create</span>
             </Button>
@@ -323,44 +357,61 @@ export default function CohortsPage() {
                     placeholder="e.g. 7"
                     value={newCohort.cohortNumber}
                     onChange={(e) =>
-                      setNewCohort({ ...newCohort, cohortNumber: e.target.value })
+                      setNewCohort({
+                        ...newCohort,
+                        cohortNumber: e.target.value,
+                      })
                     }
                   />
                 </div>
               </div>
-              
+
               <div className="grid gap-2">
                 <Label>Tracks</Label>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                    >
                       Select Tracks
                       <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+                  <DropdownMenuContent
+                    className="w-full min-w-[200px]"
+                    align="start"
+                  >
                     {tracks.length > 0 ? (
                       tracks.map((track: any) => (
                         <DropdownMenuCheckboxItem
                           key={track._id}
                           checked={newCohort.tracks.includes(track._id)}
-                          onCheckedChange={(checked) => toggleTrack(track._id, checked, false)}
+                          onCheckedChange={(checked) =>
+                            toggleTrack(track._id, checked, false)
+                          }
                         >
                           {track.name}
                         </DropdownMenuCheckboxItem>
                       ))
                     ) : (
-                      <div className="p-2 text-sm text-muted-foreground">No tracks available</div>
+                      <div className="p-2 text-sm text-muted-foreground">
+                        No tracks available
+                      </div>
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                
+
                 {newCohort.tracks.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {newCohort.tracks.map((trackId) => {
                       const track = tracks.find((t: any) => t._id === trackId);
                       return (
-                        <Badge key={trackId} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1">
+                        <Badge
+                          key={trackId}
+                          variant="secondary"
+                          className="pl-2 pr-1 py-1 flex items-center gap-1"
+                        >
                           {track?.name || "Unknown Track"}
                           <button
                             onClick={() => toggleTrack(trackId, false, false)}
@@ -401,17 +452,22 @@ export default function CohortsPage() {
                 </div>
               </div>
 
-               <div className="grid gap-2">
-                  <Label htmlFor="applicationDeadline">Application Deadline</Label>
-                  <Input
-                    id="applicationDeadline"
-                    type="date"
-                    value={newCohort.applicationDeadline}
-                    onChange={(e) =>
-                      setNewCohort({ ...newCohort, applicationDeadline: e.target.value })
-                    }
-                  />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="applicationDeadline">
+                  Application Deadline
+                </Label>
+                <Input
+                  id="applicationDeadline"
+                  type="date"
+                  value={newCohort.applicationDeadline}
+                  onChange={(e) =>
+                    setNewCohort({
+                      ...newCohort,
+                      applicationDeadline: e.target.value,
+                    })
+                  }
+                />
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
@@ -421,7 +477,10 @@ export default function CohortsPage() {
                     type="number"
                     value={newCohort.maxStudents}
                     onChange={(e) =>
-                      setNewCohort({ ...newCohort, maxStudents: parseInt(e.target.value) || 0 })
+                      setNewCohort({
+                        ...newCohort,
+                        maxStudents: parseInt(e.target.value) || 0,
+                      })
                     }
                   />
                 </div>
@@ -467,8 +526,8 @@ export default function CohortsPage() {
               >
                 Cancel
               </Button>
-              <Button 
-                onClick={handleCreateCohort} 
+              <Button
+                onClick={handleCreateCohort}
                 disabled={isCreating}
                 className="w-full sm:w-auto"
               >
@@ -483,10 +542,16 @@ export default function CohortsPage() {
       <div className="block lg:hidden space-y-4">
         {paginatedCohorts.length > 0 ? (
           paginatedCohorts.map((cohort: any) => (
-            <div key={cohort._id} className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+            <div
+              key={cohort._id}
+              className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm"
+            >
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <Link href={`/admin/cohorts/${cohort._id}`} className="font-semibold text-gray-900 text-lg hover:underline">
+                  <Link
+                    href={`/admin/cohorts/${cohort._id}`}
+                    className="font-semibold text-gray-900 text-lg hover:underline"
+                  >
                     {cohort.name}
                   </Link>
                   <p className="text-sm text-gray-500 mt-1 line-clamp-2">
@@ -500,14 +565,14 @@ export default function CohortsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => openEditDialog(cohort)}
                       className="flex items-center gap-2"
                     >
                       <Edit className="h-4 w-4" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => openDeleteDialog(cohort)}
                       className="flex items-center gap-2 text-red-600 focus:text-red-600"
                     >
@@ -517,34 +582,46 @@ export default function CohortsPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Cohort #</span>
-                  <span className="text-sm text-gray-900">{cohort.cohortNumber}</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Cohort #
+                  </span>
+                  <span className="text-sm text-gray-900">
+                    {cohort.cohortNumber}
+                  </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Duration</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Duration
+                  </span>
                   <div className="text-right">
                     <div className="text-sm text-gray-900 flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       {formatDate(cohort.startDate)}
                     </div>
-                    <div className="text-xs text-gray-500">to {formatDate(cohort.endDate)}</div>
+                    <div className="text-xs text-gray-500">
+                      to {formatDate(cohort.endDate)}
+                    </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Students</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Students
+                  </span>
                   <div className="flex items-center gap-1 text-sm text-gray-900">
                     <Users className="w-3 h-3" />
                     {cohort.currentStudents} / {cohort.maxStudents}
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600">Status</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    Status
+                  </span>
                   <span
                     className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${
                       cohort.status === "active"
@@ -554,7 +631,10 @@ export default function CohortsPage() {
                         : "bg-gray-100 text-gray-800"
                     }`}
                   >
-                    {cohort.status ? cohort.status.charAt(0).toUpperCase() + cohort.status.slice(1) : "Unknown"}
+                    {cohort.status
+                      ? cohort.status.charAt(0).toUpperCase() +
+                        cohort.status.slice(1)
+                      : "Unknown"}
                   </span>
                 </div>
               </div>
@@ -573,22 +653,42 @@ export default function CohortsPage() {
           <Table className="min-w-[800px]">
             <TableHeader className="bg-gray-50/50">
               <TableRow>
-                <TableHead className="py-4 font-semibold text-gray-900 w-[250px]">Cohort Name</TableHead>
-                <TableHead className="py-4 font-semibold text-gray-900">Cohort #</TableHead>
-                <TableHead className="py-4 font-semibold text-gray-900">Duration</TableHead>
-                <TableHead className="py-4 font-semibold text-gray-900">Students</TableHead>
-                <TableHead className="py-4 font-semibold text-gray-900">Tracks</TableHead>
-                <TableHead className="py-4 font-semibold text-gray-900">Status</TableHead>
-                <TableHead className="py-4 font-semibold text-gray-900 text-right">Actions</TableHead>
+                <TableHead className="py-4 font-semibold text-gray-900 w-[250px]">
+                  Cohort Name
+                </TableHead>
+                <TableHead className="py-4 font-semibold text-gray-900">
+                  Cohort #
+                </TableHead>
+                <TableHead className="py-4 font-semibold text-gray-900">
+                  Duration
+                </TableHead>
+                <TableHead className="py-4 font-semibold text-gray-900">
+                  Students
+                </TableHead>
+                <TableHead className="py-4 font-semibold text-gray-900">
+                  Tracks
+                </TableHead>
+                <TableHead className="py-4 font-semibold text-gray-900">
+                  Status
+                </TableHead>
+                <TableHead className="py-4 font-semibold text-gray-900 text-right">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedCohorts.length > 0 ? (
                 paginatedCohorts.map((cohort: any) => (
-                  <TableRow key={cohort._id} className="hover:bg-gray-50/50 transition-colors">
+                  <TableRow
+                    key={cohort._id}
+                    className="hover:bg-gray-50/50 transition-colors"
+                  >
                     <TableCell className="py-4">
                       <div>
-                        <Link href={`/admin/cohorts/${cohort._id}`} className="font-semibold text-gray-900 hover:underline">
+                        <Link
+                          href={`/admin/cohorts/${cohort._id}`}
+                          className="font-semibold text-gray-900 hover:underline"
+                        >
                           {cohort.name}
                         </Link>
                         <div className="text-sm text-gray-500 truncate max-w-[200px]">
@@ -604,9 +704,12 @@ export default function CohortsPage() {
                     <TableCell className="py-4">
                       <div className="flex flex-col text-sm text-gray-600">
                         <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" /> {formatDate(cohort.startDate)}
+                          <Calendar className="w-3 h-3" />{" "}
+                          {formatDate(cohort.startDate)}
                         </span>
-                        <span className="text-xs text-gray-400 ml-4">to {formatDate(cohort.endDate)}</span>
+                        <span className="text-xs text-gray-400 ml-4">
+                          to {formatDate(cohort.endDate)}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
@@ -629,26 +732,33 @@ export default function CohortsPage() {
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {cohort.status ? cohort.status.charAt(0).toUpperCase() + cohort.status.slice(1) : "Unknown"}
+                        {cohort.status
+                          ? cohort.status.charAt(0).toUpperCase() +
+                            cohort.status.slice(1)
+                          : "Unknown"}
                       </span>
                     </TableCell>
                     <TableCell className="py-4 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
                             <span className="sr-only">Open menu</span>
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => openEditDialog(cohort)}
                             className="flex items-center gap-2"
                           >
                             <Edit className="h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => openDeleteDialog(cohort)}
                             className="flex items-center gap-2 text-red-600 focus:text-red-600"
                           >
@@ -690,7 +800,8 @@ export default function CohortsPage() {
           <DialogHeader>
             <DialogTitle>Edit Cohort</DialogTitle>
             <DialogDescription>
-              Update the cohort information. Only name, tracks, dates, and status can be modified.
+              Update the cohort information. Only name, tracks, dates, and
+              status can be modified.
             </DialogDescription>
           </DialogHeader>
           {selectedCohort && (
@@ -702,43 +813,62 @@ export default function CohortsPage() {
                   placeholder="e.g. Cohort 7"
                   value={selectedCohort.name || ""}
                   onChange={(e) =>
-                    setSelectedCohort({ ...selectedCohort, name: e.target.value })
+                    setSelectedCohort({
+                      ...selectedCohort,
+                      name: e.target.value,
+                    })
                   }
                 />
               </div>
-              
+
               <div className="grid gap-2">
                 <Label>Tracks</Label>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                    >
                       Select Tracks
                       <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-full min-w-[200px]" align="start">
+                  <DropdownMenuContent
+                    className="w-full min-w-[200px]"
+                    align="start"
+                  >
                     {tracks.length > 0 ? (
                       tracks.map((track: any) => (
                         <DropdownMenuCheckboxItem
                           key={track._id}
-                          checked={selectedCohort.tracks?.includes(track._id) || false}
-                          onCheckedChange={(checked) => toggleTrack(track._id, checked, true)}
+                          checked={
+                            selectedCohort.tracks?.includes(track._id) || false
+                          }
+                          onCheckedChange={(checked) =>
+                            toggleTrack(track._id, checked, true)
+                          }
                         >
                           {track.name}
                         </DropdownMenuCheckboxItem>
                       ))
                     ) : (
-                      <div className="p-2 text-sm text-muted-foreground">No tracks available</div>
+                      <div className="p-2 text-sm text-muted-foreground">
+                        No tracks available
+                      </div>
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                
+
                 {selectedCohort.tracks && selectedCohort.tracks.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedCohort.tracks.map((trackId: any) => {
                       const track = tracks.find((t: any) => t._id === trackId);
                       return (
-                        <Badge key={trackId} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1">
+                        <Badge
+                          key={trackId}
+                          variant="secondary"
+                          className="pl-2 pr-1 py-1 flex items-center gap-1"
+                        >
                           {track?.name || "Unknown Track"}
                           <button
                             onClick={() => toggleTrack(trackId, false, true)}
@@ -762,7 +892,10 @@ export default function CohortsPage() {
                     type="date"
                     value={selectedCohort.startDate || ""}
                     onChange={(e) =>
-                      setSelectedCohort({ ...selectedCohort, startDate: e.target.value })
+                      setSelectedCohort({
+                        ...selectedCohort,
+                        startDate: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -773,23 +906,31 @@ export default function CohortsPage() {
                     type="date"
                     value={selectedCohort.endDate || ""}
                     onChange={(e) =>
-                      setSelectedCohort({ ...selectedCohort, endDate: e.target.value })
+                      setSelectedCohort({
+                        ...selectedCohort,
+                        endDate: e.target.value,
+                      })
                     }
                   />
                 </div>
               </div>
 
-               <div className="grid gap-2">
-                  <Label htmlFor="edit-applicationDeadline">Application Deadline *</Label>
-                  <Input
-                    id="edit-applicationDeadline"
-                    type="date"
-                    value={selectedCohort.applicationDeadline || ""}
-                    onChange={(e) =>
-                      setSelectedCohort({ ...selectedCohort, applicationDeadline: e.target.value })
-                    }
-                  />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-applicationDeadline">
+                  Application Deadline *
+                </Label>
+                <Input
+                  id="edit-applicationDeadline"
+                  type="date"
+                  value={selectedCohort.applicationDeadline || ""}
+                  onChange={(e) =>
+                    setSelectedCohort({
+                      ...selectedCohort,
+                      applicationDeadline: e.target.value,
+                    })
+                  }
+                />
+              </div>
 
               <div className="grid gap-2">
                 <Label htmlFor="edit-status">Status</Label>
@@ -821,8 +962,8 @@ export default function CohortsPage() {
             >
               Cancel
             </Button>
-            <Button 
-              onClick={handleEditCohort} 
+            <Button
+              onClick={handleEditCohort}
               disabled={isUpdating}
               className="w-full sm:w-auto"
             >
@@ -838,7 +979,8 @@ export default function CohortsPage() {
           <DialogHeader>
             <DialogTitle>Delete Cohort</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedCohort?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{selectedCohort?.name}
+              &quot;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
@@ -850,9 +992,9 @@ export default function CohortsPage() {
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteCohort} 
+            <Button
+              variant="destructive"
+              onClick={handleDeleteCohort}
               disabled={isDeleting}
               className="w-full sm:w-auto"
             >

@@ -77,7 +77,6 @@ export default function ProfilePage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-
   const handleUpdateProfile = async () => {
     if (!profile?._id) return;
 
@@ -104,9 +103,7 @@ export default function ProfilePage() {
       <div className="container mx-auto">
         {/* Page Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-[hsl(var(--primary))] to-[#3b82f6] bg-clip-text text-transparent">
-            My Profile
-          </h1>
+          <h1 className="text-xl font-semibold text-gray-900">My Profile</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Manage your personal information and account settings
           </p>
@@ -168,7 +165,8 @@ export default function ProfilePage() {
                       <DialogHeader>
                         <DialogTitle>Edit Profile</DialogTitle>
                         <DialogDescription>
-                          Make changes to your profile here. Click save when you're done.
+                          Make changes to your profile here. Click save when
+                          you're done.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
@@ -211,7 +209,11 @@ export default function ProfilePage() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button type="submit" onClick={handleUpdateProfile} disabled={isUpdating}>
+                        <Button
+                          type="submit"
+                          onClick={handleUpdateProfile}
+                          disabled={isUpdating}
+                        >
                           {isUpdating ? "Saving..." : "Save changes"}
                         </Button>
                       </DialogFooter>

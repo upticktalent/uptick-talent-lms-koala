@@ -1,28 +1,38 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { interviewSlotService } from '@/services/interviewSlotService';
-import { userService } from '@/services/userService';
-import { trackService } from '@/services/trackService';
-import { useFetch } from '@/hooks/useFetch';
-import { RoleGuard } from '@/middleware/roleGuard';
-import { ArrowLeft, Calendar, Clock, Link as LinkIcon, Plus, Trash2, Users } from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { interviewSlotService } from "@/services/interviewSlotService";
+import { userService } from "@/services/userService";
+import { trackService } from "@/services/trackService";
+import { useFetch } from "@/hooks/useFetch";
+import { RoleGuard } from "@/middleware/roleGuard";
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Link as LinkIcon,
+  Plus,
+  Trash2,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
 
 interface BulkForm {
   startDate: string;
@@ -50,35 +60,35 @@ interface ManualSlot {
 export default function CreateInterviewSlotsPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('bulk');
+  const [activeTab, setActiveTab] = useState("bulk");
 
   const [bulkForm, setBulkForm] = useState<BulkForm>({
-    startDate: '',
-    endDate: '',
-    startTime: '09:00',
-    endTime: '17:00',
+    startDate: "",
+    endDate: "",
+    startTime: "09:00",
+    endTime: "17:00",
     slotDuration: 60,
     maxInterviews: 1,
     tracks: [],
-    meetingLink: '',
-    notes: '',
+    meetingLink: "",
+    notes: "",
   });
 
   const [manualSlots, setManualSlots] = useState<ManualSlot[]>([
     {
-      date: '',
-      startTime: '09:00',
-      endTime: '10:00',
+      date: "",
+      startTime: "09:00",
+      endTime: "10:00",
       duration: 60,
       maxInterviews: 1,
       tracks: [],
-      meetingLink: '',
-    }
+      meetingLink: "",
+    },
   ]);
 
   // Fetch current user as interviewer
   const { data: usersData } = useFetch(() =>
-    userService.getAllUsers({ role: ['mentor', 'admin'], isActive: true })
+    userService.getAllUsers({ role: ["mentor", "admin"], isActive: true })
   );
 
   // Fetch tracks
@@ -95,7 +105,7 @@ export default function CreateInterviewSlotsPage() {
     setBulkForm((prev) => ({
       ...prev,
       [name]:
-        name === 'slotDuration' || name === 'maxInterviews'
+        name === "slotDuration" || name === "maxInterviews"
           ? parseInt(value)
           : value,
     }));
@@ -140,13 +150,13 @@ export default function CreateInterviewSlotsPage() {
     setManualSlots((prev) => [
       ...prev,
       {
-        date: '',
-        startTime: '09:00',
-        endTime: '10:00',
+        date: "",
+        startTime: "09:00",
+        endTime: "10:00",
         duration: 60,
         maxInterviews: 1,
         tracks: [],
-        meetingLink: '',
+        meetingLink: "",
       },
     ]);
   };
@@ -177,7 +187,7 @@ export default function CreateInterviewSlotsPage() {
         const slotEnd = cursor.toTimeString().slice(0, 5);
 
         slots.push({
-          date: currentDate.toISOString().split('T')[0],
+          date: currentDate.toISOString().split("T")[0],
           startTime: slotStart,
           endTime: slotEnd,
         });
@@ -192,25 +202,25 @@ export default function CreateInterviewSlotsPage() {
     setIsLoading(true);
 
     try {
-      if (activeTab === 'bulk') {
+      if (activeTab === "bulk") {
         const { startDate, endDate, startTime, endTime, tracks } = bulkForm;
         if (!startDate || !endDate || !startTime || !endTime) {
-          toast.error('All bulk form fields are required');
+          toast.error("All bulk form fields are required");
           return;
         }
         if (tracks.length === 0) {
-          toast.error('Please select at least one track');
+          toast.error("Please select at least one track");
           return;
         }
 
         await interviewSlotService.createSlots({
-          mode: 'bulk',
+          mode: "bulk",
           ...bulkForm,
         });
-        toast.success('Bulk interview slots created successfully!');
+        toast.success("Bulk interview slots created successfully!");
       } else {
         if (manualSlots.length === 0) {
-          toast.error('Add at least one manual slot');
+          toast.error("Add at least one manual slot");
           return;
         }
 
@@ -224,21 +234,21 @@ export default function CreateInterviewSlotsPage() {
         );
         if (invalidSlots.length > 0) {
           toast.error(
-            'Please fill all required fields and select tracks for all slots'
+            "Please fill all required fields and select tracks for all slots"
           );
           return;
         }
 
         await interviewSlotService.createSlots({
-          mode: 'manual',
+          mode: "manual",
           slots: manualSlots,
         });
-        toast.success('Manual interview slots created successfully!');
+        toast.success("Manual interview slots created successfully!");
       }
 
-      router.push('/lms/recruitment/interview-slots');
+      router.push("/lms/recruitment/interview-slots");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to create slots');
+      toast.error(error.response?.data?.message || "Failed to create slots");
     } finally {
       setIsLoading(false);
     }
@@ -247,13 +257,13 @@ export default function CreateInterviewSlotsPage() {
   const bulkSlotsPreview = calculateBulkSlots();
 
   return (
-    <RoleGuard allowedRoles={['admin', 'mentor']}>
-      <div className='max-w-7xl mx-auto space-y-6'>
+    <RoleGuard allowedRoles={["admin", "mentor"]}>
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
-          <Link href='/lms/recruitment/interview-slots'>
-            <Button variant='ghost' size='sm' className="-ml-2">
-              <ArrowLeft className='w-4 h-4 mr-2' />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <Link href="/lms/recruitment/interview-slots">
+            <Button variant="ghost" size="sm" className="-ml-2">
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
           </Link>
@@ -269,66 +279,67 @@ export default function CreateInterviewSlotsPage() {
             <TabsContent value="bulk" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Calendar className='w-5 h-5 text-primary' />
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-primary" />
                     Date & Time Configuration
                   </CardTitle>
                   <CardDescription>
-                    Define the date range and daily schedule for generating slots
+                    Define the date range and daily schedule for generating
+                    slots
                   </CardDescription>
                 </CardHeader>
-                <CardContent className='space-y-6'>
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    <div className='space-y-2'>
-                      <Label htmlFor='startDate'>Start Date *</Label>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="startDate">Start Date *</Label>
                       <Input
-                        type='date'
-                        id='startDate'
-                        name='startDate'
+                        type="date"
+                        id="startDate"
+                        name="startDate"
                         value={bulkForm.startDate}
                         onChange={handleBulkChange}
-                        min={new Date().toISOString().split('T')[0]}
+                        min={new Date().toISOString().split("T")[0]}
                       />
                     </div>
-                    <div className='space-y-2'>
-                      <Label htmlFor='endDate'>End Date *</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="endDate">End Date *</Label>
                       <Input
-                        type='date'
-                        id='endDate'
-                        name='endDate'
+                        type="date"
+                        id="endDate"
+                        name="endDate"
                         value={bulkForm.endDate}
                         onChange={handleBulkChange}
                         min={
                           bulkForm.startDate ||
-                          new Date().toISOString().split('T')[0]
+                          new Date().toISOString().split("T")[0]
                         }
                       />
                     </div>
                   </div>
 
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    <div className='space-y-2'>
-                      <Label htmlFor='startTime'>Start Time *</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="startTime">Start Time *</Label>
                       <div className="relative">
                         <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                          type='time'
-                          id='startTime'
-                          name='startTime'
+                          type="time"
+                          id="startTime"
+                          name="startTime"
                           value={bulkForm.startTime}
                           onChange={handleBulkChange}
                           className="pl-9"
                         />
                       </div>
                     </div>
-                    <div className='space-y-2'>
-                      <Label htmlFor='endTime'>End Time *</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="endTime">End Time *</Label>
                       <div className="relative">
                         <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                          type='time'
-                          id='endTime'
-                          name='endTime'
+                          type="time"
+                          id="endTime"
+                          name="endTime"
                           value={bulkForm.endTime}
                           onChange={handleBulkChange}
                           className="pl-9"
@@ -337,27 +348,29 @@ export default function CreateInterviewSlotsPage() {
                     </div>
                   </div>
 
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    <div className='space-y-2'>
-                      <Label htmlFor='slotDuration'>Slot Duration (minutes)</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="slotDuration">
+                        Slot Duration (minutes)
+                      </Label>
                       <Input
-                        type='number'
-                        id='slotDuration'
-                        name='slotDuration'
+                        type="number"
+                        id="slotDuration"
+                        name="slotDuration"
                         value={bulkForm.slotDuration}
                         onChange={handleBulkChange}
                         min={15}
                         max={240}
                       />
                     </div>
-                    <div className='space-y-2'>
-                      <Label htmlFor='maxInterviews'>
+                    <div className="space-y-2">
+                      <Label htmlFor="maxInterviews">
                         Max Interviews per Slot
                       </Label>
                       <Input
-                        type='number'
-                        id='maxInterviews'
-                        name='maxInterviews'
+                        type="number"
+                        id="maxInterviews"
+                        name="maxInterviews"
                         value={bulkForm.maxInterviews}
                         onChange={handleBulkChange}
                         min={1}
@@ -370,28 +383,34 @@ export default function CreateInterviewSlotsPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className='flex items-center gap-2'>
-                    <Users className='w-5 h-5 text-primary' />
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
                     Details & Tracks
                   </CardTitle>
                   <CardDescription>
                     Assign tracks and meeting details
                   </CardDescription>
                 </CardHeader>
-                <CardContent className='space-y-6'>
-                  <div className='space-y-3'>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
                     <Label>Applicable Tracks *</Label>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                       {tracks.map((track: any) => (
-                        <div key={track._id} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-slate-50 transition-colors">
-                          <Checkbox 
+                        <div
+                          key={track._id}
+                          className="flex items-center space-x-2 border p-3 rounded-md hover:bg-slate-50 transition-colors"
+                        >
+                          <Checkbox
                             id={`track-${track._id}`}
                             checked={bulkForm.tracks.includes(track._id)}
-                            onCheckedChange={(checked) => 
-                              handleBulkTrackChange(track._id, checked as boolean)
+                            onCheckedChange={(checked) =>
+                              handleBulkTrackChange(
+                                track._id,
+                                checked as boolean
+                              )
                             }
                           />
-                          <Label 
+                          <Label
                             htmlFor={`track-${track._id}`}
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full"
                           >
@@ -401,33 +420,33 @@ export default function CreateInterviewSlotsPage() {
                       ))}
                     </div>
                     {bulkForm.tracks.length === 0 && (
-                      <p className='text-sm text-red-500 font-medium'>
+                      <p className="text-sm text-red-500 font-medium">
                         Please select at least one track
                       </p>
                     )}
                   </div>
 
-                  <div className='space-y-2'>
-                    <Label htmlFor='meetingLink'>Meeting Link</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="meetingLink">Meeting Link</Label>
                     <div className="relative">
                       <LinkIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                        type='url'
-                        id='meetingLink'
-                        name='meetingLink'
+                        type="url"
+                        id="meetingLink"
+                        name="meetingLink"
                         value={bulkForm.meetingLink}
                         onChange={handleBulkChange}
-                        placeholder='https://meet.google.com/xxx-xxx-xxx'
+                        placeholder="https://meet.google.com/xxx-xxx-xxx"
                         className="pl-9"
                       />
                     </div>
                   </div>
 
-                  <div className='space-y-2'>
-                    <Label htmlFor='notes'>Notes (Optional)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (Optional)</Label>
                     <Textarea
-                      id='notes'
-                      name='notes'
+                      id="notes"
+                      name="notes"
                       value={bulkForm.notes}
                       onChange={handleBulkChange}
                       rows={3}
@@ -450,21 +469,29 @@ export default function CreateInterviewSlotsPage() {
                       <div className="text-2xl font-bold text-slate-900">
                         {bulkSlotsPreview.length}
                       </div>
-                      <div className="text-sm text-slate-500">Slots will be created</div>
+                      <div className="text-sm text-slate-500">
+                        Slots will be created
+                      </div>
                     </div>
                     {bulkSlotsPreview.length > 0 && (
                       <div className="text-sm text-slate-600 bg-white px-3 py-2 rounded-md border">
-                        First slot: {bulkSlotsPreview[0].date} at {bulkSlotsPreview[0].startTime}
+                        First slot: {bulkSlotsPreview[0].date} at{" "}
+                        {bulkSlotsPreview[0].startTime}
                       </div>
                     )}
                   </div>
-                  
+
                   {bulkSlotsPreview.length > 0 && (
                     <div className="max-h-40 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
                       {bulkSlotsPreview.map((s, i) => (
-                        <div key={i} className="text-sm text-slate-600 flex justify-between border-b border-slate-100 last:border-0 py-1">
+                        <div
+                          key={i}
+                          className="text-sm text-slate-600 flex justify-between border-b border-slate-100 last:border-0 py-1"
+                        >
                           <span>{s.date}</span>
-                          <span className="font-mono text-xs bg-slate-200 px-2 py-0.5 rounded">{s.startTime} - {s.endTime}</span>
+                          <span className="font-mono text-xs bg-slate-200 px-2 py-0.5 rounded">
+                            {s.startTime} - {s.endTime}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -480,11 +507,13 @@ export default function CreateInterviewSlotsPage() {
                     <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
                     <CardHeader className="pb-3 pt-4">
                       <div className="flex justify-between items-center">
-                        <CardTitle className="text-base">Slot #{index + 1}</CardTitle>
+                        <CardTitle className="text-base">
+                          Slot #{index + 1}
+                        </CardTitle>
                         {manualSlots.length > 1 && (
                           <Button
-                            type='button'
-                            variant='ghost'
+                            type="button"
+                            variant="ghost"
                             size="icon"
                             className="text-red-500 hover:text-red-600 hover:bg-red-50 h-8 w-8"
                             onClick={() => removeManualSlot(index)}
@@ -495,44 +524,44 @@ export default function CreateInterviewSlotsPage() {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                        <div className='space-y-2'>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
                           <Label>Date *</Label>
                           <Input
-                            type='date'
+                            type="date"
                             value={slot.date}
                             onChange={(e) =>
                               handleManualSlotChange(
                                 index,
-                                'date',
+                                "date",
                                 e.target.value
                               )
                             }
                           />
                         </div>
-                        <div className='space-y-2'>
+                        <div className="space-y-2">
                           <Label>Start Time *</Label>
                           <Input
-                            type='time'
+                            type="time"
                             value={slot.startTime}
                             onChange={(e) =>
                               handleManualSlotChange(
                                 index,
-                                'startTime',
+                                "startTime",
                                 e.target.value
                               )
                             }
                           />
                         </div>
-                        <div className='space-y-2'>
+                        <div className="space-y-2">
                           <Label>End Time *</Label>
                           <Input
-                            type='time'
+                            type="time"
                             value={slot.endTime}
                             onChange={(e) =>
                               handleManualSlotChange(
                                 index,
-                                'endTime',
+                                "endTime",
                                 e.target.value
                               )
                             }
@@ -540,11 +569,14 @@ export default function CreateInterviewSlotsPage() {
                         </div>
                       </div>
 
-                      <div className='space-y-3'>
+                      <div className="space-y-3">
                         <Label>Tracks *</Label>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                           {tracks.map((track: any) => (
-                            <div key={track._id} className="flex items-center space-x-2">
+                            <div
+                              key={track._id}
+                              className="flex items-center space-x-2"
+                            >
                               <Checkbox
                                 id={`manual-track-${index}-${track._id}`}
                                 checked={slot.tracks.includes(track._id)}
@@ -556,7 +588,7 @@ export default function CreateInterviewSlotsPage() {
                                   )
                                 }
                               />
-                              <Label 
+                              <Label
                                 htmlFor={`manual-track-${index}-${track._id}`}
                                 className="text-sm font-normal cursor-pointer"
                               >
@@ -567,28 +599,28 @@ export default function CreateInterviewSlotsPage() {
                         </div>
                       </div>
 
-                      <div className='space-y-2'>
+                      <div className="space-y-2">
                         <Label>Meeting Link</Label>
                         <Input
-                          type='url'
-                          value={slot.meetingLink || ''}
+                          type="url"
+                          value={slot.meetingLink || ""}
                           onChange={(e) =>
                             handleManualSlotChange(
                               index,
-                              'meetingLink',
+                              "meetingLink",
                               e.target.value
                             )
                           }
-                          placeholder='https://meet.google.com/xxx-xxx-xxx'
+                          placeholder="https://meet.google.com/xxx-xxx-xxx"
                         />
                       </div>
                     </CardContent>
                   </Card>
                 ))}
-                
-                <Button 
-                  type='button' 
-                  variant="default" 
+
+                <Button
+                  type="button"
+                  variant="default"
                   className="w-full py-6"
                   onClick={addManualSlot}
                 >
@@ -599,14 +631,27 @@ export default function CreateInterviewSlotsPage() {
             </TabsContent>
 
             {/* Footer Actions */}
-            <div className='flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t mt-6'>
-              <Link href='/lms/recruitment/interview-slots' className="w-full sm:w-auto">
-                <Button type='button' variant='outline' className='w-full sm:w-auto'>
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t mt-6">
+              <Link
+                href="/lms/recruitment/interview-slots"
+                className="w-full sm:w-auto"
+              >
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
                   Cancel
                 </Button>
               </Link>
-              <Button type='submit' disabled={isLoading} className='w-full sm:w-auto sm:ml-auto'>
-                {isLoading ? 'Creating Slots...' : `Create ${activeTab === 'bulk' ? 'Bulk' : 'Manual'} Slots`}
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full sm:w-auto sm:ml-auto"
+              >
+                {isLoading
+                  ? "Creating Slots..."
+                  : `Create ${activeTab === "bulk" ? "Bulk" : "Manual"} Slots`}
               </Button>
             </div>
           </form>

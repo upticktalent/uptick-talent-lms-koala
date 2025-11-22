@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -79,14 +81,9 @@ const StatCard = ({
 );
 
 export default function TracksPage() {
-  const router = useRouter()
+  const router = useRouter();
   const { isAdmin } = useUser();
-  const {
-    data,
-    loading,
-    error,
-    refetch,
-  } = useFetch(trackService.getTracks);
+  const { data, loading, error, refetch } = useFetch(trackService.getTracks);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTrack, setNewTrack] = useState({
@@ -95,7 +92,7 @@ export default function TracksPage() {
     description: "",
     isActive: true,
   });
-  const tracks = data?.tracks
+  const tracks = data?.tracks;
   const [isCreating, setIsCreating] = useState(false);
 
   const filteredTracks =
@@ -105,8 +102,7 @@ export default function TracksPage() {
 
   // Calculate stats
   const totalTracks = tracks?.length || 0;
-  const activeTracks =
-    tracks?.filter((t: any) => t.isActive).length || 0;
+  const activeTracks = tracks?.filter((t: any) => t.isActive).length || 0;
   const totalStudents =
     tracks?.reduce(
       (acc: number, curr: any) => acc + (curr.students?.length || 0),
@@ -121,9 +117,9 @@ export default function TracksPage() {
         toast.error("Name and Track ID are required");
         return;
       }
-      
+
       await trackService.createTrack(newTrack);
-      
+
       toast.success("Track created successfully");
       setIsCreateDialogOpen(false);
       setNewTrack({ name: "", trackId: "", description: "", isActive: true });
@@ -192,7 +188,10 @@ export default function TracksPage() {
           />
         </div>
         {isAdmin && (
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" /> Create New Track
@@ -211,7 +210,9 @@ export default function TracksPage() {
                   <Input
                     id="name"
                     value={newTrack.name}
-                    onChange={(e) => setNewTrack({ ...newTrack, name: e.target.value })}
+                    onChange={(e) =>
+                      setNewTrack({ ...newTrack, name: e.target.value })
+                    }
                     placeholder="e.g. Cloud Computing"
                   />
                 </div>
@@ -220,7 +221,9 @@ export default function TracksPage() {
                   <Input
                     id="trackId"
                     value={newTrack.trackId}
-                    onChange={(e) => setNewTrack({ ...newTrack, trackId: e.target.value })}
+                    onChange={(e) =>
+                      setNewTrack({ ...newTrack, trackId: e.target.value })
+                    }
                     placeholder="e.g. cloud-computing"
                   />
                 </div>
@@ -229,18 +232,24 @@ export default function TracksPage() {
                   <Textarea
                     id="description"
                     value={newTrack.description}
-                    onChange={(e) => setNewTrack({ ...newTrack, description: e.target.value })}
+                    onChange={(e) =>
+                      setNewTrack({ ...newTrack, description: e.target.value })
+                    }
                     placeholder="Provide a brief description of the track..."
                     className="min-h-[100px]"
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="status" className="text-base">Status</Label>
+                  <Label htmlFor="status" className="text-base">
+                    Status
+                  </Label>
                   <div className="flex items-center gap-2">
                     <Switch
                       id="status"
                       checked={newTrack.isActive}
-                      onCheckedChange={(checked) => setNewTrack({ ...newTrack, isActive: checked })}
+                      onCheckedChange={(checked) =>
+                        setNewTrack({ ...newTrack, isActive: checked })
+                      }
                     />
                     <span className="text-sm text-gray-600">
                       {newTrack.isActive ? "Active" : "Inactive"}
@@ -249,7 +258,11 @@ export default function TracksPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleCreateTrack} disabled={isCreating} className="w-full">
+                <Button
+                  onClick={handleCreateTrack}
+                  disabled={isCreating}
+                  className="w-full"
+                >
                   {isCreating ? "Creating..." : "Create Track"}
                 </Button>
               </DialogFooter>
@@ -273,10 +286,15 @@ export default function TracksPage() {
           <TableBody>
             {filteredTracks.length > 0 ? (
               filteredTracks.map((track: any) => (
-                <TableRow key={track._id} className="hover:bg-gray-50" onClick={() => router.push(`/lms/track/${track.trackId}/stream`)}>
+                <TableRow
+                  key={track._id}
+                  className="hover:bg-gray-50"
+                  onClick={() =>
+                    router.push(`/lms/track/${track.trackId}/stream`)
+                  }
+                >
                   <TableCell>
                     <div className="flex items-center gap-3">
-         
                       <div>
                         <div className="font-medium text-gray-900">
                           {track.name}
