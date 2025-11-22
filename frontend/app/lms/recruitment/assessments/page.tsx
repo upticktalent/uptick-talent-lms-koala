@@ -307,12 +307,12 @@ export default function AssessmentsPage() {
                     </TableCell>
                     <TableCell className="py-4">
                       <div className="capitalize font-medium text-gray-700">
-                        {assessment.application.track.name}
+                        {assessment.application.track?.name}
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
                       <div className="capitalize font-medium text-gray-700">
-                        {assessment.application.cohort.name}
+                        {assessment.application.cohort?.name}
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
