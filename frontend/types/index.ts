@@ -239,6 +239,24 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
+// Application submission response type
+export interface IApplicationSubmissionResponse {
+  applicationId: string;
+  status: 'pending' | 'under-review' | 'accepted' | 'rejected' | 'shortlisted';
+  submittedAt: string;
+}
+
+// Paginated applications response type
+export interface IPaginatedApplicationsResponse {
+  applications: IApplication[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
 // Form Types
 export interface LoginForm {
   email: string;

@@ -54,6 +54,7 @@ import { streamService } from '@/services/streamService';
 import { taskService } from '@/services/taskService';
 import { cohortService } from '@/services/cohortService';
 import { trackService } from '@/services/trackService';
+import { applicationService } from '@/services/applicationService';
 import { useUser } from '@/hooks/useUser';
 import { IStream, ITask, ICohort, ITrack, ApiResponse } from '@/types';
 import { toast } from 'sonner';
@@ -67,6 +68,13 @@ export default function LMSDashboard() {
   const [currentCohort, setCurrentCohort] = useState<ICohort | null>(null);
   const [userTracks, setUserTracks] = useState<ITrack[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recruitmentData, setRecruitmentData] = useState({
+    totalApplications: 0,
+    pendingApplications: 0,
+    shortlistedApplications: 0,
+    acceptedApplications: 0,
+    rejectedApplications: 0,
+  });
   const [selectedTrack, setSelectedTrack] = useState<string>('');
   const [activeTab, setActiveTab] = useState('streams');
 
@@ -149,6 +157,44 @@ export default function LMSDashboard() {
           if (tracksResponse.data && tracksResponse.data.length > 0) {
             setSelectedTrack(tracksResponse.data[0]._id);
           }
+        }
+      }
+
+      // Fetch recruitment data for current cohort (admin and mentor only)
+      if (
+        (user.role === 'admin' || user.role === 'mentor') &&
+        cohortResponse.success
+      ) {
+        try {
+          const applicationsResponse = await applicationService.getApplications(
+            {
+              cohort: cohortResponse.data?._id,
+            }
+          );
+
+          if (
+            applicationsResponse.success &&
+            applicationsResponse.data?.applications
+          ) {
+            const applications = applicationsResponse.data.applications;
+            setRecruitmentData({
+              totalApplications: applications.length,
+              pendingApplications: applications.filter(
+                (app: any) => app.status === 'pending'
+              ).length,
+              shortlistedApplications: applications.filter(
+                (app: any) => app.status === 'shortlisted'
+              ).length,
+              acceptedApplications: applications.filter(
+                (app: any) => app.status === 'accepted'
+              ).length,
+              rejectedApplications: applications.filter(
+                (app: any) => app.status === 'rejected'
+              ).length,
+            });
+          }
+        } catch (recruitmentError) {
+          console.error('Error fetching recruitment data:', recruitmentError);
         }
       }
     } catch (error) {
@@ -383,64 +429,133 @@ export default function LMSDashboard() {
 
       {/* Stats Cards */}
       <div className='grid gap-4 md:grid-cols-4'>
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              Active Streams
-            </CardTitle>
-            <Play className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{streams.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Total Tasks</CardTitle>
-            <BookOpen className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{tasks.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Due Soon</CardTitle>
-            <Clock className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>
-              {
-                tasks.filter((task) => {
-                  const dueDate = new Date(task.dueDate);
-                  const now = new Date();
-                  const diffTime = dueDate.getTime() - now.getTime();
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                  return diffDays <= 7 && diffDays > 0;
-                }).length
-              }
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Completed</CardTitle>
-            <CheckCircle className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>
-              {user?.role === 'student'
-                ? tasks.filter((task) =>
-                    task.submissions.some((sub) =>
-                      typeof sub.student === 'string'
-                        ? sub.student === user._id
-                        : sub.student._id === user._id
-                    )
-                  ).length
-                : tasks.filter((task) => task.submissions.length > 0).length}
-            </div>
-          </CardContent>
-        </Card>
+        {user?.role === 'admin' || user?.role === 'mentor' ? (
+          <>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  Applications
+                </CardTitle>
+                <FileText className='h-4 w-4 text-muted-foreground' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>
+                  {recruitmentData.totalApplications}
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  Total for this cohort
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>Pending</CardTitle>
+                <Clock className='h-4 w-4 text-muted-foreground' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>
+                  {recruitmentData.pendingApplications}
+                </div>
+                <p className='text-xs text-muted-foreground'>Awaiting review</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  Shortlisted
+                </CardTitle>
+                <Users className='h-4 w-4 text-muted-foreground' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>
+                  {recruitmentData.shortlistedApplications}
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  Ready for assessment
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>Accepted</CardTitle>
+                <CheckCircle className='h-4 w-4 text-muted-foreground' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>
+                  {recruitmentData.acceptedApplications}
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  Enrolled students
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  Active Streams
+                </CardTitle>
+                <Play className='h-4 w-4 text-muted-foreground' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>{streams.length}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>
+                  Total Tasks
+                </CardTitle>
+                <BookOpen className='h-4 w-4 text-muted-foreground' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>{tasks.length}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>Due Soon</CardTitle>
+                <Clock className='h-4 w-4 text-muted-foreground' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>
+                  {
+                    tasks.filter((task) => {
+                      const dueDate = new Date(task.dueDate);
+                      const now = new Date();
+                      const diffTime = dueDate.getTime() - now.getTime();
+                      const diffDays = Math.ceil(
+                        diffTime / (1000 * 60 * 60 * 24)
+                      );
+                      return diffDays <= 7 && diffDays > 0;
+                    }).length
+                  }
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                <CardTitle className='text-sm font-medium'>Completed</CardTitle>
+                <CheckCircle className='h-4 w-4 text-muted-foreground' />
+              </CardHeader>
+              <CardContent>
+                <div className='text-2xl font-bold'>
+                  {
+                    tasks.filter((task) =>
+                      task.submissions.some((sub) =>
+                        typeof sub.student === 'string'
+                          ? sub.student === user?._id
+                          : sub.student._id === user?._id
+                      )
+                    ).length
+                  }
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Main Content */}
@@ -449,8 +564,130 @@ export default function LMSDashboard() {
           <TabsList>
             <TabsTrigger value='streams'>Streams</TabsTrigger>
             <TabsTrigger value='tasks'>Tasks</TabsTrigger>
+            {(user?.role === 'admin' || user?.role === 'mentor') && (
+              <TabsTrigger value='recruitment'>Recruitment</TabsTrigger>
+            )}
           </TabsList>
+          {/* Recruitment Tab Content */}
+          {(user?.role === 'admin' || user?.role === 'mentor') && (
+            <TabsContent value='recruitment' className='space-y-4'>
+              <div className='flex items-center justify-between'>
+                <h2 className='text-2xl font-bold'>Recruitment Overview</h2>
+                <Button
+                  onClick={() =>
+                    (window.location.href = '/lms/recruitment/applications')
+                  }
+                >
+                  <FileText className='w-4 h-4 mr-2' />
+                  View All Applications
+                </Button>
+              </div>
 
+              <div className='grid gap-4 md:grid-cols-4'>
+                <Card>
+                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                    <CardTitle className='text-sm font-medium'>
+                      Total Applications
+                    </CardTitle>
+                    <FileText className='h-4 w-4 text-muted-foreground' />
+                  </CardHeader>
+                  <CardContent>
+                    <div className='text-2xl font-bold'>
+                      {recruitmentData.totalApplications}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      For current cohort
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                    <CardTitle className='text-sm font-medium'>
+                      Pending Review
+                    </CardTitle>
+                    <Clock className='h-4 w-4 text-muted-foreground' />
+                  </CardHeader>
+                  <CardContent>
+                    <div className='text-2xl font-bold'>
+                      {recruitmentData.pendingApplications}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      Need attention
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                    <CardTitle className='text-sm font-medium'>
+                      Shortlisted
+                    </CardTitle>
+                    <Users className='h-4 w-4 text-muted-foreground' />
+                  </CardHeader>
+                  <CardContent>
+                    <div className='text-2xl font-bold'>
+                      {recruitmentData.shortlistedApplications}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      Ready for assessment
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+                    <CardTitle className='text-sm font-medium'>
+                      Accepted
+                    </CardTitle>
+                    <CheckCircle className='h-4 w-4 text-muted-foreground' />
+                  </CardHeader>
+                  <CardContent>
+                    <div className='text-2xl font-bold'>
+                      {recruitmentData.acceptedApplications}
+                    </div>
+                    <p className='text-xs text-muted-foreground'>
+                      Enrolled students
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
+                  <CardDescription>
+                    Manage recruitment for the current cohort
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className='grid gap-4 md:grid-cols-3'>
+                  <Button
+                    variant='outline'
+                    onClick={() =>
+                      (window.location.href = '/lms/recruitment/applications')
+                    }
+                  >
+                    <FileText className='w-4 h-4 mr-2' />
+                    Review Applications
+                  </Button>
+                  <Button
+                    variant='outline'
+                    onClick={() => (window.location.href = '/lms/assessments')}
+                  >
+                    <CheckCircle className='w-4 h-4 mr-2' />
+                    Manage Assessments
+                  </Button>
+                  <Button
+                    variant='outline'
+                    onClick={() => (window.location.href = '/lms/cohorts')}
+                  >
+                    <Users className='w-4 h-4 mr-2' />
+                    Cohort Settings
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}{' '}
           {canCreateContent && (
             <div className='flex gap-2'>
               {activeTab === 'streams' && (

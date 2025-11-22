@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { applicationService } from '@/services/applicationService';
-import { useFetch } from '@/hooks/useFetch';
 import { formatDate } from '@/utils/formatDate';
+import { IPaginatedApplicationsResponse } from '@/types';
 import { RoleGuard } from '@/middleware/roleGuard';
 import Link from 'next/link';
 import {
@@ -53,12 +53,42 @@ export default function ApplicationsPage() {
   const [pageSize] = useState(5);
   const [isPending, startTransition] = useTransition();
 
-  const {
-    data: applications,
-    loading,
-    error,
-    refetch,
-  } = useFetch(() => applicationService.getApplications());
+  const [applications, setApplications] =
+    useState<IPaginatedApplicationsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await applicationService.getApplications();
+      console.log('Applications response:', response);
+      if (response.success) {
+        setApplications(response.data || null);
+      } else {
+        setError(response.message || 'Failed to fetch applications');
+        toast.error('Failed to fetch applications');
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        'Error fetching applications';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refetch = () => {
+    fetchApplications();
+  };
+
+  useEffect(() => {
+    fetchApplications();
+  }, []);
 
   const statuses = [
     { value: 'all', label: 'All Applications' },
@@ -68,7 +98,7 @@ export default function ApplicationsPage() {
     { value: 'accepted', label: 'Accepted' },
     { value: 'rejected', label: 'Rejected' },
   ];
-
+  console.log('Applications data:', applications);
   const filteredApplications =
     applications?.applications?.filter((app: any) => {
       const matchesStatus =
@@ -326,7 +356,7 @@ export default function ApplicationsPage() {
                     </TableCell>
                     <TableCell className='py-4'>
                       <div className='capitalize font-medium text-gray-700'>
-                        {application.track.name}
+                        {application.track?.name}
                       </div>
                     </TableCell>
                     <TableCell className='py-4'>

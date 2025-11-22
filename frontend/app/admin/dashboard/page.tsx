@@ -10,10 +10,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { lmsService } from '@/services/lmsService';
-import { applicationService } from '@/services/applicationService';
+import { useState, useEffect } from 'react';
+import { cohortService } from '@/services/cohortService';
 import { trackService } from '@/services/trackService';
-import { useFetch } from '@/hooks/useFetch';
+import { userService } from '@/services/userService';
+import { toast } from 'sonner';
 import {
   Users,
   BookOpen,
@@ -23,7 +24,6 @@ import {
   Sparkles,
   LayoutDashboard,
   Layers,
-  Star,
   Target,
   Database,
   Mail,
@@ -32,79 +32,140 @@ import {
   ArrowRight,
 } from 'lucide-react';
 
-import { DashboardCharts } from '@/components/shared/DashboardCharts';
-
 export default function AdminDashboard() {
-  const { data: dashboardStats, loading: statsLoading } = useFetch(() =>
-    lmsService.getDashboardStats()
-  );
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalMentors: 0,
+    totalTracks: 0,
+    totalCohorts: 0,
+    activeCohorts: 0,
+    completedCohorts: 0,
+  });
 
-  const { data: app } = useFetch(() => applicationService.getApplications());
+  const fetchAdminStats = async () => {
+    try {
+      setLoading(true);
 
-  const applications = app?.applications;
+      // Fetch tracks (getTracks returns paginated data with tracks array)
+      const tracksResponse: any = await trackService.getTracks();
+      console.log('Tracks Response:', tracksResponse);
+      const tracks =
+        tracksResponse.success && tracksResponse.data?.tracks
+          ? tracksResponse.data.tracks
+          : [];
 
-  const { data: tracks } = useFetch(() => trackService.getTracks());
+      // Fetch cohorts (getCohorts returns paginated data with cohorts array)
+      const cohortsResponse: any = await cohortService.getCohorts();
+      console.log('Cohorts Response:', cohortsResponse);
+      const cohorts =
+        cohortsResponse.success && cohortsResponse.data?.cohorts
+          ? cohortsResponse.data.cohorts
+          : [];
 
-  const { data: cohorts } = useFetch(() => lmsService.getCohorts());
+      // Fetch all users (no pagination for stats)
+      const usersResponse: any = await userService.getAllUsers();
+      console.log('Users Response:', usersResponse);
+      const users = usersResponse.success
+        ? usersResponse.data?.users || []
+        : [];
 
-  const stats = {
-    totalStudents: dashboardStats?.totalStudents || 0,
-    totalTracks: tracks?.tracks?.length || 0,
-    totalApplications: applications?.length || 0,
-    activeCohorts:
-      cohorts?.cohorts?.filter((c: any) => c.status === 'active').length || 0,
-    pendingApplications:
-      applications?.filter((a: any) => a.status === 'pending').length || 0,
-    shortlistedApplicants:
-      applications?.filter((a: any) => a.status === 'shortlisted').length || 0,
+      const students = users.filter((user: any) => user.role === 'student');
+      const mentors = users.filter((user: any) => user.role === 'mentor');
+      const activeCohorts = cohorts.filter(
+        (cohort: any) => cohort.isAcceptingApplications
+      );
+      const completedCohorts = cohorts.filter(
+        (cohort: any) =>
+          new Date(cohort.endDate) < new Date() &&
+          !cohort.isAcceptingApplications
+      );
+
+      // Debug logging
+      console.log('Final processed data:', {
+        students: students.length,
+        mentors: mentors.length,
+        tracks: tracks.length,
+        cohorts: cohorts.length,
+        activeCohorts: activeCohorts.length,
+        completedCohorts: completedCohorts.length,
+      });
+
+      setStats({
+        totalStudents: students.length,
+        totalMentors: mentors.length,
+        totalTracks: tracks.length,
+        totalCohorts: cohorts.length,
+        activeCohorts: activeCohorts.length,
+        completedCohorts: completedCohorts.length,
+      });
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      toast.error('Failed to load dashboard statistics');
+      // Set some default values to show the UI structure
+      setStats({
+        totalStudents: 0,
+        totalMentors: 0,
+        totalTracks: 0,
+        totalCohorts: 0,
+        activeCohorts: 0,
+        completedCohorts: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchAdminStats();
+  }, []);
 
   const statCards = [
     {
       label: 'Total Students',
-      value: statsLoading ? '...' : stats.totalStudents,
+      value: loading ? '...' : stats.totalStudents,
       icon: Users,
       description: 'Enrolled students',
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
     {
+      label: 'Total Mentors',
+      value: loading ? '...' : stats.totalMentors,
+      icon: GraduationCap,
+      description: 'System mentors',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+    },
+    {
       label: 'Learning Tracks',
-      value: stats.totalTracks,
+      value: loading ? '...' : stats.totalTracks,
       icon: BookOpen,
       description: 'Available tracks',
       color: 'text-green-600',
       bgColor: 'bg-green-50',
     },
     {
-      label: 'Active Cohorts',
-      value: stats.activeCohorts,
-      icon: GraduationCap,
-      description: 'Currently running',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-    {
-      label: 'Total Applications',
-      value: stats.totalApplications,
-      icon: ClipboardList,
-      description: 'All time applications',
+      label: 'Total Cohorts',
+      value: loading ? '...' : stats.totalCohorts,
+      icon: Database,
+      description: 'All cohorts',
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
     },
     {
-      label: 'Pending Reviews',
-      value: stats.pendingApplications,
-      icon: Clock,
-      description: 'Need attention',
+      label: 'Active Cohorts',
+      value: loading ? '...' : stats.activeCohorts,
+      icon: Activity,
+      description: 'Currently accepting applications',
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-50',
     },
     {
-      label: 'Shortlisted',
-      value: stats.shortlistedApplicants,
-      icon: Sparkles,
-      description: 'Ready for assessment',
+      label: 'Completed Cohorts',
+      value: loading ? '...' : stats.completedCohorts,
+      icon: Target,
+      description: 'Finished cohorts',
       color: 'text-pink-600',
       bgColor: 'bg-pink-50',
     },
@@ -120,6 +181,14 @@ export default function AdminDashboard() {
       bgColor: 'bg-blue-50',
     },
     {
+      title: 'Manage Mentors',
+      description: 'View and manage mentors',
+      href: '/admin/mentors',
+      icon: GraduationCap,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+    },
+    {
       title: 'Manage Tracks',
       description: 'Create and configure learning tracks',
       href: '/admin/tracks',
@@ -132,20 +201,12 @@ export default function AdminDashboard() {
       description: 'Create and manage cohort cycles',
       href: '/admin/cohorts',
       icon: Layers,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-    {
-      title: 'Active Cohort',
-      description: 'Manage the currently active cohort',
-      href: '/admin/active-cohort',
-      icon: Star,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
     },
     {
       title: 'Review Applications',
-      description: 'Process pending applications',
+      description: 'Go to LMS for applications management',
       href: '/lms/recruitment/applications',
       icon: ClipboardList,
       color: 'text-red-600',
@@ -197,72 +258,61 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      {/* Analytics Charts */}
-      <DashboardCharts applications={applications} />
+      {/* System Overview */}
 
-      {/* Recent Activity */}
+      {/* Admin Quick Actions */}
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         <div className='bg-white rounded-xl border border-slate-200 overflow-hidden'>
-          <div className='p-6 border-b border-slate-100 flex justify-between items-center'>
-            <div>
-              <h3 className='font-semibold text-gray-900'>
-                Recent Applications
-              </h3>
-              <p className='text-sm text-gray-500'>
-                Latest application submissions
-              </p>
-            </div>
-            <Link href='/lms/recruitment/applications'>
-              <Button
-                variant='ghost'
-                size='sm'
-                className='text-blue-600 hover:text-blue-700 hover:bg-blue-50'
-              >
-                View All <ArrowRight className='w-4 h-4 ml-1' />
-              </Button>
-            </Link>
+          <div className='p-6 border-b border-slate-100'>
+            <h3 className='font-semibold text-gray-900'>System Management</h3>
+            <p className='text-sm text-gray-500'>
+              Key administrative functions
+            </p>
           </div>
           <div className='p-6'>
-            {applications && applications.length > 0 ? (
-              <div className='space-y-4'>
-                {applications.slice(0, 5).map((app: any) => (
-                  <div
-                    key={app?.applicant?._id}
-                    className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100'
-                  >
-                    <div className='flex items-center gap-3'>
-                      <div className='w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium text-sm capitalize'>
-                        {app?.applicant?.firstName?.[0]}
-                        {app?.applicant?.lastName?.[0]}
-                      </div>
-                      <div>
-                        <div className='font-medium text-gray-900 capitalize'>
-                          {app?.applicant?.firstName} {app?.applicant?.lastName}
-                        </div>
-                        <div className='text-xs text-gray-500 capitalize'>
-                          {app?.applicant?.track}
-                        </div>
-                      </div>
-                    </div>
-                    <span
-                      className={`px-2.5 py-1 text-xs font-medium rounded-full ${
-                        app.status === 'pending'
-                          ? 'bg-yellow-50 text-yellow-700 border border-yellow-100'
-                          : app.status === 'shortlisted'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-100'
-                          : 'bg-gray-50 text-gray-700 border border-gray-100'
-                      }`}
-                    >
-                      {app.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </div>
-                ))}
+            <div className='space-y-4'>
+              <div className='flex items-center justify-between p-3 bg-blue-50 rounded-lg'>
+                <div className='flex items-center gap-3'>
+                  <Users className='w-5 h-5 text-blue-600' />
+                  <span className='font-medium text-gray-900'>
+                    User Management
+                  </span>
+                </div>
+                <Link href='/admin/users'>
+                  <Button size='sm' variant='outline'>
+                    Manage
+                  </Button>
+                </Link>
               </div>
-            ) : (
-              <div className='text-gray-500 text-center py-8'>
-                No recent applications found
+
+              <div className='flex items-center justify-between p-3 bg-green-50 rounded-lg'>
+                <div className='flex items-center gap-3'>
+                  <BookOpen className='w-5 h-5 text-green-600' />
+                  <span className='font-medium text-gray-900'>
+                    Track Configuration
+                  </span>
+                </div>
+                <Link href='/admin/tracks'>
+                  <Button size='sm' variant='outline'>
+                    Configure
+                  </Button>
+                </Link>
               </div>
-            )}
+
+              <div className='flex items-center justify-between p-3 bg-purple-50 rounded-lg'>
+                <div className='flex items-center gap-3'>
+                  <Layers className='w-5 h-5 text-purple-600' />
+                  <span className='font-medium text-gray-900'>
+                    Cohort Management
+                  </span>
+                </div>
+                <Link href='/admin/cohorts'>
+                  <Button size='sm' variant='outline'>
+                    Manage
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 

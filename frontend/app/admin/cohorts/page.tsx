@@ -106,8 +106,10 @@ export default function CohortsPage() {
   const fetchTracks = async () => {
     try {
       const response: any = await trackService.getActiveTracks();
+      console.log('Tracks Response:', response);
       if (response.success) {
-        setTracks(response.data.tracks || []);
+        // getActiveTracks returns { success: true, data: tracks } directly
+        setTracks(response.data || []);
       }
     } catch (error) {
       console.error('Error fetching tracks:', error);

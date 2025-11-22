@@ -1,11 +1,13 @@
-import apiClient from "./apiClient";
+import apiClient from './apiClient';
 
 export const authService = {
   login: async (email: string, password: string) => {
-    return apiClient.post("/auth/login", { email, password });
+    const response = await apiClient.post('/auth/login', { email, password });
+    return response.data;
   },
   test: async () => {
-    return apiClient.get('/health');
+    const response = await apiClient.get('/health');
+    return response.data;
   },
   register: async (userData: {
     firstName: string;
@@ -13,26 +15,35 @@ export const authService = {
     email: string;
     password: string;
   }) => {
-    return apiClient.post("/auth/register", userData);
+    const response = await apiClient.post('/auth/register', userData);
+    return response.data;
   },
 
   forgotPassword: async (email: string) => {
-    return apiClient.post("/auth/forgot-password", { email });
+    const response = await apiClient.post('/auth/forgot-password', { email });
+    return response.data;
   },
 
   resetPassword: async (token: string, newPassword: string) => {
-    return apiClient.post("/auth/reset-password", { token, newPassword });
+    const response = await apiClient.post('/auth/reset-password', {
+      token,
+      newPassword,
+    });
+    return response.data;
   },
 
   logout: async () => {
-    return apiClient.post("/auth/logout");
+    const response = await apiClient.post('/auth/logout');
+    return response.data;
   },
 
   getCurrentUser: async () => {
-    return apiClient.get("/auth/profile");
+    const response = await apiClient.get('/auth/profile');
+    return response.data;
   },
 
   refreshToken: async () => {
-    return apiClient.post("/auth/refresh-token");
+    const response = await apiClient.post('/auth/refresh-token');
+    return response.data;
   },
 };

@@ -94,13 +94,16 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const response: ApiResponse<IUser[]> = await userService.getAllUsers();
+      const response: any = await userService.getAllUsers();
+      console.log('Users response:', response);
       if (response.success) {
-        setUsers(response.data || []);
+        // getAllUsers returns { success: true, data: { users: [], total: number } }
+        setUsers(response.data?.users || []);
       } else {
         toast.error('Failed to fetch users');
       }
     } catch (error) {
+      console.error('Error fetching users:', error);
       toast.error('Error fetching users');
     } finally {
       setLoading(false);
@@ -120,9 +123,11 @@ export default function UsersPage() {
 
   const fetchTracks = async () => {
     try {
-      const response: ApiResponse<ITrack[]> = await trackService.getTracks();
+      const response: any = await trackService.getTracks();
+      console.log('Tracks response:', response);
       if (response.success) {
-        setTracks(response.data || []);
+        // getTracks returns { success: true, data: { tracks: [], pagination: {...} } }
+        setTracks(response.data?.tracks || []);
       }
     } catch (error) {
       console.error('Error fetching tracks:', error);

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-"use client";
+'use client';
 
 import {
   useState,
@@ -7,9 +7,9 @@ import {
   useContext,
   createContext,
   ReactNode,
-} from "react";
-import { IUser } from "@/types";
-import { authService } from "@/services/authService";
+} from 'react';
+import { IUser } from '@/types';
+import { authService } from '@/services/authService';
 
 interface AuthContextType {
   user: IUser | null;
@@ -33,13 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       if (token) {
         const response = await authService.getCurrentUser();
-        setUser(response.data.data);
+        setUser(response.data);
       }
     } catch (error) {
-      localStorage.removeItem("token");
+      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
@@ -47,8 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await authService.login(email, password);
-    const { token, user: userData } = response.data.data;
-    localStorage.setItem("token", token);
+    const { token, user: userData } = response.data;
+    localStorage.setItem('token', token);
     setUser(userData);
   };
 
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authService.logout();
     } finally {
-      localStorage.removeItem("token");
+      localStorage.removeItem('token');
       setUser(null);
     }
   };
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

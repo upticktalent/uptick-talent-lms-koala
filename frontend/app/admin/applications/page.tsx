@@ -163,7 +163,7 @@ export default function ApplicationsPage() {
         applicationId
       );
       if (response.success) {
-        toast.success('Application accepted and student account created');
+        toast.success('Application accepted successfully');
         fetchApplications();
       } else {
         toast.error(response.message || 'Failed to accept application');
