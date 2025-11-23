@@ -675,19 +675,52 @@ export const getPendingGrading = asyncHandler(
 // Upload task resources (mentor/admin only)
 export const uploadTaskResource = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    // This would typically integrate with a file upload service like AWS S3, Cloudinary, etc.
-    // For now, return a mock response
+    try {
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "No files uploaded",
+        });
+      }
 
-    res.status(200).json({
-      success: true,
-      message: "Resource uploaded successfully",
-      data: {
-        url: "https://example.com/uploaded-resource.pdf",
-        title: "Task Resource",
-        type: "file",
-        size: 2048000,
-      },
-    });
+      const uploadedFiles = files.map((file: any) => {
+        // Determine file type based on mimetype
+        let fileType = 'file';
+        if (file.mimetype.startsWith('image/')) {
+          fileType = 'image';
+        } else if (file.mimetype.startsWith('video/')) {
+          fileType = 'video';
+        } else if (file.mimetype === 'application/pdf' || 
+                   file.mimetype.includes('document') || 
+                   file.mimetype === 'text/plain') {
+          fileType = 'document';
+        }
+
+        return {
+          url: file.path, // Cloudinary URL
+          title: file.originalname,
+          type: fileType,
+          size: file.size,
+          publicId: file.public_id,
+          mimetype: file.mimetype,
+          isRequired: req.body.isRequired === 'true' || false, // From form data
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `${files.length} resource(s) uploaded successfully`,
+        data: uploadedFiles.length === 1 ? uploadedFiles[0] : uploadedFiles,
+      });
+    } catch (error) {
+      console.error("Error uploading task resource:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to upload resource",
+      });
+    }
   },
 );
 

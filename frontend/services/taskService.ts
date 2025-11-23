@@ -31,7 +31,7 @@ export const taskService = {
     difficulty: 'beginner' | 'intermediate' | 'advanced';
     estimatedHours: number;
     maxScore: number;
-    dueDate: string;
+    dueDate?: string;
     requirements: string[];
     resources?: any[];
     allowLateSubmissions?: boolean;

@@ -1186,7 +1186,7 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Anambra",
         role: "student",
-        currentCohort: "0", // Completed cohort
+        currentCohort: "1", // Completed cohort
         currentTrack: createdTracks[0]._id, // Frontend Development
       },
       {
@@ -1198,7 +1198,7 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Oyo",
         role: "student",
-        currentCohort: "0", // Completed cohort
+        currentCohort: "1", // Completed cohort
         currentTrack: createdTracks[1]._id, // Backend Development
       },
       {
@@ -1210,7 +1210,7 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Kano",
         role: "student",
-        currentCohort: "0", // Completed cohort
+        currentCohort: "1", // Completed cohort
         currentTrack: createdTracks[2]._id, // Full Stack Development
       },
       {
@@ -1222,7 +1222,7 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Rivers",
         role: "student",
-        currentCohort: "0", // Completed cohort
+        currentCohort: "1", // Completed cohort
         currentTrack: createdTracks[4]._id, // Product Management
       },
       {
@@ -1234,7 +1234,7 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Kaduna",
         role: "student",
-        currentCohort: "0", // Completed cohort
+        currentCohort: "1", // Completed cohort
         currentTrack: createdTracks[5]._id, // Product Design
       },
     ];
@@ -1257,7 +1257,8 @@ const seedDatabase = async () => {
 
     // Seed email templates
     console.log("🌱 Seeding email templates...");
-    await seedEmailTemplates();
+    const adminId = createdAdmins[Math.floor(Math.random() *createdAdmins.length -1)]._id;
+    await seedEmailTemplates(adminId);
 
     console.log("\n🎉 Comprehensive database seeding completed successfully!");
     console.log("📊 Seeding Summary:");

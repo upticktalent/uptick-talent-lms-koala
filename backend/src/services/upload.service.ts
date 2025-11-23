@@ -261,5 +261,110 @@ export const validateUploadedFile = (file: any) => {
   return true;
 };
 
+// Configure Cloudinary storage for stream media with cohort-track folder structure
+const createMediaStorage = (type: 'stream' | 'task') => new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: (req: any) => {
+      const { cohortId, trackId, cohortName, trackName } = req.body;
+      const folderName = cohortName && trackName 
+        ? `${cohortName}-${trackName}`.replace(/[^a-zA-Z0-9-_]/g, '_')
+        : `${cohortId}-${trackId}`;
+      return `uptick-talent/lms/${folderName}/${type}s`;
+    },
+    resource_type: "auto",
+    public_id: (req: any, file: any) => {
+      try {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9]/g, "_");
+        return `${type}-${sanitizedName}-${uniqueSuffix}`;
+      } catch (error) {
+        console.error(`Error generating ${type} public_id:`, error);
+        return `${type}-${Date.now()}`;
+      }
+    },
+    transformation: [
+      { quality: "auto:good" },
+      { fetch_format: "auto" }
+    ],
+  } as any,
+});
+
+// Media file filter for streams and tasks
+const mediaFileFilter = (
+  req: any,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback,
+) => {
+  try {
+    // Accept images, videos, and documents
+    const allowedMimes = [
+      // Images
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+      // Videos
+      "video/mp4",
+      "video/webm",
+      "video/ogg",
+      "video/avi",
+      "video/mov",
+      "video/quicktime",
+      // Documents
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      "text/plain",
+    ];
+
+    const allowedExtensions = [
+      ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg",
+      ".mp4", ".webm", ".ogg", ".avi", ".mov",
+      ".pdf", ".docx", ".pptx", ".txt"
+    ];
+    
+    const fileExtension = file.originalname
+      .toLowerCase()
+      .substring(file.originalname.lastIndexOf("."));
+
+    if (
+      allowedMimes.includes(file.mimetype) &&
+      allowedExtensions.includes(fileExtension)
+    ) {
+      cb(null, true);
+    } else {
+      const error = new Error(
+        `Invalid file type. Allowed: Images (jpg, png, gif, webp, svg), Videos (mp4, webm, ogg, avi, mov), Documents (pdf, docx, pptx, txt). Received: ${file.mimetype} (${fileExtension})`,
+      );
+      error.name = "FILE_TYPE_ERROR";
+      cb(error);
+    }
+  } catch (error) {
+    console.error("Error in media file filter:", error);
+    cb(new Error("File validation failed"));
+  }
+};
+
+// Create multer upload instances for streams and tasks
+export const uploadStreamMedia = multer({
+  storage: createMediaStorage('stream') as any,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit for media files
+    files: 5, // Maximum 5 files per upload
+  },
+  fileFilter: mediaFileFilter,
+});
+
+export const uploadTaskMedia = multer({
+  storage: createMediaStorage('task') as any,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB limit for media files
+    files: 5, // Maximum 5 files per upload
+  },
+  fileFilter: mediaFileFilter,
+});
+
 // Export cloudinary instance for direct usage if needed
 export { cloudinary };

@@ -2,13 +2,12 @@ import { EmailTemplate } from "../models/EmailTemplate.model";
 import mongoose from "mongoose";
 
 // Default email templates for the system
-export const seedEmailTemplates = async () => {
+export const seedEmailTemplates = async (adminId:string) => {
   try {
     console.log("Seeding email templates...");
 
     // Create admin user ID for seeding (will be replaced with actual admin ID in production)
-    const adminId = new mongoose.Types.ObjectId();
-
+   
     const defaultTemplates = [
       {
         name: "Application Confirmation",
@@ -19,6 +18,12 @@ export const seedEmailTemplates = async () => {
             <p>Dear {{applicantName}},</p>
             <p>Thank you for applying to join the <strong>{{cohortName}}</strong> cohort at {{platformName}}.</p>
             <p>Your application has been received and is currently under review. Our team will carefully evaluate your application and get back to you soon.</p>
+            
+            <div style="background-color: #dbeafe; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #2563eb;">
+              <h3 style="margin-top: 0; color: #1e40af;">📋 Your Application ID</h3>
+              <p style="font-size: 18px; font-weight: bold; color: #1e40af; font-family: monospace; background-color: #fff; padding: 10px; border-radius: 4px; text-align: center;">{{applicationId}}</p>
+              <p style="color: #dc2626; font-weight: 600;">⚠️ Please keep this Application ID safe and secure. You will need it for all subsequent processes including assessments, interviews, and communications.</p>
+            </div>
             
             <div style="background-color: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px;">
               <h3 style="margin-top: 0;">What happens next?</h3>
@@ -39,6 +44,7 @@ export const seedEmailTemplates = async () => {
           "cohortName",
           "platformName",
           "supportEmail",
+          "applicationId",
         ],
         createdBy: adminId,
       },
@@ -380,6 +386,118 @@ export const seedEmailTemplates = async () => {
           "meetingLink",
           "platformName",
         ],
+        createdBy: adminId,
+      },
+      {
+        name: "Interview Result Notification",
+        subject: "Interview Result - {{platformName}}",
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Interview Result Update</h2>
+            <p>Dear {{applicantName}},</p>
+            <p>We wanted to update you on the status of your interview for the <strong>{{trackName}}</strong> track.</p>
+            
+            <div style="background-color: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px;">
+              <h3 style="margin-top: 0;">Interview Details:</h3>
+              <p><strong>Date:</strong> {{interviewDate}}</p>
+              <p><strong>Time:</strong> {{interviewTime}}</p>
+              <p><strong>Interviewer:</strong> {{mentorName}}</p>
+              <p><strong>Status:</strong> {{interviewStatus}}</p>
+            </div>
+            
+            <p>{{interviewFeedback}}</p>
+            
+            <p>If you have any questions, please contact us at {{supportEmail}}.</p>
+            <p>Best regards,<br>The {{platformName}} Team</p>
+          </div>
+        `,
+        templateType: "interview_result_notification",
+        variables: ["applicantName", "trackName", "interviewDate", "interviewTime", "mentorName", "interviewStatus", "interviewFeedback", "platformName", "supportEmail"],
+        createdBy: adminId,
+      },
+      {
+        name: "Password Reset Request",
+        subject: "Password Reset - {{platformName}}",
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Password Reset Request</h2>
+            <p>Dear {{recipientName}},</p>
+            <p>We received a request to reset your password for your {{platformName}} account.</p>
+            
+            <div style="background-color: #dbeafe; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;">
+              <p>Click the button below to reset your password:</p>
+              <a href="{{resetLink}}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 10px 0;">Reset Password</a>
+              <p style="font-size: 14px; color: #6b7280;">This link will expire in 24 hours.</p>
+            </div>
+            
+            <p style="font-size: 14px; color: #6b7280;">If you didn't request this password reset, please ignore this email or contact us at {{supportEmail}} if you have concerns.</p>
+            <p>Best regards,<br>The {{platformName}} Team</p>
+          </div>
+        `,
+        templateType: "password_reset",
+        variables: ["recipientName", "resetLink", "platformName", "supportEmail"],
+        createdBy: adminId,
+      },
+      {
+        name: "Interview Cancellation Notification",
+        subject: "Interview Cancelled - {{platformName}}",
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #dc2626;">Interview Cancelled</h2>
+            <p>Dear {{applicantName}},</p>
+            <p>We regret to inform you that your scheduled interview for the <strong>{{trackName}}</strong> track has been cancelled.</p>
+            
+            <div style="background-color: #fef2f2; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #dc2626;">
+              <h3 style="margin-top: 0;">Cancelled Interview Details:</h3>
+              <p><strong>Originally Scheduled:</strong> {{interviewDate}} at {{interviewTime}}</p>
+              <p><strong>Interviewer:</strong> {{mentorName}}</p>
+              <p><strong>Reason:</strong> {{cancellationReason}}</p>
+            </div>
+            
+            <p>{{additionalMessage}}</p>
+            
+            <p>We apologize for any inconvenience caused. If you have any questions, please contact us at {{supportEmail}}.</p>
+            <p>Best regards,<br>The {{platformName}} Team</p>
+          </div>
+        `,
+        templateType: "interview_cancellation_notification",
+        variables: ["applicantName", "trackName", "interviewDate", "interviewTime", "mentorName", "cancellationReason", "additionalMessage", "platformName", "supportEmail"],
+        createdBy: adminId,
+      },
+      {
+        name: "Interview Reminder Notification",
+        subject: "Interview Reminder - Tomorrow at {{interviewTime}}",
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2563eb;">Interview Reminder</h2>
+            <p>Dear {{applicantName}},</p>
+            <p>This is a friendly reminder about your upcoming interview for the <strong>{{trackName}}</strong> track.</p>
+            
+            <div style="background-color: #dbeafe; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #2563eb;">
+              <h3 style="margin-top: 0;">📅 Interview Details:</h3>
+              <p><strong>Date:</strong> {{interviewDate}}</p>
+              <p><strong>Time:</strong> {{interviewTime}}</p>
+              <p><strong>Interviewer:</strong> {{mentorName}}</p>
+              <p><strong>Duration:</strong> Approximately 30-45 minutes</p>
+            </div>
+            
+            <div style="background-color: #f3f4f6; padding: 20px; margin: 20px 0; border-radius: 8px;">
+              <h3 style="margin-top: 0;">💡 Preparation Tips:</h3>
+              <ul>
+                <li>Review your application and portfolio</li>
+                <li>Prepare questions about the program</li>
+                <li>Test your internet connection and camera</li>
+                <li>Have a copy of your CV/resume ready</li>
+              </ul>
+            </div>
+            
+            <p>If you need to reschedule or have any technical issues, please contact us immediately at {{supportEmail}}.</p>
+            <p>We look forward to speaking with you!</p>
+            <p>Best regards,<br>The {{platformName}} Team</p>
+          </div>
+        `,
+        templateType: "interview_reminder_notification",
+        variables: ["applicantName", "trackName", "interviewDate", "interviewTime", "mentorName", "platformName", "supportEmail"],
         createdBy: adminId,
       },
     ];

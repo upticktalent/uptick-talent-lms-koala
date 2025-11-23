@@ -77,7 +77,7 @@ export const getAllUsers = asyncHandler(
     }
 
     const users = await User.find(filter)
-      .select("firstName lastName email role assignedTracks isActive")
+      .select("firstName lastName email role assignedTracks isActive state country lastLogin")
       .populate("assignedTracks", "name trackId")
       .sort({ firstName: 1, lastName: 1 });
 

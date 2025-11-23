@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IStreamAttachment {
   title: string;
   url: string;
-  type: "link" | "file" | "video" | "image";
+  type: "link" | "file" | "video" | "image"|"document";
   size?: number;
   uploadedAt: Date;
 }
@@ -57,7 +57,7 @@ const StreamAttachmentSchema = new Schema({
   },
   type: {
     type: String,
-    enum: ["link", "file", "video", "image"],
+    enum: ["link", "file", "video", "image","document"],
     required: true,
   },
   size: {

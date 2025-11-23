@@ -60,6 +60,8 @@ import { IStream, ITask, ICohort, ITrack, ApiResponse } from '@/types';
 import { toast } from 'sonner';
 import Loader from '@/components/Loader';
 import { CustomPagination } from '@/components/shared/CustomPagination';
+import CreateStreamDialog from '@/components/shared/CreateStreamDialog';
+import CreateTaskDialog from '@/components/shared/CreateTaskDialog';
 
 export default function LMSDashboard() {
   const { user } = useUser();
@@ -84,28 +86,9 @@ export default function LMSDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Stream creation
+  // Dialog states
   const [createStreamOpen, setCreateStreamOpen] = useState(false);
-  const [streamFormData, setStreamFormData] = useState({
-    title: '',
-    content: '',
-    type: 'announcement' as 'announcement' | 'lesson' | 'update',
-    scheduledFor: '',
-  });
-
-  // Task creation
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
-  const [taskFormData, setTaskFormData] = useState({
-    title: '',
-    description: '',
-    type: 'assignment' as 'assignment' | 'project' | 'quiz' | 'reading',
-    difficulty: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
-    estimatedHours: 1,
-    maxScore: 100,
-    dueDate: '',
-    requirements: [] as string[],
-    allowLateSubmissions: true,
-  });
 
   useEffect(() => {
     fetchInitialData();
@@ -265,51 +248,7 @@ export default function LMSDashboard() {
     }
   };
 
-  const handleCreateStream = async () => {
-    if (!currentCohort || !selectedTrack) return;
 
-    try {
-      const response: ApiResponse<IStream> = await streamService.createStream({
-        cohortId: currentCohort._id,
-        trackId: selectedTrack,
-        ...streamFormData,
-      });
-
-      if (response.success) {
-        toast.success('Stream created successfully');
-        setCreateStreamOpen(false);
-        resetStreamForm();
-        fetchStreams();
-      } else {
-        toast.error(response.message || 'Failed to create stream');
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error creating stream');
-    }
-  };
-
-  const handleCreateTask = async () => {
-    if (!currentCohort || !selectedTrack) return;
-
-    try {
-      const response: ApiResponse<ITask> = await taskService.createTask({
-        cohortId: currentCohort._id,
-        trackId: selectedTrack,
-        ...taskFormData,
-      });
-
-      if (response.success) {
-        toast.success('Task created successfully');
-        setCreateTaskOpen(false);
-        resetTaskForm();
-        fetchTasks();
-      } else {
-        toast.error(response.message || 'Failed to create task');
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error creating task');
-    }
-  };
 
   const handleAddReaction = async (
     streamId: string,
@@ -323,28 +262,7 @@ export default function LMSDashboard() {
     }
   };
 
-  const resetStreamForm = () => {
-    setStreamFormData({
-      title: '',
-      content: '',
-      type: 'announcement',
-      scheduledFor: '',
-    });
-  };
 
-  const resetTaskForm = () => {
-    setTaskFormData({
-      title: '',
-      description: '',
-      type: 'assignment',
-      difficulty: 'beginner',
-      estimatedHours: 1,
-      maxScore: 100,
-      dueDate: '',
-      requirements: [],
-      allowLateSubmissions: true,
-    });
-  };
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -571,274 +489,17 @@ export default function LMSDashboard() {
           {canCreateContent && (
             <div className='flex gap-2'>
               {activeTab === 'streams' && (
-                <Dialog
-                  open={createStreamOpen}
-                  onOpenChange={setCreateStreamOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button onClick={resetStreamForm}>
-                      <Plus className='h-4 w-4 mr-2' />
-                      Create Stream
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className='sm:max-w-[600px]'>
-                    <DialogHeader>
-                      <DialogTitle>Create New Stream</DialogTitle>
-                      <DialogDescription>
-                        Share announcements, lessons, or updates with your
-                        students.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className='grid gap-4 py-4'>
-                      <div className='space-y-2'>
-                        <Label htmlFor='stream-title'>Title</Label>
-                        <Input
-                          id='stream-title'
-                          value={streamFormData.title}
-                          onChange={(e) =>
-                            setStreamFormData((prev) => ({
-                              ...prev,
-                              title: e.target.value,
-                            }))
-                          }
-                          placeholder='Stream title...'
-                        />
-                      </div>
-                      <div className='grid grid-cols-2 gap-4'>
-                        <div className='space-y-2'>
-                          <Label htmlFor='stream-type'>Type</Label>
-                          <Select
-                            value={streamFormData.type}
-                            onValueChange={(
-                              value: 'announcement' | 'lesson' | 'update'
-                            ) =>
-                              setStreamFormData((prev) => ({
-                                ...prev,
-                                type: value,
-                              }))
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value='announcement'>
-                                Announcement
-                              </SelectItem>
-                              <SelectItem value='lesson'>Lesson</SelectItem>
-                              <SelectItem value='update'>Update</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className='space-y-2'>
-                          <Label htmlFor='stream-scheduled'>
-                            Schedule For (Optional)
-                          </Label>
-                          <Input
-                            id='stream-scheduled'
-                            type='datetime-local'
-                            value={streamFormData.scheduledFor}
-                            onChange={(e) =>
-                              setStreamFormData((prev) => ({
-                                ...prev,
-                                scheduledFor: e.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className='space-y-2'>
-                        <Label htmlFor='stream-content'>Content</Label>
-                        <Textarea
-                          id='stream-content'
-                          value={streamFormData.content}
-                          onChange={(e) =>
-                            setStreamFormData((prev) => ({
-                              ...prev,
-                              content: e.target.value,
-                            }))
-                          }
-                          placeholder='Write your content here...'
-                          rows={6}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant='outline'
-                        onClick={() => setCreateStreamOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={handleCreateStream}>
-                        Create Stream
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button onClick={() => setCreateStreamOpen(true)}>
+                  <Plus className='h-4 w-4 mr-2' />
+                  Create Stream
+                </Button>
               )}
 
               {activeTab === 'tasks' && (
-                <Dialog open={createTaskOpen} onOpenChange={setCreateTaskOpen}>
-                  <DialogTrigger asChild>
-                    <Button onClick={resetTaskForm}>
-                      <Plus className='h-4 w-4 mr-2' />
-                      Create Task
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className='sm:max-w-[600px]'>
-                    <DialogHeader>
-                      <DialogTitle>Create New Task</DialogTitle>
-                      <DialogDescription>
-                        Create assignments, projects, quizzes, or reading
-                        materials.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className='grid gap-4 py-4'>
-                      <div className='space-y-2'>
-                        <Label htmlFor='task-title'>Title</Label>
-                        <Input
-                          id='task-title'
-                          value={taskFormData.title}
-                          onChange={(e) =>
-                            setTaskFormData((prev) => ({
-                              ...prev,
-                              title: e.target.value,
-                            }))
-                          }
-                          placeholder='Task title...'
-                        />
-                      </div>
-                      <div className='grid grid-cols-3 gap-4'>
-                        <div className='space-y-2'>
-                          <Label htmlFor='task-type'>Type</Label>
-                          <Select
-                            value={taskFormData.type}
-                            onValueChange={(
-                              value:
-                                | 'assignment'
-                                | 'project'
-                                | 'quiz'
-                                | 'reading'
-                            ) =>
-                              setTaskFormData((prev) => ({
-                                ...prev,
-                                type: value,
-                              }))
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value='assignment'>
-                                Assignment
-                              </SelectItem>
-                              <SelectItem value='project'>Project</SelectItem>
-                              <SelectItem value='quiz'>Quiz</SelectItem>
-                              <SelectItem value='reading'>Reading</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className='space-y-2'>
-                          <Label htmlFor='task-difficulty'>Difficulty</Label>
-                          <Select
-                            value={taskFormData.difficulty}
-                            onValueChange={(
-                              value: 'beginner' | 'intermediate' | 'advanced'
-                            ) =>
-                              setTaskFormData((prev) => ({
-                                ...prev,
-                                difficulty: value,
-                              }))
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value='beginner'>Beginner</SelectItem>
-                              <SelectItem value='intermediate'>
-                                Intermediate
-                              </SelectItem>
-                              <SelectItem value='advanced'>Advanced</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className='space-y-2'>
-                          <Label htmlFor='task-hours'>Est. Hours</Label>
-                          <Input
-                            id='task-hours'
-                            type='number'
-                            value={taskFormData.estimatedHours}
-                            onChange={(e) =>
-                              setTaskFormData((prev) => ({
-                                ...prev,
-                                estimatedHours: parseInt(e.target.value),
-                              }))
-                            }
-                            min='1'
-                          />
-                        </div>
-                      </div>
-                      <div className='grid grid-cols-2 gap-4'>
-                        <div className='space-y-2'>
-                          <Label htmlFor='task-score'>Max Score</Label>
-                          <Input
-                            id='task-score'
-                            type='number'
-                            value={taskFormData.maxScore}
-                            onChange={(e) =>
-                              setTaskFormData((prev) => ({
-                                ...prev,
-                                maxScore: parseInt(e.target.value),
-                              }))
-                            }
-                            min='1'
-                          />
-                        </div>
-                        <div className='space-y-2'>
-                          <Label htmlFor='task-due'>Due Date</Label>
-                          <Input
-                            id='task-due'
-                            type='datetime-local'
-                            value={taskFormData.dueDate}
-                            onChange={(e) =>
-                              setTaskFormData((prev) => ({
-                                ...prev,
-                                dueDate: e.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className='space-y-2'>
-                        <Label htmlFor='task-description'>Description</Label>
-                        <Textarea
-                          id='task-description'
-                          value={taskFormData.description}
-                          onChange={(e) =>
-                            setTaskFormData((prev) => ({
-                              ...prev,
-                              description: e.target.value,
-                            }))
-                          }
-                          placeholder='Task description and instructions...'
-                          rows={4}
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant='outline'
-                        onClick={() => setCreateTaskOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={handleCreateTask}>Create Task</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                <Button onClick={() => setCreateTaskOpen(true)}>
+                  <Plus className='h-4 w-4 mr-2' />
+                  Create Task
+                </Button>
               )}
             </div>
           )}
@@ -1283,6 +944,29 @@ export default function LMSDashboard() {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Reusable Dialog Components */}
+      <CreateStreamDialog
+        isOpen={createStreamOpen}
+        onClose={() => setCreateStreamOpen(false)}
+        cohortId={currentCohort?._id || ''}
+        trackId={selectedTrack}
+        trackName={userTracks.find(track => track._id === selectedTrack)?.name}
+        onSuccess={() => {
+          fetchStreams();
+        }}
+      />
+
+      <CreateTaskDialog
+        isOpen={createTaskOpen}
+        onClose={() => setCreateTaskOpen(false)}
+        cohortId={currentCohort?._id || ''}
+        trackId={selectedTrack}
+        trackName={userTracks.find(track => track._id === selectedTrack)?.name}
+        onSuccess={() => {
+          fetchTasks();
+        }}
+      />
     </div>
   );
 }

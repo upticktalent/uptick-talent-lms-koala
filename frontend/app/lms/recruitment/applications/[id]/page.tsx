@@ -24,7 +24,7 @@ export default function ApplicationDetail() {
   const id = params?.id as string;
 
   const {
-    data: application,
+    response: application,
     loading,
     error,
     refetch,

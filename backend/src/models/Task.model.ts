@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface ITaskResource {
   title: string;
   description?: string;
-  type: "link" | "file" | "video" | "reading";
+  type: "link" | "file" | "video" | "reading"|"document";
   url: string;
   isRequired: boolean;
 }
@@ -67,7 +67,7 @@ const TaskResourceSchema = new Schema({
   },
   type: {
     type: String,
-    enum: ["link", "file", "video", "reading"],
+    enum: ["link", "file", "video", "reading","document"],
     required: true,
   },
   url: {

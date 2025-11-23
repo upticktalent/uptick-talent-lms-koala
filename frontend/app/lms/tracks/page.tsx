@@ -102,6 +102,7 @@ export default function TracksPage() {
   // Extract tracks from current active cohort
   
   const cohortTracks = currentCohort?.tracks || [];
+  console.log(cohortTracks);
   const [isCreating, setIsCreating] = useState(false);
 
   const filteredTracks = cohortTracks?.filter((cohortTrack: any) =>

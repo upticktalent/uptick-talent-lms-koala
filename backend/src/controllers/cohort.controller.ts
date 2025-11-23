@@ -492,3 +492,62 @@ export const removeMentorFromTrack = asyncHandler(
     });
   },
 );
+
+// Get track details within current active cohort context
+export const getTrackInActiveCohort = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { trackId } = req.params;
+
+    // Get current active cohort
+    const activeCohort = await Cohort.getCurrentActive();
+
+    if (!activeCohort) {
+      return res.status(404).json({
+        success: false,
+        message: "No currently active cohort found",
+      });
+    }
+
+    // Find the track within this cohort
+    const cohortTrack = activeCohort.tracks.find(
+      (ct: any) => ct.track.trackId === trackId || ct.track._id.toString() === trackId
+    );
+
+    if (!cohortTrack) {
+      return res.status(404).json({
+        success: false,
+        message: "Track not found in current active cohort",
+      });
+    }
+
+    // Get additional track data and populate students
+    const User = require("../models/User.model").User;
+    const students = await User.find({
+      role: "student",
+      currentCohort: activeCohort._id,
+      currentTrack: cohortTrack.track._id,
+      isActive: true,
+    }).select("firstName lastName email");
+
+    const trackDetails = {
+      cohort: {
+        _id: activeCohort._id,
+        name: activeCohort.name,
+        cohortNumber: activeCohort.cohortNumber,
+        startDate: activeCohort.startDate,
+        endDate: activeCohort.endDate,
+      },
+      track: cohortTrack.track,
+      mentors: cohortTrack.mentors,
+      maxStudents: cohortTrack.maxStudents,
+      currentStudents: cohortTrack.currentStudents,
+      students: students,
+    };
+
+    res.status(200).json({
+      success: true,
+      message: "Track details retrieved successfully",
+      data: trackDetails,
+    });
+  },
+);

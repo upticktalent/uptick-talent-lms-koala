@@ -4,6 +4,15 @@ import {
   getApplications,
   reviewApplication,
   getApplicationDetails,
+  getAvailableTracks,
+  getApplicationsByCohort,
+  getApplicationsByTrack,
+  acceptApplication,
+  shortlistApplication,
+  rejectApplication,
+  getApplicationStats,
+  bulkUpdateApplications,
+  exportApplications,
 } from "../controllers/application.controller";
 import { authenticate, authorize } from "../middleware/auth";
 import {
@@ -62,6 +71,61 @@ router.patch(
   authorize("mentor", "admin"),
   validateReviewApplication,
   reviewApplication,
+);
+
+// Additional application management routes
+router.get(
+  "/available-tracks",
+  getAvailableTracks,
+);
+
+router.get(
+  "/cohort/:cohortId",
+  authorize("mentor", "admin"),
+  getApplicationsByCohort,
+);
+
+router.get(
+  "/track/:trackId",
+  authorize("mentor", "admin"),
+  getApplicationsByTrack,
+);
+
+router.get(
+  "/stats",
+  authorize("mentor", "admin"),
+  getApplicationStats,
+);
+
+router.get(
+  "/export",
+  authorize("admin"),
+  exportApplications,
+);
+
+// Application actions (admin only)
+router.post(
+  "/:id/accept",
+  authorize("admin"),
+  acceptApplication,
+);
+
+router.patch(
+  "/:id/shortlist",
+  authorize("mentor", "admin"),
+  shortlistApplication,
+);
+
+router.patch(
+  "/:id/reject",
+  authorize("mentor", "admin"),
+  rejectApplication,
+);
+
+router.patch(
+  "/bulk-update",
+  authorize("admin"),
+  bulkUpdateApplications,
 );
 
 export default router;

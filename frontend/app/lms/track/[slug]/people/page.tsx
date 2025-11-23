@@ -4,18 +4,24 @@ import { useParams } from "next/navigation";
 import { trackService } from "@/services/trackService";
 import { cohortService } from "@/services/cohortService";
 import { useFetch } from "@/hooks/useFetch";
+import { useUser } from "@/hooks/useUser";
 import Loader from "@/components/Loader";
 
 export default function PeoplePage() {
   const params = useParams();
   const slug = params.slug as string;
-  const { data: track, isLoading } = useFetch(
-    `track-${params.slug}`,
-    () => cohortService.getTrackInActiveCohort(params.slug),
-    [params.slug]
+  const { user } = useUser();
+  const { response: data, loading } = useFetch(
+    () => cohortService.getTrackInActiveCohort(slug)
   );
-
-  if (isLoading) return <Loader />;
+  const track = data;
+  
+  const userRole = user?.role || 'student';
+  const isInstructor = userRole === 'admin' || userRole === 'mentor';
+  const studentsLabel = isInstructor ? 'Students' : 'Classmates';
+  
+  console.log(track)
+  if (loading) return <Loader />;
   if (!track) return null;
 
   return (
@@ -38,14 +44,14 @@ export default function PeoplePage() {
         </div>
       </section>
 
-      {/* Classmates */}
+      {/* Students/Classmates */}
       <section>
         <div className="flex items-center justify-between border-b border-blue-600 pb-4 mb-4">
-           <h2 className="text-3xl font-normal text-blue-600">Classmates</h2>
-           <span className="text-blue-600 font-medium">{track.students?.length || 0} students</span>
+           <h2 className="text-3xl font-normal text-blue-600">{studentsLabel}</h2>
+           <span className="text-blue-600 font-medium">{track?.track.students?.length || 0} students</span>
         </div>
         <div className="space-y-4">
-           {track.students?.map((student: any) => (
+           {track?.track.students?.map((student: any) => (
               <div key={student._id} className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
                  <div className="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-medium">
                     {student.firstName?.[0]}
@@ -53,7 +59,7 @@ export default function PeoplePage() {
                  <span className="font-medium text-gray-900">{student.firstName} {student.lastName}</span>
               </div>
            ))}
-           {(!track.students || track.students.length === 0) && <p className="text-gray-500 italic">No students enrolled</p>}
+           {(!track?.track.students || track?.track.students.length === 0) && <p className="text-gray-500 italic">No students enrolled</p>}
         </div>
       </section>
     </div>

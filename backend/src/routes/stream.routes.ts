@@ -15,6 +15,7 @@ import {
   getStreamAnalytics,
 } from "../controllers/stream.controller";
 import { authenticate, authorize } from "../middleware/auth";
+import { uploadStreamMedia } from "../services/upload.service";
 
 const router = Router();
 
@@ -45,6 +46,7 @@ router.get("/mentor", authorize("mentor", "admin"), getMentorStreams);
 router.post(
   "/upload-attachment",
   authorize("mentor", "admin"),
+  uploadStreamMedia.array("files", 5) as any, // Allow up to 5 files
   uploadAttachment,
 );
 

@@ -12,6 +12,7 @@ import {
   removeTrackFromCohort,
   addMentorToTrack,
   removeMentorFromTrack,
+  getTrackInActiveCohort,
 } from "../controllers/cohort.controller";
 import { authenticate, authorize } from "../middleware/auth";
 
@@ -20,6 +21,7 @@ const router = Router();
 // Public routes
 router.get("/active", getActiveCohorts);
 router.get("/current-active", getCurrentActiveCohort);
+router.get("/track/:trackId", getTrackInActiveCohort);
 router.get("/:id", getCohortDetails);
 
 // Protected routes - Admin only

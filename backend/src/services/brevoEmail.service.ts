@@ -390,7 +390,7 @@ class BrevoEmailService {
     applicantName: string,
     cohortName: string,
     applicationId?: string,
-  ): Promise<void> {
+    ): Promise<void> {
     await this.sendTemplatedEmail({
       templateType: "application_confirmation",
       recipient: {
@@ -401,6 +401,7 @@ class BrevoEmailService {
       },
       variables: {
         cohortName,
+        applicantId: applicationId || "",
       },
       metadata: {
         applicationId,

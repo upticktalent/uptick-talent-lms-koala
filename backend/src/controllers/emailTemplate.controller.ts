@@ -20,7 +20,7 @@ export const getEmailTemplates = async (req: AuthRequest, res: Response) => {
     if (isActive !== undefined) filter.isActive = isActive === "true";
 
     const templates = await EmailTemplate.find(filter)
-      .populate("createdBy", "fullName email")
+      .populate("createdBy", "name email")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -44,7 +44,7 @@ export const getEmailTemplate = async (req: AuthRequest, res: Response) => {
 
     const template = await EmailTemplate.findById(id).populate(
       "createdBy",
-      "fullName email",
+      " firstName lastName email",
     );
 
     if (!template) {
@@ -93,7 +93,7 @@ export const createEmailTemplate = async (req: AuthRequest, res: Response) => {
     });
 
     await template.save();
-    await template.populate("createdBy", "fullName email");
+    await template.populate("createdBy", " firstName lastName email");
 
     return res.status(201).json({
       success: true,
@@ -127,7 +127,7 @@ export const updateEmailTemplate = async (req: AuthRequest, res: Response) => {
         isActive,
       },
       { new: true, runValidators: true },
-    ).populate("createdBy", "fullName email");
+    ).populate("createdBy", " firstName lastName email");
 
     if (!template) {
       return res.status(404).json({
@@ -368,11 +368,11 @@ export const getEmailRecipients = async (req: AuthRequest, res: Response) => {
       const filter: any = {};
       if (req.query.role) filter.role = req.query.role;
 
-      recipients = await User.find(filter).select("fullName email role").lean();
+      recipients = await User.find(filter).select(" firstName lastName email role").lean();
 
       recipients = recipients.map((user) => ({
         id: user._id,
-        name: user.fullName,
+        name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         type: "user",
         metadata: {

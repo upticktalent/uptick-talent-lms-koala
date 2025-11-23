@@ -16,6 +16,7 @@ import {
   returnSubmissionForRevision,
 } from "../controllers/task.controller";
 import { authenticate, authorize } from "../middleware/auth";
+import { uploadTaskMedia } from "../services/upload.service";
 
 const router = Router();
 
@@ -48,6 +49,11 @@ router.get("/mentor", getMentorTasks);
 router.get("/mentor/pending-grading", getPendingGrading);
 
 // File upload route
-router.post("/upload-resource", uploadTaskResource);
+router.post(
+  "/upload-resource", 
+  authorize("mentor", "admin"),
+  uploadTaskMedia.array("files", 5) as any, // Allow up to 5 files
+  uploadTaskResource
+);
 
 export default router;

@@ -404,10 +404,355 @@ export const getApplicationDetails = asyncHandler(
       });
     }
 
+  res.status(200).json({
+    success: true,
+    message: "Application details retrieved successfully",
+    data: application,
+  });
+},
+);
+
+export const getAvailableTracks = asyncHandler(
+  async (req: Request, res: Response) => {
+    // Get current active cohort and its tracks
+    const activeCohort = await Cohort.findOne({ 
+      isCurrentlyActive: true,
+      applicationDeadline: { $gte: new Date() }
+    }).populate('tracks');
+
+    if (!activeCohort) {
+      return res.status(404).json({
+        success: false,
+        message: "No active cohort accepting applications",
+        data: [],
+      });
+    }
+
     res.status(200).json({
       success: true,
-      message: "Application details retrieved successfully",
+      message: "Available tracks retrieved successfully",
+      data: activeCohort.tracks || [],
+    });
+  },
+);
+
+export const getApplicationsByCohort = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { cohortId } = req.params;
+
+    if (!isValidObjectId(cohortId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort ID",
+      });
+    }
+
+    const applications = await Application.find({ cohort: cohortId })
+      .populate("applicant", "firstName lastName email")
+      .populate("track", "name")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Applications retrieved successfully",
+      data: applications,
+    });
+  },
+);
+
+export const getApplicationsByTrack = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { trackId } = req.params;
+
+    if (!isValidObjectId(trackId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid track ID",
+      });
+    }
+
+    const applications = await Application.find({ track: trackId })
+      .populate("applicant", "firstName lastName email")
+      .populate("cohort", "name")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: "Applications retrieved successfully",
+      data: applications,
+    });
+  },
+);
+
+export const acceptApplication = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid application ID",
+      });
+    }
+
+    const application = await Application.findById(id)
+      .populate("applicant")
+      .populate("cohort")
+      .populate("track");
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
+      });
+    }
+
+    if (application.status === "accepted") {
+      return res.status(400).json({
+        success: false,
+        message: "Application is already accepted",
+      });
+    }
+
+    // Type assertions for populated fields
+    const applicant = application.applicant as any;
+    const cohort = application.cohort as any;
+    const track = application.track as any;
+
+    // Generate password for new student
+    const generatedPassword = generatePassword();
+    const hashedPassword = await hashPassword(generatedPassword);
+
+    // Create student user account
+    const student = new User({
+      firstName: applicant.firstName,
+      lastName: applicant.lastName,
+      email: applicant.email,
+      password: hashedPassword,
+      role: "student",
+      cohort: cohort._id,
+      track: track._id,
+      isActive: true,
+    });
+
+    await student.save();
+
+    // Update application status
+    application.status = "accepted";
+    application.reviewedBy = req.user?.userId;
+    application.reviewedAt = new Date();
+    await application.save();
+
+     res.status(200).json({
+      success: true,
+      message: "Application accepted and student account created",
+      data: {
+        application,
+        student,
+        generatedPassword,
+      },
+    });
+  },
+);
+
+export const shortlistApplication = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid application ID",
+      });
+    }
+
+    const application = await Application.findByIdAndUpdate(
+      id,
+      {
+        status: "shortlisted",
+        reviewedBy: req.user?.userId,
+        reviewedAt: new Date(),
+      },
+      { new: true }
+    ).populate("applicant", "firstName lastName email");
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Application shortlisted successfully",
       data: application,
     });
+  },
+);
+
+export const rejectApplication = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { rejectionReason } = req.body;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid application ID",
+      });
+    }
+
+    const application = await Application.findByIdAndUpdate(
+      id,
+      {
+        status: "rejected",
+        rejectionReason,
+        reviewedBy: req.user?.userId,
+        reviewedAt: new Date(),
+      },
+      { new: true }
+    ).populate("applicant", "firstName lastName email");
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Application rejected successfully",
+      data: application,
+    });
+  },
+);
+
+export const getApplicationStats = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { cohortId } = req.query;
+
+    const matchFilter: any = {};
+    if (cohortId && isValidObjectId(cohortId as string)) {
+      matchFilter.cohort = cohortId;
+    }
+
+    const stats = await Application.aggregate([
+      { $match: matchFilter },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const totalApplications = await Application.countDocuments(matchFilter);
+
+    const formattedStats = {
+      total: totalApplications,
+      pending: 0,
+      "under-review": 0,
+      shortlisted: 0,
+      accepted: 0,
+      rejected: 0,
+    };
+
+    stats.forEach((stat) => {
+      formattedStats[stat._id as keyof typeof formattedStats] = stat.count;
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Application statistics retrieved successfully",
+      data: formattedStats,
+    });
+  },
+);
+
+export const bulkUpdateApplications = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { applicationIds, status } = req.body;
+
+    if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Application IDs are required",
+      });
+    }
+
+    if (!["under-review", "shortlisted", "accepted", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status",
+      });
+    }
+
+    const result = await Application.updateMany(
+      { _id: { $in: applicationIds } },
+      {
+        status,
+        reviewedBy: req.user?.userId,
+        reviewedAt: new Date(),
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `${result.modifiedCount} applications updated successfully`,
+      data: { modified: result.modifiedCount },
+    });
+  },
+);
+
+export const exportApplications = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { cohortId } = req.query;
+
+    const matchFilter: any = {};
+    if (cohortId && isValidObjectId(cohortId as string)) {
+      matchFilter.cohort = cohortId;
+    }
+
+    const applications = await Application.find(matchFilter)
+      .populate("applicant", "firstName lastName email phoneNumber")
+      .populate("cohort", "name")
+      .populate("track", "name")
+      .sort({ createdAt: -1 });
+
+    // Convert to CSV format
+    const csvHeaders = [
+      "Name",
+      "Email",
+      "Phone",
+      "Track",
+      "Cohort",
+      "Status",
+      "Applied Date",
+    ];
+
+    const csvRows = applications.map((app) => {
+      const applicant = app.applicant as any;
+      const track = app.track as any;
+      const cohort = app.cohort as any;
+      return [
+        `${applicant.firstName} ${applicant.lastName}`,
+        applicant.email,
+        applicant.phoneNumber || "",
+        track?.name || "",
+        cohort?.name || "",
+        app.status,
+        new Date(app.createdAt).toLocaleDateString(),
+      ];
+    });
+
+    const csvContent = [csvHeaders, ...csvRows]
+      .map((row) => row.map((field) => `"${field}"`).join(","))
+      .join("\n");
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=applications.csv");
+    res.status(200).send(csvContent);
   },
 );
