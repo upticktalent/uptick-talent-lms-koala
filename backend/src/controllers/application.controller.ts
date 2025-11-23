@@ -308,7 +308,7 @@ export const reviewApplication = asyncHandler(
 
     if (status === "shortlisted") {
       // Generate assessment link
-      const assessmentLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/assessment/${application._id}`;
+      const assessmentLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/apply/assessment`;
 
       // Send assessment email
       await brevoEmailService.sendAssessmentEmail(
