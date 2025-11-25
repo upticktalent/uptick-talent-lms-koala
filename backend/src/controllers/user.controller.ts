@@ -30,7 +30,8 @@ export const getUsers = asyncHandler(
     const skip = (Number(page) - 1) * Number(limit);
 
     const users = await User.find(filter)
-      .populate("assignedTracks", "name trackId")
+      .populate("trackAssignments.track", "name trackId")
+      .populate("trackAssignments.cohort", "name cohortNumber")
       .populate("createdBy", "firstName lastName email")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -64,7 +65,9 @@ export const getAllUsers = asyncHandler(
     const isRoleArray = Array.isArray(role);
     if (role) {
       // Handle multiple roles separated by comma
-      const roles = isRoleArray ? role : (role as string).split(",").map((r) => r.trim());
+      const roles = isRoleArray
+        ? role
+        : (role as string).split(",").map((r) => r.trim());
       if (roles.length > 1) {
         filter.role = { $in: roles };
       } else {
@@ -77,7 +80,9 @@ export const getAllUsers = asyncHandler(
     }
 
     const users = await User.find(filter)
-      .select("firstName lastName email role assignedTracks isActive state country lastLogin")
+      .select(
+        "firstName lastName email role assignedTracks isActive state country lastLogin",
+      )
       .populate("assignedTracks", "name trackId")
       .sort({ firstName: 1, lastName: 1 });
 
@@ -189,7 +194,8 @@ export const createUser = asyncHandler(
       state: state.trim(),
       password: hashedPassword,
       role,
-      assignedTracks: role === "mentor" ? assignedTracks : [],
+      // Note: For mentors, track assignments should be done via cohort-track assignment endpoints
+      trackAssignments: [],
       isPasswordDefault: true,
       createdBy: adminId,
     });
@@ -201,8 +207,8 @@ export const createUser = asyncHandler(
     const trackNames =
       role === "mentor" && assignedTracks.length > 0
         ? (await Track.find({ _id: { $in: assignedTracks } }))
-          .map((t) => t.name)
-          .join(", ")
+            .map((t) => t.name)
+            .join(", ")
         : "";
 
     await brevoEmailService.sendWelcomeEmail(
@@ -300,7 +306,7 @@ export const toggleUserStatus = asyncHandler(
 export const assignTracksToMentor = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { trackIds } = req.body;
+    const { trackIds, cohortIds } = req.body;
 
     // Validate ObjectId format
     if (!isValidObjectId(id)) {
@@ -334,8 +340,22 @@ export const assignTracksToMentor = asyncHandler(
       });
     }
 
+    // Update both legacy and new fields for backward compatibility
     mentor.assignedTracks = trackIds;
+
+    // Create track assignments - if cohortIds provided, create specific assignments
+    // Otherwise create general assignments (mentor can access track in any cohort)
+    const trackAssignments = trackIds.map((trackId: any) => ({
+      cohort: cohortIds && cohortIds.length > 0 ? cohortIds[0] : null, // For simplicity, assign to first cohort if provided
+      track: trackId,
+      role: "mentor" as const,
+      assignedAt: new Date(),
+      isActive: true,
+    }));
+
+    (mentor as any).trackAssignments = trackAssignments;
     await mentor.save();
+
     await mentor.populate("assignedTracks", "name trackId");
 
     res.status(200).json({
@@ -381,18 +401,19 @@ export const getStudents = asyncHandler(async (req: Request, res: Response) => {
   // Build filter query for students only
   const filter: any = { role: "student" };
 
-  if (cohortId) {
-    filter.currentCohort = cohortId;
-  }
-
-  if (trackId) {
-    filter.currentTrack = trackId;
+  // Handle cohort/track filtering with new trackAssignments structure
+  if (cohortId || trackId) {
+    const assignmentFilter: any = {};
+    if (cohortId) assignmentFilter["trackAssignments.cohort"] = cohortId;
+    if (trackId) assignmentFilter["trackAssignments.track"] = trackId;
+    Object.assign(filter, assignmentFilter);
   }
 
   const skip = (Number(page) - 1) * Number(limit);
 
   const students = await User.find(filter)
-    .populate("currentTrack", "name trackId description color")
+    .populate("trackAssignments.track", "name trackId description color")
+    .populate("trackAssignments.cohort", "name cohortNumber")
     .populate("assignedTracks", "name trackId")
     .sort({ createdAt: -1 })
     .skip(skip)
@@ -469,18 +490,39 @@ export const assignTrackToStudent = asyncHandler(
       });
     }
 
-    // Update student with current track and cohort
-    const student = await User.findOneAndUpdate(
-      { _id: id, role: "student" },
+    // Find or create track assignment
+    const student = await User.findById(id);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    const existingAssignment = ((student.trackAssignments as any[]) || []).find(
+      (assignment: any) =>
+        assignment.track.toString() === trackId &&
+        assignment.cohort.toString() === cohortId,
+    );
+
+    if (!existingAssignment) {
+      (student.trackAssignments as any[]).push({
+        cohort: cohortId,
+        track: trackId,
+        role: "student",
+        assignedAt: new Date(),
+        isActive: true,
+      });
+      await student.save();
+    }
+
+    await student.populate([
       {
-        currentTrack: trackId,
-        currentCohort: cohortId,
-        $addToSet: { assignedTracks: trackId }, // Add to assigned tracks if not already present
+        path: "trackAssignments.track",
+        select: "name trackId description color",
       },
-      { new: true },
-    )
-      .populate("currentTrack", "name trackId description color")
-      .populate("assignedTracks", "name trackId");
+      { path: "trackAssignments.cohort", select: "name cohortNumber" },
+    ]);
 
     if (!student) {
       return res.status(404).json({
@@ -586,7 +628,7 @@ export const resetUserPassword = asyncHandler(
     await brevoEmailService.sendPasswordResetEmail(
       user.email,
       `${user.firstName} ${user.lastName}`,
-      newPassword
+      newPassword,
     );
 
     res.status(200).json({

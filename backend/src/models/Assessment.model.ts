@@ -2,8 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IAssessment extends Document {
   _id: string;
-  application: mongoose.Types.ObjectId; // Required - links to Application
-  cohort: mongoose.Types.ObjectId; // Required - links to Cohort
+  application: mongoose.Types.ObjectId; // Required - links to Application (which contains track info)
   fileUrl?: string;
   linkUrl?: string;
   notes?: string; // Optional notes from applicant
@@ -24,11 +23,6 @@ const AssessmentSchema: Schema = new Schema(
       ref: "Application",
       required: [true, "Application ID is required"],
       unique: true, // One assessment per application
-    },  
-    cohort: {
-      type: Schema.Types.ObjectId,
-      ref: "Cohort",
-      required: [true, "Cohort is required"],
     },
     fileUrl: {
       type: String,

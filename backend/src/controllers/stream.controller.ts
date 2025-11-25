@@ -461,20 +461,28 @@ export const getStudentStreams = asyncHandler(
     const userId = req.user!.id;
 
     // Get user's current cohort and track
-    const user = await User.findById(userId).select(
-      "currentCohort currentTrack",
+    const user = await User.findById(req.user._id).select(
+      "trackAssignments",
     );
 
-    if (!user || !user.currentCohort || !user.currentTrack) {
+    if (!user || !user.trackAssignments || user.trackAssignments.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "User is not enrolled in any cohort or track",
+        message: "User is not enrolled in any track",
+      });
+    }
+
+    // Use the first active track assignment
+    const activeAssignment = (user.trackAssignments as any[]).find((assignment: any) => assignment.isActive);
+    if (!activeAssignment) {
+      return res.status(400).json({
+        success: false,
+        message: "User has no active track assignment",
       });
     }
 
     const streams = await Stream.find({
-      cohort: user.currentCohort,
-      track: user.currentTrack,
+      track: activeAssignment.track,
       isPublished: true,
       $or: [
         { scheduledFor: { $exists: false } },
@@ -503,17 +511,21 @@ export const getMentorStreams = asyncHandler(
     const userId = req.user!.id;
 
     // Get user's assigned tracks
-    const user = await User.findById(userId).select("assignedTracks");
+    const user = await User.findById(userId).select("trackAssignments");
 
-    if (!user || !user.assignedTracks || user.assignedTracks.length === 0) {
+    if (!user || !user.trackAssignments || user.trackAssignments.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Mentor is not assigned to any tracks",
       });
     }
 
+    const mentorTrackIds = (user.trackAssignments as any[])
+      .filter((assignment: any) => assignment.role === 'mentor' && assignment.isActive)
+      .map((assignment: any) => assignment.track);
+
     const streams = await Stream.find({
-      track: { $in: user.assignedTracks },
+      track: { $in: mentorTrackIds },
     })
       .populate("cohort", "name cohortNumber")
       .populate("track", "name trackId")

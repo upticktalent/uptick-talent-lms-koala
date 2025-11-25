@@ -3,6 +3,7 @@ import { Interview } from "../models/Interview.model";
 import { InterviewSlot } from "../models/InterviewSlot.model";
 import { Application } from "../models/Application.model";
 import { User } from "../models/User.model";
+import { hashPassword, generatePassword } from "../utils/auth";
 import { asyncHandler } from "../utils/mongooseErrorHandler";
 import { isValidObjectId } from "../utils/mongooseErrorHandler";
 import { brevoEmailService } from "../services/brevoEmail.service";
@@ -54,7 +55,6 @@ export const createInterviewSlots = asyncHandler(
           message: "Track does not belong to this cohort",
         });
       }
-
     };
 
     // =====================================
@@ -71,7 +71,7 @@ export const createInterviewSlots = asyncHandler(
       }
 
       const createdSlots: any[] = [];
-      let index = 0
+      let index = 0;
       for (const slot of slots) {
         const {
           date,
@@ -101,8 +101,6 @@ export const createInterviewSlots = asyncHandler(
 
         if (conflict) continue; // skip this slot
 
-
-
         const newSlot = await InterviewSlot.create({
           interviewer: interviewerId,
           tracks,
@@ -113,7 +111,7 @@ export const createInterviewSlots = asyncHandler(
           maxInterviews,
           notes,
           meetingLink,
-          cohort: cohortId
+          cohort: cohortId,
         });
 
         createdSlots.push(newSlot);
@@ -142,8 +140,9 @@ export const createInterviewSlots = asyncHandler(
         meetingLink,
       } = req.body;
 
-      tracks?.forEach(async (t: string) => await validateCohortTracks(cohortId, t));
-
+      tracks?.forEach(
+        async (t: string) => await validateCohortTracks(cohortId, t),
+      );
 
       if (!startDate || !endDate || !startTime || !endTime || !tracks.length) {
         return res.status(400).json({
@@ -187,7 +186,7 @@ export const createInterviewSlots = asyncHandler(
           maxInterviews,
           notes,
           meetingLink,
-          cohort: cohortId
+          cohort: cohortId,
         })),
       );
 
@@ -301,7 +300,7 @@ export const getAvailableSlots = asyncHandler(
       acc[dateKey].push({
         _id: slot._id,
         interviewer: slot.interviewer,
-        tracks: slot.tracks,
+        track: slot.track,
         startTime: slot.startTime,
         endTime: slot.endTime,
         duration: slot.duration,
@@ -545,6 +544,25 @@ export const getInterviews = asyncHandler(
       .populate("interviewer", "firstName lastName email")
       .sort({ scheduledDate: -1 });
 
+    // Filter by mentor's assigned tracks if user is a mentor
+    if (userRole === "mentor") {
+      const mentorTrackIds = req.user?.trackAssignments
+        ?.filter(
+          (assignment: any) =>
+            assignment.role === "mentor" && assignment.isActive,
+        )
+        .map((assignment: any) => assignment.track.toString());
+
+      if (mentorTrackIds && mentorTrackIds.length > 0) {
+        interviews = interviews.filter((interview: any) => {
+          const trackId = interview.application?.track?._id?.toString();
+          return trackId && mentorTrackIds.includes(trackId);
+        });
+      } else {
+        interviews = [];
+      }
+    }
+
     // Filter by track if specified
     if (track) {
       interviews = interviews.filter(
@@ -762,6 +780,27 @@ export const reviewInterview = asyncHandler(
       });
     }
 
+    // Check mentor track permissions
+    if (req.user?.role === "mentor") {
+      const mentorTrackIds = req.user?.trackAssignments
+        ?.filter(
+          (assignment: any) =>
+            assignment.role === "mentor" && assignment.isActive,
+        )
+        .map((assignment: any) => assignment.track.toString());
+
+      const applicationTrackId = (
+        interview.application as any
+      ).track._id.toString();
+      if (!mentorTrackIds?.includes(applicationTrackId)) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Access denied: You can only review interviews for your assigned tracks",
+        });
+      }
+    }
+
     // Update interview
     interview.status = "interviewed";
     if (notes) interview.notes = notes;
@@ -778,13 +817,58 @@ export const reviewInterview = asyncHandler(
         { new: true },
       );
 
-      // If accepted, promote applicant to student role
+      // If accepted, promote applicant to student role with proper track assignment
       if (status === "accepted") {
-        await User.findByIdAndUpdate(
-          (interview.application as any).applicant._id,
-          { role: "student" },
-          { new: true },
-        );
+        try {
+          const applicant = (interview.application as any).applicant;
+          const application = await Application.findById(
+            interview.application._id,
+          )
+            .populate("cohort")
+            .populate("track");
+
+          // Check if user is already a student
+          const existingUser = await User.findById(applicant._id);
+          if (existingUser && existingUser.role !== "student") {
+            // Generate new password for student access
+            const studentPassword = generatePassword();
+            const hashedPassword = await hashPassword(studentPassword);
+
+            // Update existing applicant to student role
+            existingUser.role = "student";
+            existingUser.password = hashedPassword;
+            existingUser.isPasswordDefault = true;
+
+            // Add track assignment
+            const trackAssignment = {
+              cohort: (application as any).cohort._id,
+              track: (application as any).track._id,
+              role: "student" as const,
+              assignedAt: new Date(),
+              isActive: true,
+            };
+
+            if (!existingUser.trackAssignments) {
+              existingUser.trackAssignments = [];
+            }
+            (existingUser.trackAssignments as any[]).push(trackAssignment);
+
+            await existingUser.save();
+
+            // Send welcome email for new student with credentials
+            const track = (application as any).track;
+            await brevoEmailService.sendWelcomeEmail(
+              existingUser.email,
+              `${existingUser.firstName} ${existingUser.lastName}`,
+              "student",
+              studentPassword, // Send the generated password
+              track.name,
+            );
+          }
+        } catch (error) {
+          console.error("Error converting applicant to student:", error);
+          // Don't fail the review if student conversion fails
+        }
       }
     }
 

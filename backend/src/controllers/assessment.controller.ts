@@ -243,7 +243,7 @@ export const getAssessments = asyncHandler(
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    const assessments = await Assessment.find(filter)
+    let assessments = await Assessment.find(filter)
       .populate({
         path: "application",
         populate: [
@@ -256,6 +256,25 @@ export const getAssessments = asyncHandler(
       .sort({ submittedAt: -1 })
       .skip(skip)
       .limit(Number(limit));
+
+    // Filter assessments for mentors based on their assigned tracks
+    if (req.user?.role === "mentor") {
+      const mentorTrackIds = req.user.trackAssignments
+        ?.filter(
+          (assignment: any) =>
+            assignment.role === "mentor" && assignment.isActive,
+        )
+        .map((assignment: any) => assignment.track.toString());
+
+      if (mentorTrackIds && mentorTrackIds.length > 0) {
+        assessments = assessments.filter((assessment: any) => {
+          const trackId = assessment.application?.track?._id?.toString();
+          return trackId && mentorTrackIds.includes(trackId);
+        });
+      } else {
+        assessments = [];
+      }
+    }
 
     const total = await Assessment.countDocuments(filter);
 
@@ -347,13 +366,43 @@ export const reviewAssessment = asyncHandler(
       });
     }
 
-    const assessment = await Assessment.findById(id).populate("application");
+    const assessment = await Assessment.findById(id).populate([
+      {
+        path: "application",
+        populate: [
+          { path: "applicant", select: "firstName lastName email" },
+          { path: "track", select: "name" },
+          { path: "cohort", select: "name cohortNumber" },
+        ],
+      },
+    ]);
 
     if (!assessment) {
       return res.status(404).json({
         success: false,
         message: "Assessment not found",
       });
+    }
+
+    // Check mentor track permissions
+    if (req.user?.role === "mentor") {
+      const mentorTrackIds = req.user.trackAssignments
+        ?.filter(
+          (assignment: any) =>
+            assignment.role === "mentor" && assignment.isActive,
+        )
+        .map((assignment: any) => assignment.track.toString());
+
+      const applicationTrackId = (
+        assessment.application as any
+      ).track._id.toString();
+      if (!mentorTrackIds?.includes(applicationTrackId)) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Access denied: You can only review assessments for your assigned tracks",
+        });
+      }
     }
 
     // Update assessment - hardcode status as "reviewed"

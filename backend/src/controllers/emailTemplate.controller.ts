@@ -5,6 +5,7 @@ import {
   EmailLog,
   User,
   Application,
+  Cohort,
 } from "../models";
 import { brevoEmailService } from "../services/brevoEmail.service";
 import { AuthRequest } from "../middleware/auth";
@@ -344,24 +345,28 @@ export const getEmailRecipients = async (req: AuthRequest, res: Response) => {
 
       const applications = await Application.find(filter)
         .populate("applicant", "firstName lastName email")
-        .populate("cohort", "name")
         .populate("track", "name")
         .lean();
 
-      recipients = applications.map((app) => {
+      recipients = await Promise.all(applications.map(async (app) => {
         const applicant = app.applicant as any;
+        const track = app.track as any;
+
+        // Find cohort through track
+        const cohort = track ? await Cohort.findOne({ 'tracks.track': track._id }) : null;
+
         return {
           id: app._id,
           name: `${applicant.firstName} ${applicant.lastName}`,
           email: applicant.email,
           type: "applicant",
           metadata: {
-            cohortName: (app.cohort as any)?.name,
-            trackName: (app.track as any)?.name,
+            cohortName: cohort?.name || '',
+            trackName: track?.name || '',
             status: app.status,
           },
         };
-      });
+      }));
     }
 
     if (type === "users") {

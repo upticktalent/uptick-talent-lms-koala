@@ -3,7 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IInterviewSlot extends Document {
   _id: string;
   interviewer: mongoose.Types.ObjectId; // Admin/Mentor who will conduct interview
-  tracks: mongoose.Types.ObjectId[]; // Tracks this slot is available for
+  track?: mongoose.Types.ObjectId; // Single track this slot is for (optional for general slots)
+  isGeneral: boolean; // If true, this slot is available for all tracks
   date: Date; // Date of availability
   startTime: string; // Format: "14:00" (2:00 PM)
   endTime: string; // Format: "15:00" (3:00 PM)
@@ -28,15 +29,17 @@ const InterviewSlotSchema: Schema = new Schema(
     cohort: {
       type: Schema.Types.ObjectId,
       ref: "Cohort",
-      required: [true, "Cohort is required"],
+      required: false,
     },
-    tracks: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Track",
-        required: [true, "At least one track is required"],
-      },
-    ],
+    track: {
+      type: Schema.Types.ObjectId,
+      ref: "Track",
+      required: false,
+    },
+    isGeneral: {
+      type: Boolean,
+      default: false,
+    },
     date: {
       type: Date,
       required: [true, "Date is required"],
@@ -111,6 +114,20 @@ const InterviewSlotSchema: Schema = new Schema(
   },
 );
 
+// Add validation to ensure either track is provided OR isGeneral is true
+InterviewSlotSchema.pre("validate", function (this: any) {
+  if (!this.isGeneral && !this.track) {
+    throw new Error(
+      "Either track must be specified or slot must be marked as general",
+    );
+  }
+  if (this.isGeneral && (this.track || this.cohort)) {
+    throw new Error(
+      "General slots cannot have specific track or cohort assignments",
+    );
+  }
+});
+
 // Compound index to prevent duplicate slots for same interviewer on same date/time
 InterviewSlotSchema.index(
   { interviewer: 1, date: 1, startTime: 1 },
@@ -132,6 +149,19 @@ InterviewSlotSchema.virtual("isFullyBooked").get(function (
 // Update isAvailable based on booking status
 InterviewSlotSchema.pre("save", function (this: IInterviewSlot, next) {
   this.isAvailable = this.bookedCount < this.maxInterviews;
+  next();
+});
+
+// Validation to ensure either track is provided or isGeneral is true
+InterviewSlotSchema.pre("validate", function (this: IInterviewSlot, next) {
+  if (this.isGeneral && this.track) {
+    return next(
+      new Error("General slots cannot have a specific track assigned"),
+    );
+  }
+  if (!this.isGeneral && !this.track) {
+    return next(new Error("Non-general slots must have a track assigned"));
+  }
   next();
 });
 

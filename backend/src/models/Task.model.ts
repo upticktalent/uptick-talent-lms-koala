@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface ITaskResource {
   title: string;
   description?: string;
-  type: "link" | "file" | "video" | "reading"|"document";
+  type: "link" | "file" | "video" | "reading" | "document";
   url: string;
   isRequired: boolean;
 }
@@ -36,8 +36,8 @@ export interface ITaskSubmission {
 
 export interface ITask extends Document {
   _id: string;
-  cohort: mongoose.Types.ObjectId;
-  track: mongoose.Types.ObjectId;
+  cohort: mongoose.Types.ObjectId; // Cohort this task belongs to
+  track: mongoose.Types.ObjectId; // Track within the cohort
   title: string;
   description: string;
   type: "assignment" | "project" | "quiz" | "reading";
@@ -67,7 +67,7 @@ const TaskResourceSchema = new Schema({
   },
   type: {
     type: String,
-    enum: ["link", "file", "video", "reading","document"],
+    enum: ["link", "file", "video", "reading", "document"],
     required: true,
   },
   url: {

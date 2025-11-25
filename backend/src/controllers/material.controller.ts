@@ -10,53 +10,38 @@ import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
 export const getMaterials = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const {
-      cohortId,
       trackId,
-      category,
+      cohortId,
       type,
+      category,
       difficulty,
       isRequired,
+      isPublished,
       page = 1,
-      limit = 20,
+      limit = 10,
     } = req.query;
 
-    // Build filter
-    const filter: any = { isPublished: true };
+    const filter: any = {};
 
-    if (cohortId) {
-      if (!isValidObjectId(cohortId as string)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid cohort ID",
-        });
-      }
+    // Cohort filtering (required for cohort-centric approach)
+    if (cohortId && isValidObjectId(cohortId as string)) {
       filter.cohort = cohortId;
     }
 
-    if (trackId) {
-      if (!isValidObjectId(trackId as string)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid track ID",
-        });
-      }
+    // Track filtering
+    if (trackId && isValidObjectId(trackId as string)) {
       filter.track = trackId;
     }
 
-    if (category) {
-      filter.category = category;
-    }
-
-    if (type) {
-      filter.type = type;
-    }
-
-    if (difficulty) {
-      filter.difficulty = difficulty;
-    }
-
-    if (isRequired !== undefined) {
-      filter.isRequired = isRequired === "true";
+    // If cohort is provided, ensure track belongs to that cohort
+    if (cohortId && trackId) {
+      const cohort = await Cohort.findById(cohortId);
+      if (cohort && !cohort.hasTrack(trackId as string)) {
+        return res.status(400).json({
+          success: false,
+          message: "Track does not belong to the specified cohort",
+        });
+      }
     }
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -137,6 +122,7 @@ export const createMaterial = asyncHandler(
       difficulty = "beginner",
       estimatedReadTime,
       isRequired = false,
+      isPublished = false,
       order = 0,
       tags = [],
     } = req.body;
@@ -182,9 +168,10 @@ export const createMaterial = asyncHandler(
       difficulty,
       estimatedReadTime,
       isRequired,
+      isPublished,
       order,
       tags,
-      createdBy: req.user!.id,
+      createdBy: req.user!.userId,
     });
 
     await material.save();
@@ -299,20 +286,28 @@ export const getStudentMaterials = asyncHandler(
     const userId = req.user!.id;
 
     // Get user's current cohort and track
-    const user = await User.findById(userId).select(
-      "currentCohort currentTrack",
-    );
+    const user = await User.findById(req.user._id).select("trackAssignments");
 
-    if (!user || !user.currentCohort || !user.currentTrack) {
+    if (!user || !user.trackAssignments || user.trackAssignments.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "User is not enrolled in any cohort or track",
+        message: "User is not enrolled in any track",
+      });
+    }
+
+    // Use the first active track assignment
+    const activeAssignment = (user.trackAssignments as any[]).find(
+      (assignment: any) => assignment.isActive,
+    );
+    if (!activeAssignment) {
+      return res.status(400).json({
+        success: false,
+        message: "User has no active track assignment",
       });
     }
 
     const materials = await Material.find({
-      cohort: user.currentCohort,
-      track: user.currentTrack,
+      track: activeAssignment.track,
       isPublished: true,
     })
       .populate("cohort", "name cohortNumber")
@@ -334,17 +329,24 @@ export const getMentorMaterials = asyncHandler(
     const userId = req.user!.id;
 
     // Get user's assigned tracks
-    const user = await User.findById(userId).select("assignedTracks");
+    const user = await User.findById(userId).select("trackAssignments");
 
-    if (!user || !user.assignedTracks || user.assignedTracks.length === 0) {
+    if (!user || !user.trackAssignments || user.trackAssignments.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Mentor is not assigned to any tracks",
       });
     }
 
+    const mentorTrackIds = (user.trackAssignments as any[])
+      .filter(
+        (assignment: any) =>
+          assignment.role === "mentor" && assignment.isActive,
+      )
+      .map((assignment: any) => assignment.track);
+
     const materials = await Material.find({
-      track: { $in: user.assignedTracks },
+      track: { $in: mentorTrackIds },
     })
       .populate("cohort", "name cohortNumber")
       .populate("track", "name trackId")

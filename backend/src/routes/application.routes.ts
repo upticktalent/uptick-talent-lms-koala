@@ -20,6 +20,7 @@ import {
   validateReviewApplication,
   validatePagination,
 } from "../middleware/validation";
+import { ensureTrackAssignments } from "../middleware/trackPermissions";
 import { uploadCV, handleUploadError } from "../services/upload.service";
 import { Request, Response, NextFunction } from "express";
 
@@ -55,6 +56,7 @@ router.post(
 
 // Protected routes
 router.use(authenticate);
+router.use(ensureTrackAssignments);
 
 // Student/Applicant routes
 router.get("/:id", getApplicationDetails);
@@ -74,10 +76,7 @@ router.patch(
 );
 
 // Additional application management routes
-router.get(
-  "/available-tracks",
-  getAvailableTracks,
-);
+router.get("/available-tracks", getAvailableTracks);
 
 router.get(
   "/cohort/:cohortId",
@@ -91,24 +90,12 @@ router.get(
   getApplicationsByTrack,
 );
 
-router.get(
-  "/stats",
-  authorize("mentor", "admin"),
-  getApplicationStats,
-);
+router.get("/stats", authorize("mentor", "admin"), getApplicationStats);
 
-router.get(
-  "/export",
-  authorize("admin"),
-  exportApplications,
-);
+router.get("/export", authorize("admin"), exportApplications);
 
 // Application actions (admin only)
-router.post(
-  "/:id/accept",
-  authorize("admin"),
-  acceptApplication,
-);
+router.post("/:id/accept", authorize("admin"), acceptApplication);
 
 router.patch(
   "/:id/shortlist",
@@ -116,16 +103,8 @@ router.patch(
   shortlistApplication,
 );
 
-router.patch(
-  "/:id/reject",
-  authorize("mentor", "admin"),
-  rejectApplication,
-);
+router.patch("/:id/reject", authorize("mentor", "admin"), rejectApplication);
 
-router.patch(
-  "/bulk-update",
-  authorize("admin"),
-  bulkUpdateApplications,
-);
+router.patch("/bulk-update", authorize("admin"), bulkUpdateApplications);
 
 export default router;

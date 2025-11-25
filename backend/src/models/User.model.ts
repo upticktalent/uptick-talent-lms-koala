@@ -1,5 +1,13 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export interface ITrackAssignment {
+  cohort: mongoose.Types.ObjectId;
+  track: mongoose.Types.ObjectId;
+  role: "mentor" | "student";
+  assignedAt: Date;
+  isActive: boolean;
+}
+
 export interface IUser extends Document {
   _id: string;
   firstName: string;
@@ -11,9 +19,8 @@ export interface IUser extends Document {
   state: string;
   password: string;
   role: "applicant" | "student" | "mentor" | "admin";
-  assignedTracks?: mongoose.Types.ObjectId[]; // For mentors - tracks they can review
-  currentTrack?: mongoose.Types.ObjectId; // For students - current enrolled track
-  currentCohort?: string; // For students - current enrolled cohort number
+  assignedTracks: mongoose.Types.ObjectId[]; // Legacy field for backward compatibility
+  trackAssignments: ITrackAssignment[]; // Flexible track assignments within cohorts
   isActive: boolean;
   isPasswordDefault: boolean;
   createdBy?: mongoose.Types.ObjectId; // Who created this user (for admins/mentors)
@@ -82,19 +89,40 @@ const UserSchema: Schema = new Schema(
       },
       default: "applicant",
     },
+    // Legacy field for backward compatibility
     assignedTracks: [
       {
         type: Schema.Types.ObjectId,
         ref: "Track",
       },
     ],
-    currentTrack: {
-      type: Schema.Types.ObjectId,
-      ref: "Track",
-    },
-    currentCohort: {
-      type: String, // Cohort number
-    },
+    trackAssignments: [
+      {
+        cohort: {
+          type: Schema.Types.ObjectId,
+          ref: "Cohort",
+          required: false, // Make optional to support legacy data
+        },
+        track: {
+          type: Schema.Types.ObjectId,
+          ref: "Track",
+          required: true,
+        },
+        role: {
+          type: String,
+          enum: ["mentor", "student"],
+          required: true,
+        },
+        assignedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        isActive: {
+          type: Boolean,
+          default: true,
+        },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,

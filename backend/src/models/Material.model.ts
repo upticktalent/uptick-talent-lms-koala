@@ -2,8 +2,8 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IMaterial extends Document {
   _id: string;
-  cohort: mongoose.Types.ObjectId;
-  track: mongoose.Types.ObjectId;
+  cohort: mongoose.Types.ObjectId; // Cohort this material belongs to
+  track: mongoose.Types.ObjectId; // Track within the cohort
   title: string;
   description?: string;
   type: "document" | "video" | "link" | "slides" | "book" | "article";

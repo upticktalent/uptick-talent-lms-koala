@@ -84,6 +84,33 @@ export const submitApplication = asyncHandler(
         });
       }
 
+      // Verify that the track exists in this cohort
+      if (!selectedCohort.hasTrack(selectedTrack._id.toString())) {
+        return res.status(400).json({
+          success: false,
+          message: "Selected track is not available in this cohort",
+        });
+      }
+
+      // Get the cohort track settings
+      const cohortTrack = selectedCohort.getTrackById(
+        selectedTrack._id.toString(),
+      );
+      if (!cohortTrack?.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: "This track is not currently active in the selected cohort",
+        });
+      }
+
+      if (!cohortTrack.settings.allowApplications) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Applications are not currently being accepted for this track",
+        });
+      }
+
       // Ensure the cohort is the current active one and accepting applications
       if (selectedCohort.status !== "active") {
         return res.status(400).json({
@@ -106,16 +133,16 @@ export const submitApplication = asyncHandler(
       let user = await User.findOne({ email: email.toLowerCase() });
 
       if (user) {
-        // Check if user already has an application for this cohort
+        // Check if user already has an application for this track (which belongs to cohort)
         const existingApplication = await Application.findOne({
           applicant: user._id,
-          cohort: selectedCohort._id,
+          track: selectedTrack._id,
         });
 
         if (existingApplication) {
           return res.status(HttpStatusCode.BAD_REQUEST).json({
             success: false,
-            message: "You have already applied for this cohort",
+            message: "You have already applied for this track in this cohort",
           });
         }
       } else {
@@ -216,29 +243,76 @@ export const submitApplication = asyncHandler(
 
 export const getApplications = asyncHandler(
   async (req: AuthRequest, res: Response) => {
-    const { status, cohort, track, page = 1, limit = 10 } = req.query;
+    const {
+      status,
+      trackId,
+      cohortId,
+      page = 1,
+      limit = 10,
+      sort = "-createdAt",
+    } = req.query;
 
     // Build filter query
     const filter: any = {};
 
-    if (status) {
-      filter.status = status;
+    // If mentor, restrict to their assigned tracks
+    if (req.user?.role === "mentor") {
+      const mentorTrackIds = req.user.trackAssignments
+        ?.filter(
+          (assignment: any) =>
+            assignment.role === "mentor" && assignment.isActive,
+        )
+        .map((assignment: any) => assignment.track.toString());
+
+      if (mentorTrackIds && mentorTrackIds.length > 0) {
+        filter.track = { $in: mentorTrackIds };
+      } else {
+        // Mentor has no assigned tracks, return empty result
+        return res.status(200).json({
+          success: true,
+          message: "Applications retrieved successfully",
+          data: {
+            applications: [],
+            pagination: {
+              total: 0,
+              page: Number(page),
+              limit: Number(limit),
+              pages: 0,
+            },
+          },
+        });
+      }
     }
 
-    if (cohort) {
-      filter.cohort = cohort;
-    }
+    if (status) filter.status = status;
+    if (trackId) {
+      // If trackId is specified and user is mentor, ensure it's in their assigned tracks
+      if (req.user?.role === "mentor") {
+        const mentorTrackIds = req.user.trackAssignments
+          ?.filter(
+            (assignment: any) =>
+              assignment.role === "mentor" && assignment.isActive,
+          )
+          .map((assignment: any) => assignment.track.toString());
 
-    if (track) {
-      filter.track = track;
+        if (!mentorTrackIds?.includes(trackId as string)) {
+          return res.status(403).json({
+            success: false,
+            message:
+              "Access denied: You can only view applications for your assigned tracks",
+          });
+        }
+      }
+      filter.track = trackId;
     }
+    if (cohortId) filter.cohort = cohortId;
 
     const skip = (Number(page) - 1) * Number(limit);
 
     const applications = await Application.find(filter)
       .populate("applicant", "firstName lastName email")
-      .populate("cohort", "name")
-      .populate("track", "name")
+      .populate("cohort", "name cohortNumber")
+      .populate("track", "name trackId")
       .populate("reviewedBy", "firstName lastName")
       .sort({ submittedAt: -1 })
       .skip(skip)
@@ -265,8 +339,8 @@ export const getApplications = asyncHandler(
 export const reviewApplication = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
-    const { status, reviewNotes, rejectionReason } = req.body;
-    const reviewerId = req.user._id;
+    const { status, feedback, cohortId, trackId } = req.body;
+    const reviewedBy = req.user?._id;
 
     // Validate ObjectId format
     if (!isValidObjectId(id)) {
@@ -276,9 +350,26 @@ export const reviewApplication = asyncHandler(
       });
     }
 
-    const application = await Application.findById(id)
-      .populate("applicant")
-      .populate("cohort");
+    // Validate status
+    const validStatuses = [
+      "shortlisted",
+      "rejected",
+      "under-review",
+      "accepted",
+    ];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status",
+      });
+    }
+
+    // Find the application
+    const application = await Application.findById(id).populate([
+      { path: "applicant", select: "firstName lastName email" },
+      { path: "track", select: "name" },
+      { path: "cohort", select: "name cohortNumber" },
+    ]);
 
     if (!application) {
       return res.status(404).json({
@@ -287,95 +378,124 @@ export const reviewApplication = asyncHandler(
       });
     }
 
-    // Update application
+    // Check mentor track permissions
+    if (req.user?.role === "mentor") {
+      const mentorTrackIds = req.user.trackAssignments
+        ?.filter(
+          (assignment: any) =>
+            assignment.role === "mentor" && assignment.isActive,
+        )
+        .map((assignment: any) => assignment.track.toString());
+
+      if (!mentorTrackIds?.includes(application.track._id.toString())) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Access denied: You can only review applications for your assigned tracks",
+        });
+      }
+    }
+
+    // Validate status transitions
+    const validTransitions: Record<string, string[]> = {
+      pending: ["shortlisted", "rejected"],
+      shortlisted: ["under-review", "rejected", "accepted"],
+      "under-review": ["accepted", "rejected"],
+    };
+
+    const currentStatus = application.status;
+    if (!validTransitions[currentStatus]?.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot change status from ${currentStatus} to ${status}`,
+      });
+    }
+
+    // Update application status
     application.status = status;
-    application.reviewedBy = reviewerId;
+    application.reviewedBy = reviewedBy;
     application.reviewedAt = new Date();
-
-    if (reviewNotes) {
-      application.reviewNotes = reviewNotes;
-    }
-
-    if (rejectionReason) {
-      application.rejectionReason = rejectionReason;
-    }
+    if (feedback) application.reviewNotes = feedback;
 
     await application.save();
 
-    // Handle status-specific actions and emails
-    const applicant = application.applicant as any;
-    const cohort = application.cohort as any;
+    // Handle role change when application is accepted
+    if (status === "accepted") {
+      try {
+        const applicant = application.applicant as any;
 
+        // Check if user is already a student
+        const existingUser = await User.findById(applicant._id);
+        if (existingUser && existingUser.role !== "student") {
+          // Generate new password for student access
+          const studentPassword = generatePassword();
+          const hashedPassword = await hashPassword(studentPassword);
+
+          // Update existing applicant to student role
+          existingUser.role = "student";
+          existingUser.password = hashedPassword;
+          existingUser.isPasswordDefault = true;
+
+          // Add track assignment
+          const trackAssignment = {
+            cohort: application.cohort,
+            track: application.track._id,
+            role: "student" as const,
+            assignedAt: new Date(),
+            isActive: true,
+          };
+
+          if (!existingUser.trackAssignments) {
+            existingUser.trackAssignments = [];
+          }
+          (existingUser.trackAssignments as any[]).push(trackAssignment);
+
+          await existingUser.save();
+
+          // Send welcome email for new student with credentials
+          const track = application.track as any;
+          await brevoEmailService.sendWelcomeEmail(
+            existingUser.email,
+            `${existingUser.firstName} ${existingUser.lastName}`,
+            "student",
+            studentPassword, // Send the generated password
+            track.name,
+          );
+        }
+      } catch (error) {
+        console.error("Error converting applicant to student:", error);
+        // Don't fail the review if student conversion fails
+      }
+    }
+
+    // Send assessment email if application is shortlisted
     if (status === "shortlisted") {
-      // Generate assessment link
-      const assessmentLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/apply/assessment`;
+      try {
+        const applicant = application.applicant as any;
+        const track = application.track as any;
+        const cohort = application.cohort as any;
 
-      // Send assessment email
-      await brevoEmailService.sendAssessmentEmail(
-        applicant.email,
-        `${applicant.firstName} ${applicant.lastName}`,
-        cohort.name,
-        assessmentLink,
-        application._id,
-      );
-    } else if (status === "accepted") {
-      // Generate password and update user role
-      const tempPassword = generatePassword();
-      const hashedPassword = await hashPassword(tempPassword);
-
-      const user = await User.findById(applicant._id);
-      if (user) {
-        user.password = hashedPassword;
-        user.role = "student";
-        user.isPasswordDefault = true;
-        user.currentTrack = application.track._id;
-        user.currentCohort = (application.cohort as any).cohortNumber;
-        await user.save();
-
-        // Send acceptance email with credentials
-        await brevoEmailService.sendAcceptanceEmail(
+        await brevoEmailService.sendAssessmentEmail(
           applicant.email,
           `${applicant.firstName} ${applicant.lastName}`,
-          cohort.name,
-          tempPassword,
+          cohort?.name || track.name,
+          `${process.env.FRONTEND_URL}/assessment/${application._id}`,
+          application._id.toString(),
         );
-
-        // Update cohort track student count (new cohort-centric approach)
-        const cohortDoc = await Cohort.findById(cohort._id);
-        if (cohortDoc) {
-          // Update overall cohort student count
-          cohortDoc.currentStudents += 1;
-
-          // Update specific track student count within the cohort
-          const trackIndex = cohortDoc.tracks.findIndex(
-            (ct: any) =>
-              ct.track.toString() === application.track._id.toString(),
-          );
-
-          if (trackIndex !== -1) {
-            cohortDoc.tracks[trackIndex].currentStudents += 1;
-          }
-
-          await cohortDoc.save();
-        }
+      } catch (emailError) {
+        console.error("Error sending assessment email:", emailError);
+        // Don't fail the review if email fails
       }
-    } else if (status === "rejected") {
-      // Send rejection email
-      await brevoEmailService.sendRejectionEmail(
-        applicant.email,
-        `${applicant.firstName} ${applicant.lastName}`,
-        cohort.name,
-        rejectionReason,
-      );
     }
 
     res.status(200).json({
       success: true,
-      message: `Application ${status} successfully`,
+      message: "Application reviewed successfully",
       data: application,
     });
   },
 );
+
 export const getApplicationDetails = asyncHandler(
   async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -404,21 +524,21 @@ export const getApplicationDetails = asyncHandler(
       });
     }
 
-  res.status(200).json({
-    success: true,
-    message: "Application details retrieved successfully",
-    data: application,
-  });
-},
+    res.status(200).json({
+      success: true,
+      message: "Application details retrieved successfully",
+      data: application,
+    });
+  },
 );
 
 export const getAvailableTracks = asyncHandler(
   async (req: Request, res: Response) => {
     // Get current active cohort and its tracks
-    const activeCohort = await Cohort.findOne({ 
+    const activeCohort = await Cohort.findOne({
       isCurrentlyActive: true,
-      applicationDeadline: { $gte: new Date() }
-    }).populate('tracks');
+      applicationDeadline: { $gte: new Date() },
+    }).populate("tracks");
 
     if (!activeCohort) {
       return res.status(404).json({
@@ -447,7 +567,18 @@ export const getApplicationsByCohort = asyncHandler(
       });
     }
 
-    const applications = await Application.find({ cohort: cohortId })
+    // Find tracks that belong to this cohort
+    const cohort = await Cohort.findById(cohortId);
+    if (!cohort) {
+      return res.status(404).json({
+        success: false,
+        message: "Cohort not found",
+      });
+    }
+
+    const trackIds = cohort.tracks.map((t: any) => t.track);
+
+    const applications = await Application.find({ track: { $in: trackIds } })
       .populate("applicant", "firstName lastName email")
       .populate("track", "name")
       .sort({ createdAt: -1 });
@@ -497,7 +628,6 @@ export const acceptApplication = asyncHandler(
 
     const application = await Application.findById(id)
       .populate("applicant")
-      .populate("cohort")
       .populate("track");
 
     if (!application) {
@@ -516,26 +646,42 @@ export const acceptApplication = asyncHandler(
 
     // Type assertions for populated fields
     const applicant = application.applicant as any;
-    const cohort = application.cohort as any;
     const track = application.track as any;
+    const cohort = application.cohort as any;
 
-    // Generate password for new student
+    // Generate password for student access
     const generatedPassword = generatePassword();
     const hashedPassword = await hashPassword(generatedPassword);
 
-    // Create student user account
-    const student = new User({
-      firstName: applicant.firstName,
-      lastName: applicant.lastName,
-      email: applicant.email,
-      password: hashedPassword,
-      role: "student",
+    // Update existing applicant to student role
+    const existingUser = await User.findById(applicant._id);
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Applicant user not found",
+      });
+    }
+
+    // Update user to student role with new credentials
+    existingUser.role = "student";
+    existingUser.password = hashedPassword;
+    existingUser.isPasswordDefault = true;
+
+    // Add track assignment
+    const trackAssignment = {
       cohort: cohort._id,
       track: track._id,
+      role: "student" as const,
+      assignedAt: new Date(),
       isActive: true,
-    });
+    };
 
-    await student.save();
+    if (!existingUser.trackAssignments) {
+      existingUser.trackAssignments = [];
+    }
+    (existingUser.trackAssignments as any[]).push(trackAssignment);
+
+    await existingUser.save();
 
     // Update application status
     application.status = "accepted";
@@ -543,12 +689,26 @@ export const acceptApplication = asyncHandler(
     application.reviewedAt = new Date();
     await application.save();
 
-     res.status(200).json({
+    // Send welcome email with credentials
+    try {
+      await brevoEmailService.sendWelcomeEmail(
+        existingUser.email,
+        `${existingUser.firstName} ${existingUser.lastName}`,
+        "student",
+        generatedPassword,
+        track.name,
+      );
+    } catch (emailError) {
+      console.error("Error sending welcome email:", emailError);
+      // Don't fail the acceptance if email fails
+    }
+
+    res.status(200).json({
       success: true,
-      message: "Application accepted and student account created",
+      message: "Application accepted and user promoted to student",
       data: {
         application,
-        student,
+        student: existingUser,
         generatedPassword,
       },
     });
@@ -573,7 +733,7 @@ export const shortlistApplication = asyncHandler(
         reviewedBy: req.user?.userId,
         reviewedAt: new Date(),
       },
-      { new: true }
+      { new: true },
     ).populate("applicant", "firstName lastName email");
 
     if (!application) {
@@ -611,7 +771,7 @@ export const rejectApplication = asyncHandler(
         reviewedBy: req.user?.userId,
         reviewedAt: new Date(),
       },
-      { new: true }
+      { new: true },
     ).populate("applicant", "firstName lastName email");
 
     if (!application) {
@@ -682,7 +842,9 @@ export const bulkUpdateApplications = asyncHandler(
       });
     }
 
-    if (!["under-review", "shortlisted", "accepted", "rejected"].includes(status)) {
+    if (
+      !["under-review", "shortlisted", "accepted", "rejected"].includes(status)
+    ) {
       return res.status(400).json({
         success: false,
         message: "Invalid status",
@@ -695,7 +857,7 @@ export const bulkUpdateApplications = asyncHandler(
         status,
         reviewedBy: req.user?.userId,
         reviewedAt: new Date(),
-      }
+      },
     );
 
     res.status(200).json({
@@ -710,14 +872,22 @@ export const exportApplications = asyncHandler(
   async (req: Request, res: Response) => {
     const { cohortId } = req.query;
 
-    const matchFilter: any = {};
+    let trackIds: any[] = [];
     if (cohortId && isValidObjectId(cohortId as string)) {
-      matchFilter.cohort = cohortId;
+      // Find tracks that belong to this cohort
+      const cohort = await Cohort.findById(cohortId);
+      if (cohort) {
+        trackIds = cohort.tracks.map((t: any) => t.track);
+      }
+    }
+
+    const matchFilter: any = {};
+    if (trackIds.length > 0) {
+      matchFilter.track = { $in: trackIds };
     }
 
     const applications = await Application.find(matchFilter)
       .populate("applicant", "firstName lastName email phoneNumber")
-      .populate("cohort", "name")
       .populate("track", "name")
       .sort({ createdAt: -1 });
 
@@ -732,27 +902,36 @@ export const exportApplications = asyncHandler(
       "Applied Date",
     ];
 
-    const csvRows = applications.map((app) => {
-      const applicant = app.applicant as any;
-      const track = app.track as any;
-      const cohort = app.cohort as any;
-      return [
-        `${applicant.firstName} ${applicant.lastName}`,
-        applicant.email,
-        applicant.phoneNumber || "",
-        track?.name || "",
-        cohort?.name || "",
-        app.status,
-        new Date(app.createdAt).toLocaleDateString(),
-      ];
-    });
+    // Get cohort information for each application
+    const csvRows = await Promise.all(
+      applications.map(async (app) => {
+        const applicant = app.applicant as any;
+        const track = app.track as any;
+
+        // Find the cohort that contains this track
+        const cohort = await Cohort.findOne({ "tracks.track": track._id });
+
+        return [
+          `${applicant.firstName} ${applicant.lastName}`,
+          applicant.email,
+          applicant.phoneNumber || "",
+          track?.name || "",
+          cohort?.name || "",
+          app.status,
+          new Date(app.createdAt).toLocaleDateString(),
+        ];
+      }),
+    );
 
     const csvContent = [csvHeaders, ...csvRows]
       .map((row) => row.map((field) => `"${field}"`).join(","))
       .join("\n");
 
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", "attachment; filename=applications.csv");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=applications.csv",
+    );
     res.status(200).send(csvContent);
   },
 );

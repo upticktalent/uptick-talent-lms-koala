@@ -45,7 +45,10 @@ router.get(
 );
 router.get("/students/:id", authorize("mentor", "admin"), getStudentDetails);
 
-// Admin-only routes
+// Admin-only routes (mentors can also create other mentors)
+router.post("/", authorize("admin", "mentor"), validateCreateUser, createUser);
+
+// Remaining admin-only routes
 router.use(authorize("admin"));
 
 // User management routes

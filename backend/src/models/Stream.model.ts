@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IStreamAttachment {
   title: string;
   url: string;
-  type: "link" | "file" | "video" | "image"|"document";
+  type: "link" | "file" | "video" | "image" | "document";
   size?: number;
   uploadedAt: Date;
 }
@@ -30,8 +30,7 @@ export interface IStreamComment {
 
 export interface IStream extends Document {
   _id: string;
-  cohort: mongoose.Types.ObjectId;
-  track: mongoose.Types.ObjectId;
+  track: mongoose.Types.ObjectId; // Track contains cohort information
   title: string;
   content: string;
   type: "announcement" | "lesson" | "update";
@@ -57,7 +56,7 @@ const StreamAttachmentSchema = new Schema({
   },
   type: {
     type: String,
-    enum: ["link", "file", "video", "image","document"],
+    enum: ["link", "file", "video", "image", "document"],
     required: true,
   },
   size: {
@@ -124,11 +123,6 @@ const StreamCommentSchema = new Schema(
 
 const StreamSchema = new Schema(
   {
-    cohort: {
-      type: Schema.Types.ObjectId,
-      ref: "Cohort",
-      required: [true, "Cohort is required"],
-    },
     track: {
       type: Schema.Types.ObjectId,
       ref: "Track",

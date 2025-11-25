@@ -9,6 +9,7 @@ import {
 } from "../controllers/assessment.controller";
 import { uploadAssessment } from "../services/upload.service";
 import { authenticate } from "../middleware/auth";
+import { ensureTrackAssignments } from "../middleware/trackPermissions";
 import { validate } from "../middleware/validation";
 import {
   assessmentSubmissionSchema,
@@ -31,6 +32,7 @@ router.get("/application/:applicationId", getAssessmentByApplication);
 
 // Protected routes (for admin/mentors)
 router.use(authenticate); // All routes below require authentication
+router.use(ensureTrackAssignments);
 
 router.get("/", getAssessments);
 router.get("/:id", getAssessmentDetails);

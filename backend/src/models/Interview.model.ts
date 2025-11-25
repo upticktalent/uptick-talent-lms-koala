@@ -26,11 +26,6 @@ const InterviewSchema: Schema = new Schema(
       required: [true, "Application ID is required"],
       unique: true, // One interview per application
     },
- cohort: {
-          type: Schema.Types.ObjectId,
-          ref: "Cohort",
-          required: [true, "Cohort is required"],
-        },
     interviewer: {
       type: Schema.Types.ObjectId,
       ref: "User",
