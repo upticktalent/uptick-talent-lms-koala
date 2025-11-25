@@ -20,7 +20,7 @@ export const getCohorts = asyncHandler(async (req: Request, res: Response) => {
   const skip = (Number(page) - 1) * Number(limit);
 
   const cohorts = await Cohort.find(filter)
-    .populate("tracks.track", "name trackId description color")
+    .populate("tracks.track", "name trackId description isActive")
     .populate("tracks.mentors", "firstName lastName email")
     .sort({ startDate: -1 })
     .skip(skip)
@@ -53,7 +53,7 @@ export const getActiveCohorts = asyncHandler(
       isAcceptingApplications: true,
       applicationDeadline: { $gt: now }, // Application deadline hasn't passed
     })
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email")
       .sort({ startDate: 1 });
 
@@ -97,7 +97,7 @@ export const getCohortDetails = asyncHandler(
     }
 
     const cohort = await Cohort.findById(id)
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     if (!cohort) {
@@ -179,7 +179,7 @@ export const createCohort = asyncHandler(
     });
 
     await cohort.save();
-    await cohort.populate("tracks.track", "name trackId description color");
+    await cohort.populate("tracks.track", "name trackId description isActive");
     await cohort.populate("tracks.mentors", "firstName lastName email");
 
     res.status(201).json({
@@ -219,7 +219,7 @@ export const updateCohort = asyncHandler(
       { ...updates, updatedAt: new Date() },
       { new: true, runValidators: true },
     )
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     if (!cohort) {
@@ -343,7 +343,7 @@ export const addTrackToCohort = asyncHandler(
     await cohort.save();
 
     const updatedCohort = await Cohort.findById(id)
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     res.status(200).json({
@@ -382,7 +382,7 @@ export const removeTrackFromCohort = asyncHandler(
     await cohort.save();
 
     const updatedCohort = await Cohort.findById(id)
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     res.status(200).json({
@@ -422,7 +422,7 @@ export const addMentorToTrack = asyncHandler(
       await cohort.addMentorToTrack(trackId, mentorId);
 
       const updatedCohort = await Cohort.findById(id)
-        .populate("tracks.track", "name trackId description color")
+        .populate("tracks.track", "name trackId description isActive")
         .populate("tracks.mentors", "firstName lastName email");
 
       res.status(200).json({
@@ -482,7 +482,7 @@ export const removeMentorFromTrack = asyncHandler(
     await cohort.save();
 
     const updatedCohort = await Cohort.findById(id)
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     res.status(200).json({

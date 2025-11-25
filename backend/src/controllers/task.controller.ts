@@ -53,7 +53,7 @@ export const getTasks = asyncHandler(
 
     const tasks = await Task.find(filter)
       .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role")
       .populate("submissions.student", "firstName lastName email")
       .populate("submissions.gradedBy", "firstName lastName")
@@ -92,7 +92,7 @@ export const getTaskById = asyncHandler(async (req: Request, res: Response) => {
 
   const task = await Task.findById(id)
     .populate("cohort", "name cohortNumber description")
-    .populate("track", "name trackId description color")
+    .populate("track", "name trackId description isActive")
     .populate("createdBy", "firstName lastName email role")
     .populate("submissions.student", "firstName lastName email")
     .populate("submissions.gradedBy", "firstName lastName");
@@ -179,7 +179,7 @@ export const createTask = asyncHandler(
 
     const populatedTask = await Task.findById(task._id)
       .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role");
 
     res.status(201).json({
@@ -229,7 +229,7 @@ export const updateTask = asyncHandler(
       { new: true, runValidators: true },
     )
       .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role");
 
     res.status(200).json({
@@ -677,7 +677,7 @@ export const uploadTaskResource = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     try {
       const files = req.files as Express.Multer.File[];
-      
+
       if (!files || files.length === 0) {
         return res.status(400).json({
           success: false,
@@ -692,9 +692,9 @@ export const uploadTaskResource = asyncHandler(
           fileType = 'image';
         } else if (file.mimetype.startsWith('video/')) {
           fileType = 'video';
-        } else if (file.mimetype === 'application/pdf' || 
-                   file.mimetype.includes('document') || 
-                   file.mimetype === 'text/plain') {
+        } else if (file.mimetype === 'application/pdf' ||
+          file.mimetype.includes('document') ||
+          file.mimetype === 'text/plain') {
           fileType = 'document';
         }
 

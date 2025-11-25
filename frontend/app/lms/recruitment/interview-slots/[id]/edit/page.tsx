@@ -58,7 +58,7 @@ export default function EditInterviewSlotPage() {
   } = useFetch(() => interviewSlotService.getSlot(params.id));
 
   // Fetch tracks
-  const { data: tracksData, loading: tracksLoading } = useFetch(() =>
+  const { response: tracksData, loading: tracksLoading } = useFetch(() =>
     trackService.getActiveTracks()
   );
 

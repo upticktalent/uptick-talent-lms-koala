@@ -99,6 +99,24 @@ const CohortSchema = new Schema(
         },
       },
     ],
+    applications:[
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Application",
+      },
+    ],
+    assessments:[
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Assessment",
+      },
+    ],
+    interviews:[
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Interview",
+      },
+    ],
     status: {
       type: String,
       enum: {
@@ -197,7 +215,7 @@ CohortSchema.methods.addMentorToTrack = async function (
 // Static method to get the current active cohort
 CohortSchema.statics.getCurrentActive = function (): Promise<ICohort | null> {
   return this.findOne({ isCurrentlyActive: true })
-    .populate("tracks.track", "name trackId description color")
+    .populate("tracks.track", "name trackId description isActive")
     .populate("tracks.mentors", "firstName lastName email");
 };
 
@@ -217,7 +235,7 @@ CohortSchema.statics.setCurrentlyActive = async function (
     { isCurrentlyActive: true },
     { new: true },
   )
-    .populate("tracks.track", "name trackId description color")
+    .populate("tracks.track", "name trackId description isActive")
     .populate("tracks.mentors", "firstName lastName email");
 };
 

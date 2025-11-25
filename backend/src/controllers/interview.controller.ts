@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/mongooseErrorHandler";
 import { isValidObjectId } from "../utils/mongooseErrorHandler";
 import { brevoEmailService } from "../services/brevoEmail.service";
 import { AuthRequest } from "../middleware/auth";
+import { Cohort, Track } from "../models";
 
 // ==================== INTERVIEW SLOTS (Admin/Mentor) ====================
 
@@ -14,7 +15,7 @@ import { AuthRequest } from "../middleware/auth";
 export const createInterviewSlots = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const interviewerId = req.user?.id;
-    const { mode } = req.body;
+    const { mode, cohortId } = req.body;
 
     if (!mode || !["bulk", "manual"].includes(mode)) {
       return res.status(400).json({
@@ -22,6 +23,39 @@ export const createInterviewSlots = asyncHandler(
         message: "Invalid mode. Must be 'bulk' or 'manual'",
       });
     }
+
+    // Validate cohortId and track existence
+    const validateCohortTracks = async (cohortId: string, trackId: string) => {
+      if (!isValidObjectId(cohortId) || !isValidObjectId(trackId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid cohort or track ID",
+        });
+      }
+
+      const cohort = await Cohort.findById(cohortId);
+      const track = await Track.findById(trackId);
+
+      if (!cohort || !track) {
+        return res.status(404).json({
+          success: false,
+          message: "Cohort or track not found",
+        });
+      }
+
+      // Verify track belongs to cohort
+      const trackExists = cohort.tracks.some(
+        (ct: any) => ct.track.toString() === trackId,
+      );
+
+      if (!trackExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Track does not belong to this cohort",
+        });
+      }
+
+    };
 
     // =====================================
     // 1️⃣ MANUAL MODE
@@ -37,7 +71,7 @@ export const createInterviewSlots = asyncHandler(
       }
 
       const createdSlots: any[] = [];
-
+      let index = 0
       for (const slot of slots) {
         const {
           date,
@@ -49,7 +83,7 @@ export const createInterviewSlots = asyncHandler(
           notes,
           meetingLink,
         } = slot;
-
+        await validateCohortTracks(cohortId, tracks[index++]);
         if (!date || !startTime || !endTime || !tracks.length) continue;
 
         const slotDate = new Date(date);
@@ -67,6 +101,8 @@ export const createInterviewSlots = asyncHandler(
 
         if (conflict) continue; // skip this slot
 
+
+
         const newSlot = await InterviewSlot.create({
           interviewer: interviewerId,
           tracks,
@@ -77,6 +113,7 @@ export const createInterviewSlots = asyncHandler(
           maxInterviews,
           notes,
           meetingLink,
+          cohort: cohortId
         });
 
         createdSlots.push(newSlot);
@@ -104,6 +141,9 @@ export const createInterviewSlots = asyncHandler(
         notes,
         meetingLink,
       } = req.body;
+
+      tracks?.forEach(async (t: string) => await validateCohortTracks(cohortId, t));
+
 
       if (!startDate || !endDate || !startTime || !endTime || !tracks.length) {
         return res.status(400).json({
@@ -147,6 +187,7 @@ export const createInterviewSlots = asyncHandler(
           maxInterviews,
           notes,
           meetingLink,
+          cohort: cohortId
         })),
       );
 

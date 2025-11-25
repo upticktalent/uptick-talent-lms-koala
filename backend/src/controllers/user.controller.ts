@@ -61,10 +61,10 @@ export const getAllUsers = asyncHandler(
 
     // Build filter query
     const filter: any = {};
-
+    const isRoleArray = Array.isArray(role);
     if (role) {
       // Handle multiple roles separated by comma
-      const roles = (role as string).split(",").map((r) => r.trim());
+      const roles = isRoleArray ? role : (role as string).split(",").map((r) => r.trim());
       if (roles.length > 1) {
         filter.role = { $in: roles };
       } else {
@@ -201,8 +201,8 @@ export const createUser = asyncHandler(
     const trackNames =
       role === "mentor" && assignedTracks.length > 0
         ? (await Track.find({ _id: { $in: assignedTracks } }))
-            .map((t) => t.name)
-            .join(", ")
+          .map((t) => t.name)
+          .join(", ")
         : "";
 
     await brevoEmailService.sendWelcomeEmail(

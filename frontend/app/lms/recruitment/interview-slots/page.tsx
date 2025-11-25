@@ -51,9 +51,12 @@ export default function InterviewSlotsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchSlots = async () => {
+
     try {
+
       setLoading(true);
       setError(null);
+
 
       const params = {
         date: dateFilter || undefined,
@@ -62,10 +65,10 @@ export default function InterviewSlotsPage() {
         track: trackFilter !== 'all' ? trackFilter : undefined,
       };
 
-      const response = await interviewSlotService.getAllSlots(params);
+      const response: any = await interviewSlotService.getAllSlots(params);
 
       if (response.success && response.data) {
-        setSlots(response.data);
+        setSlots(response.data?.slots || []);
       } else {
         setError(response.message || 'Failed to fetch slots');
       }
@@ -115,7 +118,6 @@ export default function InterviewSlotsPage() {
   const refetch = () => {
     fetchSlots();
   };
-
   // Calculate statistics
   const totalSlots = slots.length;
   const availableSlots = slots.filter(
@@ -304,18 +306,18 @@ export default function InterviewSlotsPage() {
           {(dateFilter ||
             interviewerFilter !== 'all' ||
             trackFilter !== 'all') && (
-            <Button
-              variant='secondary'
-              onClick={() => {
-                setDateFilter('');
-                setInterviewerFilter('all');
-                setTrackFilter('all');
-              }}
-              className='w-full md:w-auto'
-            >
-              Clear Filters
-            </Button>
-          )}
+              <Button
+                variant='secondary'
+                onClick={() => {
+                  setDateFilter('');
+                  setInterviewerFilter('all');
+                  setTrackFilter('all');
+                }}
+                className='w-full md:w-auto'
+              >
+                Clear Filters
+              </Button>
+            )}
         </div>
 
         {/* Slots List */}
@@ -372,8 +374,8 @@ export default function InterviewSlotsPage() {
                           <span className='font-medium text-blue-600 text-right'>
                             {slot.tracks && slot.tracks.length > 0
                               ? slot.tracks
-                                  .map((track: any) => track.name)
-                                  .join(', ')
+                                .map((track: any) => track.name)
+                                .join(', ')
                               : 'All Tracks'}
                           </span>
                         </div>
@@ -470,12 +472,14 @@ export default function InterviewSlotsPage() {
                         <TableCell className='py-4'>
                           <div className='text-sm text-blue-600'>
                             {slot.tracks && slot.tracks.length > 0
-                              ? slot.tracks
+                              ? slot.tracks.length > 2 ? slot.tracks.splice(0, 2).map((t: any) => t.name).join(', ') + ` +${slot.tracks.length + 2}` :
+                                slot.tracks
                                   .map((track: any) => track.name)
                                   .join(', ')
                               : 'All Tracks'}
                           </div>
                         </TableCell>
+
                         <TableCell className='py-4'>
                           <div className='text-sm text-gray-700'>
                             {slot.bookedCount} / {slot.maxInterviews}

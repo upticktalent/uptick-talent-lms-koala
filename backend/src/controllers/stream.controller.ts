@@ -42,7 +42,7 @@ export const getStreams = asyncHandler(
 
     const streams = await Stream.find(filter)
       .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role")
       .populate("reactions.user", "firstName lastName")
       .populate("comments.user", "firstName lastName")
@@ -83,7 +83,7 @@ export const getStreamById = asyncHandler(
 
     const stream = await Stream.findById(id)
       .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role")
       .populate("reactions.user", "firstName lastName")
       .populate("comments.user", "firstName lastName")
@@ -162,7 +162,7 @@ export const createStream = asyncHandler(
 
     const populatedStream = await Stream.findById(stream._id)
       .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role");
 
     res.status(201).json({
@@ -212,7 +212,7 @@ export const updateStream = asyncHandler(
       { new: true, runValidators: true },
     )
       .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role");
 
     res.status(200).json({
@@ -536,7 +536,7 @@ export const uploadAttachment = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     try {
       const files = req.files as Express.Multer.File[];
-      
+
       if (!files || files.length === 0) {
         return res.status(400).json({
           success: false,
@@ -551,9 +551,9 @@ export const uploadAttachment = asyncHandler(
           fileType = 'image';
         } else if (file.mimetype.startsWith('video/')) {
           fileType = 'video';
-        } else if (file.mimetype === 'application/pdf' || 
-                   file.mimetype.includes('document') || 
-                   file.mimetype === 'text/plain') {
+        } else if (file.mimetype === 'application/pdf' ||
+          file.mimetype.includes('document') ||
+          file.mimetype === 'text/plain') {
           fileType = 'document';
         }
 

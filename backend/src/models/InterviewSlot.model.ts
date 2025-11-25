@@ -25,6 +25,11 @@ const InterviewSlotSchema: Schema = new Schema(
       ref: "User",
       required: [true, "Interviewer is required"],
     },
+    cohort: {
+      type: Schema.Types.ObjectId,
+      ref: "Cohort",
+      required: [true, "Cohort is required"],
+    },
     tracks: [
       {
         type: Schema.Types.ObjectId,
@@ -113,6 +118,7 @@ InterviewSlotSchema.index(
 );
 
 // Index for querying available slots
+InterviewSlotSchema.index({ cohort: 1 });
 InterviewSlotSchema.index({ date: 1, isAvailable: 1 });
 InterviewSlotSchema.index({ interviewer: 1, date: 1 });
 

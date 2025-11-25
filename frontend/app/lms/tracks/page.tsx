@@ -96,21 +96,20 @@ export default function TracksPage() {
     description: "",
     isActive: true,
   });
-  
+
   console.log('Cohort Data:', currentCohort);
-  
+
   // Extract tracks from current active cohort
-  
+
   const cohortTracks = currentCohort?.tracks || [];
-  console.log(cohortTracks);
   const [isCreating, setIsCreating] = useState(false);
 
   const filteredTracks = cohortTracks?.filter((cohortTrack: any) =>
     cohortTrack.track?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
-  
+
   console.log('Filtered Tracks:', filteredTracks);
-  
+
   // Calculate stats based on cohort tracks
   const totalTracks = cohortTracks?.length || 0;
   const activeTracks = cohortTracks?.filter((ct: any) => ct.track?.isActive).length || 0;
@@ -131,9 +130,9 @@ export default function TracksPage() {
         toast.error("Name and Track ID are required");
         return;
       }
-      
+
       await trackService.createTrack(newTrack);
-      
+
       toast.success("Track created successfully");
       setIsCreateDialogOpen(false);
       setNewTrack({ name: "", trackId: "", description: "", isActive: true });
@@ -394,8 +393,8 @@ export default function TracksPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  {currentCohort ? 
-                    "No tracks found in the current active cohort." : 
+                  {currentCohort ?
+                    "No tracks found in the current active cohort." :
                     "No active cohort found. Please create or activate a cohort first."
                   }
                 </TableCell>
