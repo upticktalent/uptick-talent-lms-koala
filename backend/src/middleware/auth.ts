@@ -21,7 +21,10 @@ export const authenticate = async (
     }
 
     const decoded = verifyToken(token);
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await User.findById(decoded.userId)
+      .select("-password")
+      .populate("trackAssignments.track", "name trackId description color")
+      .populate("trackAssignments.cohort", "name cohortNumber");
 
     if (!user) {
       return res.status(401).json({

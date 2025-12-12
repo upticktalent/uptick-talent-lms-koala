@@ -64,7 +64,7 @@ async function verifyCohortCentricBackend() {
     }
     if (specificSlot) {
       console.log(
-        `✅ Track-specific interview slots are supported: ${(specificSlot.track as any)?.name || "Track not populated"}`,
+        `✅ Track-specific interview slots are supported: ${(specificSlot.tracks as any)?.[0]?.name || "Track not populated"}`,
       );
     }
 

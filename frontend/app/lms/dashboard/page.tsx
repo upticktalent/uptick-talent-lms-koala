@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -20,16 +20,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Play,
   Clock,
@@ -49,25 +49,30 @@ import {
   Send,
   Edit,
   Trash2,
-} from 'lucide-react';
-import { streamService } from '@/services/streamService';
-import { taskService } from '@/services/taskService';
-import { cohortService } from '@/services/cohortService';
-import { trackService } from '@/services/trackService';
-import { applicationService } from '@/services/applicationService';
-import { useUser } from '@/hooks/useUser';
-import { IStream, ITask, ICohort, ITrack, ApiResponse } from '@/types';
-import { toast } from 'sonner';
-import Loader from '@/components/Loader';
-import { CustomPagination } from '@/components/shared/CustomPagination';
-import CreateStreamDialog from '@/components/shared/CreateStreamDialog';
-import CreateTaskDialog from '@/components/shared/CreateTaskDialog';
+} from "lucide-react";
+import { useCohortContext, useCohortId } from "@/contexts/CohortContext";
+import { useCohortAwareServices } from "@/services/cohortAwareServices";
+import { trackService } from "@/services/trackService";
+import { useUser } from "@/hooks/useUser";
+import { IStream, ITask, ICohort, ITrack, ApiResponse } from "@/types";
+import { toast } from "sonner";
+import Loader from "@/components/Loader";
+import { CustomPagination } from "@/components/shared/CustomPagination";
+import CreateStreamDialog from "@/components/shared/CreateStreamDialog";
+import CreateTaskDialog from "@/components/shared/CreateTaskDialog";
 
 export default function LMSDashboard() {
   const { user } = useUser();
+  const {
+    currentCohort,
+    loading: cohortLoading,
+    error: cohortError,
+  } = useCohortContext();
+  const cohortId = useCohortId();
+  const cohortServices = useCohortAwareServices(cohortId);
+
   const [streams, setStreams] = useState<IStream[]>([]);
   const [tasks, setTasks] = useState<ITask[]>([]);
-  const [currentCohort, setCurrentCohort] = useState<ICohort | null>(null);
   const [userTracks, setUserTracks] = useState<ITrack[]>([]);
   const [loading, setLoading] = useState(true);
   const [recruitmentData, setRecruitmentData] = useState({
@@ -77,8 +82,8 @@ export default function LMSDashboard() {
     acceptedApplications: 0,
     rejectedApplications: 0,
   });
-  const [selectedTrack, setSelectedTrack] = useState<string>('');
-  const [activeTab, setActiveTab] = useState('streams');
+  const [selectedTrack, setSelectedTrack] = useState<string>("");
+  const [activeTab, setActiveTab] = useState("streams");
 
   // Pagination state
   const [streamsPagination, setStreamsPagination] = useState<any>(null);
@@ -91,11 +96,13 @@ export default function LMSDashboard() {
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
 
   useEffect(() => {
-    fetchInitialData();
-  }, [user]);
+    if (!cohortLoading && currentCohort && user) {
+      fetchInitialData();
+    }
+  }, [cohortLoading, currentCohort, user]);
 
   useEffect(() => {
-    if (selectedTrack && currentCohort) {
+    if (selectedTrack && currentCohort && cohortServices) {
       // Reset pagination when track changes
       setCurrentPage(1);
       setStreamsPagination(null);
@@ -103,57 +110,62 @@ export default function LMSDashboard() {
       fetchStreams(1);
       fetchTasks(1);
     }
-  }, [selectedTrack, currentCohort]);
+  }, [selectedTrack, currentCohort?._id, cohortId]);
 
   const fetchInitialData = async () => {
-    if (!user) return;
+    if (!user || !currentCohort || !cohortServices) return;
 
     try {
-      // Get current active cohort
-      const cohortResponse: any = await cohortService.getCurrentActiveCohort();
-      console.log(cohortResponse);
-      if (cohortResponse.success && cohortResponse.data) {
-        setCurrentCohort(cohortResponse.data);
-      }
+      // Get user's tracks based on role - use tracks from current cohort
+      if (user.role === "mentor") {
+        // For mentors, get tracks from current cohort where they are assigned as mentors
+        const mentorTracks =
+          currentCohort.tracks
+            ?.filter((ct: any) =>
+              ct.mentors?.some((mentor: any) => mentor._id === user._id)
+            )
+            .map((ct: any) => ct.track)
+            .filter(Boolean) || [];
 
-      // Get user's tracks based on role
-      if (user.role === 'mentor') {
-        const tracksResponse: any = await trackService.getMentorTracks();
-        if (tracksResponse.success) {
-          setUserTracks(tracksResponse.data || []);
-          if (tracksResponse.data && tracksResponse.data.length > 0) {
-            setSelectedTrack(tracksResponse.data[0]._id);
-          }
+        setUserTracks(mentorTracks);
+        if (mentorTracks.length > 0) {
+          setSelectedTrack(mentorTracks[0]._id);
         }
-      } else if (user.role === 'student' && user.studentTrack) {
-        const trackResponse: ApiResponse<ITrack> =
-          await trackService.getTrackById(user.studentTrack);
-        if (trackResponse.success && trackResponse.data) {
-          setUserTracks([trackResponse.data]);
-          setSelectedTrack(trackResponse.data._id);
+      } else if (
+        user.role === "student" &&
+        user.trackAssignments &&
+        user.trackAssignments.length > 0
+      ) {
+        // For students, get their active track assignments in current cohort
+        const activeAssignment = user.trackAssignments.find(
+          (assignment: any) =>
+            assignment.cohort?._id === currentCohort._id && assignment.isActive
+        );
+
+        if (
+          activeAssignment?.track &&
+          typeof activeAssignment.track === "object"
+        ) {
+          const studentTrack = activeAssignment.track as ITrack;
+          setUserTracks([studentTrack]);
+          setSelectedTrack(studentTrack._id);
         }
-      } else if (user.role === 'admin') {
-        const tracksResponse: ApiResponse<ITrack[]> =
-          await trackService.getActiveTracks();
-        if (tracksResponse.success) {
-          setUserTracks(tracksResponse.data || []);
-          if (tracksResponse.data && tracksResponse.data.length > 0) {
-            setSelectedTrack(tracksResponse.data[0]._id);
-          }
+      } else if (user.role === "admin") {
+        // For admin, show all tracks in current cohort
+        const cohortTracks =
+          currentCohort.tracks?.map((ct: any) => ct.track).filter(Boolean) ||
+          [];
+        setUserTracks(cohortTracks);
+        if (cohortTracks.length > 0) {
+          setSelectedTrack(cohortTracks[0]._id);
         }
       }
 
       // Fetch recruitment data for current cohort (admin and mentor only)
-      if (
-        (user.role === 'admin' || user.role === 'mentor') &&
-        cohortResponse.success
-      ) {
+      if (user.role === "admin" || user.role === "mentor") {
         try {
-          const applicationsResponse = await applicationService.getApplications(
-            {
-              cohort: cohortResponse.data?._id,
-            }
-          );
+          const applicationsResponse =
+            await cohortServices.applications.getByCohort();
 
           if (
             applicationsResponse.success &&
@@ -163,77 +175,73 @@ export default function LMSDashboard() {
             setRecruitmentData({
               totalApplications: applications.length,
               pendingApplications: applications.filter(
-                (app: any) => app.status === 'pending'
+                (app: any) => app.status === "pending"
               ).length,
               shortlistedApplications: applications.filter(
-                (app: any) => app.status === 'shortlisted'
+                (app: any) => app.status === "shortlisted"
               ).length,
               acceptedApplications: applications.filter(
-                (app: any) => app.status === 'accepted'
+                (app: any) => app.status === "accepted"
               ).length,
               rejectedApplications: applications.filter(
-                (app: any) => app.status === 'rejected'
+                (app: any) => app.status === "rejected"
               ).length,
             });
           }
         } catch (recruitmentError) {
-          console.error('Error fetching recruitment data:', recruitmentError);
+          console.error("Error fetching recruitment data:", recruitmentError);
         }
       }
     } catch (error) {
-      console.error('Error fetching initial data:', error);
-      toast.error('Error loading dashboard data');
+      console.error("Error fetching initial data:", error);
+      toast.error("Error loading dashboard data");
     } finally {
       setLoading(false);
     }
   };
 
   const fetchStreams = async (page = currentPage) => {
-    if (!currentCohort || !selectedTrack) return;
+    if (!currentCohort || !selectedTrack || !cohortServices) return;
 
     try {
       const response: ApiResponse<{ streams: IStream[]; pagination: any }> =
-        await streamService.getStreams(
-          currentCohort._id,
-          selectedTrack,
+        await cohortServices.streams.getAll(selectedTrack, {
           page,
-          pageSize
-        );
+          limit: pageSize,
+        });
       if (response.success && response.data) {
         setStreams(response.data.streams || []);
         setStreamsPagination(response.data.pagination);
       }
     } catch (error) {
-      console.error('Error fetching streams:', error);
+      console.error("Error fetching streams:", error);
     }
   };
 
   const fetchTasks = async (page = currentPage) => {
-    if (!currentCohort || !selectedTrack) return;
+    if (!currentCohort || !selectedTrack || !cohortServices) return;
 
     try {
       const response: ApiResponse<{ tasks: ITask[]; pagination: any }> =
-        await taskService.getTasks(
-          currentCohort._id,
-          selectedTrack,
+        await cohortServices.tasks.getAll(selectedTrack, {
           page,
-          pageSize
-        );
+          limit: pageSize,
+        });
       if (response.success && response.data) {
         setTasks(response.data.tasks || []);
         setTasksPagination(response.data.pagination);
       }
     } catch (error) {
-      console.error('Error fetching tasks:', error);
+      console.error("Error fetching tasks:", error);
     }
   };
 
   // Pagination handlers
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    if (activeTab === 'streams') {
+    if (activeTab === "streams") {
       fetchStreams(newPage);
-    } else if (activeTab === 'tasks') {
+    } else if (activeTab === "tasks") {
       fetchTasks(newPage);
     }
   };
@@ -241,76 +249,88 @@ export default function LMSDashboard() {
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
     setCurrentPage(1);
-    if (activeTab === 'streams') {
+    if (activeTab === "streams") {
       fetchStreams(1);
-    } else if (activeTab === 'tasks') {
+    } else if (activeTab === "tasks") {
       fetchTasks(1);
     }
   };
 
-
-
   const handleAddReaction = async (
     streamId: string,
-    type: 'like' | 'love' | 'helpful' | 'confused'
+    type: "like" | "love" | "helpful" | "confused"
   ) => {
     try {
-      await streamService.addReaction(streamId, type);
-      fetchStreams(); // Refresh to show updated reactions
+      if (cohortServices) {
+        await cohortServices.streams.react(streamId, type);
+        fetchStreams(); // Refresh to show updated reactions
+      }
     } catch (error) {
-      console.error('Error adding reaction:', error);
+      console.error("Error adding reaction:", error);
     }
   };
 
-
-
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'announcement':
-        return 'bg-blue-100 text-blue-800';
-      case 'lesson':
-        return 'bg-green-100 text-green-800';
-      case 'update':
-        return 'bg-purple-100 text-purple-800';
-      case 'assignment':
-        return 'bg-orange-100 text-orange-800';
-      case 'project':
-        return 'bg-red-100 text-red-800';
-      case 'quiz':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'reading':
-        return 'bg-gray-100 text-gray-800';
+      case "announcement":
+        return "bg-blue-100 text-blue-800";
+      case "lesson":
+        return "bg-green-100 text-green-800";
+      case "update":
+        return "bg-purple-100 text-purple-800";
+      case "assignment":
+        return "bg-orange-100 text-orange-800";
+      case "project":
+        return "bg-red-100 text-red-800";
+      case "quiz":
+        return "bg-yellow-100 text-yellow-800";
+      case "reading":
+        return "bg-gray-100 text-gray-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner':
-        return 'bg-green-100 text-green-800';
-      case 'intermediate':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'advanced':
-        return 'bg-red-100 text-red-800';
+      case "beginner":
+        return "bg-green-100 text-green-800";
+      case "intermediate":
+        return "bg-yellow-100 text-yellow-800";
+      case "advanced":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const canCreateContent = user?.role === 'mentor' || user?.role === 'admin';
+  const canCreateContent = user?.role === "mentor" || user?.role === "admin";
 
-  if (loading) {
+  // Show loader while cohort or data is loading
+  if (cohortLoading || loading) {
     return <Loader />;
   }
 
+  // Show error state if cohort failed to load
+  if (cohortError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h3 className="text-lg font-medium">Error Loading Cohort</h3>
+          <p className="text-muted-foreground">{cohortError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message when no active cohort
   if (!currentCohort) {
     return (
-      <div className='flex items-center justify-center h-64'>
-        <div className='text-center'>
-          <h3 className='text-lg font-medium'>No Active Cohort</h3>
-          <p className='text-muted-foreground'>
-            There is no currently active cohort.
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <h3 className="text-lg font-medium">No Active Cohort</h3>
+          <p className="text-muted-foreground">
+            There is no currently active cohort. Contact an administrator.
           </p>
         </div>
       </div>
@@ -318,21 +338,21 @@ export default function LMSDashboard() {
   }
 
   return (
-    <div className='space-y-6'>
+    <div className="space-y-6">
       {/* Header */}
-      <div className='flex justify-between items-center'>
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className='text-3xl font-bold tracking-tight'>
+          <h1 className="text-3xl font-bold tracking-tight">
             Learning Management System
           </h1>
-          <p className='text-muted-foreground'>
+          <p className="text-muted-foreground">
             {currentCohort.name} - Track-based content and assignments
           </p>
         </div>
-        <div className='flex gap-2'>
+        <div className="flex gap-2">
           <Select value={selectedTrack} onValueChange={setSelectedTrack}>
-            <SelectTrigger className='w-[200px]'>
-              <SelectValue placeholder='Select track' />
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select track" />
             </SelectTrigger>
             <SelectContent>
               {userTracks.map((track) => (
@@ -346,63 +366,63 @@ export default function LMSDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className='grid gap-4 md:grid-cols-4'>
-        {user?.role === 'admin' || user?.role === 'mentor' ? (
+      <div className="grid gap-4 md:grid-cols-4">
+        {user?.role === "admin" || user?.role === "mentor" ? (
           <>
             <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
                   Applications
                 </CardTitle>
-                <FileText className='h-4 w-4 text-muted-foreground' />
+                <FileText className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>
+                <div className="text-2xl font-bold">
                   {recruitmentData.totalApplications}
                 </div>
-                <p className='text-xs text-muted-foreground'>
+                <p className="text-xs text-muted-foreground">
                   Total for this cohort
                 </p>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>Pending</CardTitle>
-                <Clock className='h-4 w-4 text-muted-foreground' />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>
+                <div className="text-2xl font-bold">
                   {recruitmentData.pendingApplications}
                 </div>
-                <p className='text-xs text-muted-foreground'>Awaiting review</p>
+                <p className="text-xs text-muted-foreground">Awaiting review</p>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
                   Shortlisted
                 </CardTitle>
-                <Users className='h-4 w-4 text-muted-foreground' />
+                <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>
+                <div className="text-2xl font-bold">
                   {recruitmentData.shortlistedApplications}
                 </div>
-                <p className='text-xs text-muted-foreground'>
+                <p className="text-xs text-muted-foreground">
                   Ready for assessment
                 </p>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>Accepted</CardTitle>
-                <CheckCircle className='h-4 w-4 text-muted-foreground' />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Accepted</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>
+                <div className="text-2xl font-bold">
                   {recruitmentData.acceptedApplications}
                 </div>
-                <p className='text-xs text-muted-foreground'>
+                <p className="text-xs text-muted-foreground">
                   Enrolled students
                 </p>
               </CardContent>
@@ -411,34 +431,34 @@ export default function LMSDashboard() {
         ) : (
           <>
             <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
                   Active Streams
                 </CardTitle>
-                <Play className='h-4 w-4 text-muted-foreground' />
+                <Play className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>{streams.length}</div>
+                <div className="text-2xl font-bold">{streams.length}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
                   Total Tasks
                 </CardTitle>
-                <BookOpen className='h-4 w-4 text-muted-foreground' />
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>{tasks.length}</div>
+                <div className="text-2xl font-bold">{tasks.length}</div>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>Due Soon</CardTitle>
-                <Clock className='h-4 w-4 text-muted-foreground' />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Due Soon</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>
+                <div className="text-2xl font-bold">
                   {
                     tasks.filter((task) => {
                       const dueDate = new Date(task.dueDate);
@@ -454,16 +474,16 @@ export default function LMSDashboard() {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                <CardTitle className='text-sm font-medium'>Completed</CardTitle>
-                <CheckCircle className='h-4 w-4 text-muted-foreground' />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className='text-2xl font-bold'>
+                <div className="text-2xl font-bold">
                   {
                     tasks.filter((task) =>
                       task.submissions.some((sub) =>
-                        typeof sub.student === 'string'
+                        typeof sub.student === "string"
                           ? sub.student === user?._id
                           : sub.student._id === user?._id
                       )
@@ -478,26 +498,26 @@ export default function LMSDashboard() {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className='flex justify-between items-center'>
+        <div className="flex justify-between items-center">
           <TabsList>
-            <TabsTrigger value='streams'>Streams</TabsTrigger>
-            <TabsTrigger value='tasks'>Tasks</TabsTrigger>
-            {(user?.role === 'admin' || user?.role === 'mentor') && (
-              <TabsTrigger value='recruitment'>Recruitment</TabsTrigger>
+            <TabsTrigger value="streams">Streams</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            {(user?.role === "admin" || user?.role === "mentor") && (
+              <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
             )}
           </TabsList>
           {canCreateContent && (
-            <div className='flex gap-2'>
-              {activeTab === 'streams' && (
+            <div className="flex gap-2">
+              {activeTab === "streams" && (
                 <Button onClick={() => setCreateStreamOpen(true)}>
-                  <Plus className='h-4 w-4 mr-2' />
+                  <Plus className="h-4 w-4 mr-2" />
                   Create Stream
                 </Button>
               )}
 
-              {activeTab === 'tasks' && (
+              {activeTab === "tasks" && (
                 <Button onClick={() => setCreateTaskOpen(true)}>
-                  <Plus className='h-4 w-4 mr-2' />
+                  <Plus className="h-4 w-4 mr-2" />
                   Create Task
                 </Button>
               )}
@@ -505,17 +525,17 @@ export default function LMSDashboard() {
           )}
         </div>
 
-        <TabsContent value='streams' className='mt-6'>
-          <div className='space-y-4'>
+        <TabsContent value="streams" className="mt-6">
+          <div className="space-y-4">
             {streams.length === 0 ? (
               <Card>
-                <CardContent className='flex items-center justify-center py-12'>
-                  <div className='text-center'>
-                    <MessageSquare className='h-12 w-12 text-muted-foreground mx-auto mb-4' />
-                    <h3 className='text-lg font-medium'>No streams yet</h3>
-                    <p className='text-muted-foreground'>
+                <CardContent className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium">No streams yet</h3>
+                    <p className="text-muted-foreground">
                       {canCreateContent
-                        ? 'Create your first stream to share content with students.'
+                        ? "Create your first stream to share content with students."
                         : "Your mentors haven't posted any streams yet."}
                     </p>
                   </div>
@@ -525,13 +545,13 @@ export default function LMSDashboard() {
               streams.map((stream) => (
                 <Card key={stream._id}>
                   <CardHeader>
-                    <div className='flex justify-between items-start'>
+                    <div className="flex justify-between items-start">
                       <div>
-                        <div className='flex items-center gap-2 mb-2'>
+                        <div className="flex items-center gap-2 mb-2">
                           <Badge className={getTypeColor(stream.type)}>
                             {stream.type}
                           </Badge>
-                          <span className='text-sm text-muted-foreground'>
+                          <span className="text-sm text-muted-foreground">
                             {new Date(stream.createdAt).toLocaleDateString()}
                           </span>
                         </div>
@@ -540,37 +560,37 @@ export default function LMSDashboard() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className='prose prose-sm max-w-none mb-4'>
-                      {stream.content.split('\n').map((paragraph, index) => (
+                    <div className="prose prose-sm max-w-none mb-4">
+                      {stream.content.split("\n").map((paragraph, index) => (
                         <p key={index}>{paragraph}</p>
                       ))}
                     </div>
 
                     {stream.attachments && stream.attachments.length > 0 && (
-                      <div className='mb-4'>
-                        <h4 className='text-sm font-medium mb-2'>
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium mb-2">
                           Attachments
                         </h4>
-                        <div className='space-y-2'>
+                        <div className="space-y-2">
                           {stream.attachments.map((attachment) => (
                             <div
                               key={attachment._id}
-                              className='flex items-center gap-2 p-2 border rounded'
+                              className="flex items-center gap-2 p-2 border rounded"
                             >
-                              {attachment.type === 'video' && (
-                                <Video className='h-4 w-4' />
+                              {attachment.type === "video" && (
+                                <Video className="h-4 w-4" />
                               )}
-                              {attachment.type === 'link' && (
-                                <Link className='h-4 w-4' />
+                              {attachment.type === "link" && (
+                                <Link className="h-4 w-4" />
                               )}
-                              {attachment.type === 'file' && (
-                                <FileText className='h-4 w-4' />
+                              {attachment.type === "file" && (
+                                <FileText className="h-4 w-4" />
                               )}
                               <a
                                 href={attachment.url}
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                className='text-sm text-blue-600 hover:underline'
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-blue-600 hover:underline"
                               >
                                 {attachment.title}
                               </a>
@@ -580,63 +600,63 @@ export default function LMSDashboard() {
                       </div>
                     )}
 
-                    <div className='flex items-center gap-4 pt-4 border-t'>
+                    <div className="flex items-center gap-4 pt-4 border-t">
                       <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => handleAddReaction(stream._id, 'like')}
-                        className='text-muted-foreground hover:text-blue-600'
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleAddReaction(stream._id, "like")}
+                        className="text-muted-foreground hover:text-blue-600"
                       >
-                        <ThumbsUp className='h-4 w-4 mr-1' />
+                        <ThumbsUp className="h-4 w-4 mr-1" />
                         {
-                          stream.reactions.filter((r) => r.type === 'like')
+                          stream.reactions.filter((r) => r.type === "like")
                             .length
                         }
                       </Button>
                       <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => handleAddReaction(stream._id, 'love')}
-                        className='text-muted-foreground hover:text-red-600'
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleAddReaction(stream._id, "love")}
+                        className="text-muted-foreground hover:text-red-600"
                       >
-                        <Heart className='h-4 w-4 mr-1' />
+                        <Heart className="h-4 w-4 mr-1" />
                         {
-                          stream.reactions.filter((r) => r.type === 'love')
+                          stream.reactions.filter((r) => r.type === "love")
                             .length
                         }
                       </Button>
                       <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => handleAddReaction(stream._id, 'helpful')}
-                        className='text-muted-foreground hover:text-green-600'
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleAddReaction(stream._id, "helpful")}
+                        className="text-muted-foreground hover:text-green-600"
                       >
-                        <CheckCircle className='h-4 w-4 mr-1' />
+                        <CheckCircle className="h-4 w-4 mr-1" />
                         {
-                          stream.reactions.filter((r) => r.type === 'helpful')
+                          stream.reactions.filter((r) => r.type === "helpful")
                             .length
                         }
                       </Button>
                       <Button
-                        variant='ghost'
-                        size='sm'
+                        variant="ghost"
+                        size="sm"
                         onClick={() =>
-                          handleAddReaction(stream._id, 'confused')
+                          handleAddReaction(stream._id, "confused")
                         }
-                        className='text-muted-foreground hover:text-yellow-600'
+                        className="text-muted-foreground hover:text-yellow-600"
                       >
-                        <HelpCircle className='h-4 w-4 mr-1' />
+                        <HelpCircle className="h-4 w-4 mr-1" />
                         {
-                          stream.reactions.filter((r) => r.type === 'confused')
+                          stream.reactions.filter((r) => r.type === "confused")
                             .length
                         }
                       </Button>
                       <Button
-                        variant='ghost'
-                        size='sm'
-                        className='text-muted-foreground'
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground"
                       >
-                        <MessageSquare className='h-4 w-4 mr-1' />
+                        <MessageSquare className="h-4 w-4 mr-1" />
                         {stream.comments.length}
                       </Button>
                     </div>
@@ -656,17 +676,17 @@ export default function LMSDashboard() {
           </div>
         </TabsContent>
 
-        <TabsContent value='tasks' className='mt-6'>
-          <div className='space-y-4'>
+        <TabsContent value="tasks" className="mt-6">
+          <div className="space-y-4">
             {tasks.length === 0 ? (
               <Card>
-                <CardContent className='flex items-center justify-center py-12'>
-                  <div className='text-center'>
-                    <BookOpen className='h-12 w-12 text-muted-foreground mx-auto mb-4' />
-                    <h3 className='text-lg font-medium'>No tasks yet</h3>
-                    <p className='text-muted-foreground'>
+                <CardContent className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium">No tasks yet</h3>
+                    <p className="text-muted-foreground">
                       {canCreateContent
-                        ? 'Create your first task to assign work to students.'
+                        ? "Create your first task to assign work to students."
                         : "Your mentors haven't assigned any tasks yet."}
                     </p>
                   </div>
@@ -676,9 +696,9 @@ export default function LMSDashboard() {
               tasks.map((task) => (
                 <Card key={task._id}>
                   <CardHeader>
-                    <div className='flex justify-between items-start'>
+                    <div className="flex justify-between items-start">
                       <div>
-                        <div className='flex items-center gap-2 mb-2'>
+                        <div className="flex items-center gap-2 mb-2">
                           <Badge className={getTypeColor(task.type)}>
                             {task.type}
                           </Badge>
@@ -687,31 +707,31 @@ export default function LMSDashboard() {
                           >
                             {task.difficulty}
                           </Badge>
-                          <span className='text-sm text-muted-foreground'>
+                          <span className="text-sm text-muted-foreground">
                             {task.estimatedHours}h • {task.maxScore} pts
                           </span>
                         </div>
                         <CardTitle>{task.title}</CardTitle>
                         <CardDescription>
-                          Due: {new Date(task.dueDate).toLocaleDateString()} at{' '}
+                          Due: {new Date(task.dueDate).toLocaleDateString()} at{" "}
                           {new Date(task.dueDate).toLocaleTimeString()}
                         </CardDescription>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className='prose prose-sm max-w-none mb-4'>
-                      {task.description.split('\n').map((paragraph, index) => (
+                    <div className="prose prose-sm max-w-none mb-4">
+                      {task.description.split("\n").map((paragraph, index) => (
                         <p key={index}>{paragraph}</p>
                       ))}
                     </div>
 
                     {task.requirements && task.requirements.length > 0 && (
-                      <div className='mb-4'>
-                        <h4 className='text-sm font-medium mb-2'>
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium mb-2">
                           Requirements
                         </h4>
-                        <ul className='text-sm list-disc list-inside space-y-1'>
+                        <ul className="text-sm list-disc list-inside space-y-1">
                           {task.requirements.map((requirement, index) => (
                             <li key={index}>{requirement}</li>
                           ))}
@@ -720,41 +740,41 @@ export default function LMSDashboard() {
                     )}
 
                     {task.resources && task.resources.length > 0 && (
-                      <div className='mb-4'>
-                        <h4 className='text-sm font-medium mb-2'>Resources</h4>
-                        <div className='space-y-2'>
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium mb-2">Resources</h4>
+                        <div className="space-y-2">
                           {task.resources.map((resource) => (
                             <div
                               key={resource._id}
-                              className='flex items-center gap-2 p-2 border rounded'
+                              className="flex items-center gap-2 p-2 border rounded"
                             >
-                              {resource.type === 'video' && (
-                                <Video className='h-4 w-4' />
+                              {resource.type === "video" && (
+                                <Video className="h-4 w-4" />
                               )}
-                              {resource.type === 'link' && (
-                                <Link className='h-4 w-4' />
+                              {resource.type === "link" && (
+                                <Link className="h-4 w-4" />
                               )}
-                              {resource.type === 'file' && (
-                                <FileText className='h-4 w-4' />
+                              {resource.type === "file" && (
+                                <FileText className="h-4 w-4" />
                               )}
                               <div>
                                 <a
                                   href={resource.url}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
-                                  className='text-sm text-blue-600 hover:underline font-medium'
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-600 hover:underline font-medium"
                                 >
                                   {resource.title}
                                 </a>
                                 {resource.description && (
-                                  <p className='text-xs text-muted-foreground'>
+                                  <p className="text-xs text-muted-foreground">
                                     {resource.description}
                                   </p>
                                 )}
                                 {resource.isRequired && (
                                   <Badge
-                                    variant='outline'
-                                    className='ml-2 text-xs'
+                                    variant="outline"
+                                    className="ml-2 text-xs"
                                   >
                                     Required
                                   </Badge>
@@ -766,9 +786,9 @@ export default function LMSDashboard() {
                       </div>
                     )}
 
-                    <div className='flex items-center justify-between pt-4 border-t'>
-                      <div className='flex items-center gap-2 text-sm text-muted-foreground'>
-                        <Calendar className='h-4 w-4' />
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
                         <span>
                           {new Date(task.dueDate) > new Date()
                             ? `Due in ${Math.ceil(
@@ -776,29 +796,29 @@ export default function LMSDashboard() {
                                   new Date().getTime()) /
                                   (1000 * 60 * 60 * 24)
                               )} days`
-                            : 'Past due'}
+                            : "Past due"}
                         </span>
                       </div>
-                      <div className='flex gap-2'>
-                        {user?.role === 'student' && (
-                          <Button size='sm' asChild>
+                      <div className="flex gap-2">
+                        {user?.role === "student" && (
+                          <Button size="sm" asChild>
                             <a href={`/lms/tasks/${task._id}/submit`}>
-                              <Upload className='h-4 w-4 mr-1' />
+                              <Upload className="h-4 w-4 mr-1" />
                               Submit
                             </a>
                           </Button>
                         )}
-                        {(user?.role === 'mentor' ||
-                          user?.role === 'admin') && (
+                        {(user?.role === "mentor" ||
+                          user?.role === "admin") && (
                           <>
-                            <Button variant='outline' size='sm' asChild>
+                            <Button variant="outline" size="sm" asChild>
                               <a href={`/lms/tasks/${task._id}/submissions`}>
-                                <Users className='h-4 w-4 mr-1' />
+                                <Users className="h-4 w-4 mr-1" />
                                 Submissions ({task.submissions.length})
                               </a>
                             </Button>
-                            <Button variant='outline' size='sm'>
-                              <Edit className='h-4 w-4 mr-1' />
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4 mr-1" />
                               Edit
                             </Button>
                           </>
@@ -822,85 +842,85 @@ export default function LMSDashboard() {
         </TabsContent>
 
         {/* Recruitment Tab Content */}
-        {(user?.role === 'admin' || user?.role === 'mentor') && (
-          <TabsContent value='recruitment' className='mt-6'>
-            <div className='space-y-4'>
-              <div className='flex items-center justify-between'>
-                <h2 className='text-2xl font-bold'>Recruitment Overview</h2>
+        {(user?.role === "admin" || user?.role === "mentor") && (
+          <TabsContent value="recruitment" className="mt-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Recruitment Overview</h2>
                 <Button
                   onClick={() =>
-                    (window.location.href = '/lms/recruitment/applications')
+                    (window.location.href = "/lms/recruitment/applications")
                   }
                 >
-                  <FileText className='w-4 h-4 mr-2' />
+                  <FileText className="w-4 h-4 mr-2" />
                   View All Applications
                 </Button>
               </div>
 
-              <div className='grid gap-4 md:grid-cols-4'>
+              <div className="grid gap-4 md:grid-cols-4">
                 <Card>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
                       Total Applications
                     </CardTitle>
-                    <FileText className='h-4 w-4 text-muted-foreground' />
+                    <FileText className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className='text-2xl font-bold'>
+                    <div className="text-2xl font-bold">
                       {recruitmentData.totalApplications}
                     </div>
-                    <p className='text-xs text-muted-foreground'>
+                    <p className="text-xs text-muted-foreground">
                       For current cohort
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
                       Pending Review
                     </CardTitle>
-                    <Clock className='h-4 w-4 text-muted-foreground' />
+                    <Clock className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className='text-2xl font-bold'>
+                    <div className="text-2xl font-bold">
                       {recruitmentData.pendingApplications}
                     </div>
-                    <p className='text-xs text-muted-foreground'>
+                    <p className="text-xs text-muted-foreground">
                       Need attention
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
                       Shortlisted
                     </CardTitle>
-                    <Users className='h-4 w-4 text-muted-foreground' />
+                    <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className='text-2xl font-bold'>
+                    <div className="text-2xl font-bold">
                       {recruitmentData.shortlistedApplications}
                     </div>
-                    <p className='text-xs text-muted-foreground'>
+                    <p className="text-xs text-muted-foreground">
                       Ready for assessment
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card>
-                  <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
                       Accepted
                     </CardTitle>
-                    <CheckCircle className='h-4 w-4 text-muted-foreground' />
+                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className='text-2xl font-bold'>
+                    <div className="text-2xl font-bold">
                       {recruitmentData.acceptedApplications}
                     </div>
-                    <p className='text-xs text-muted-foreground'>
+                    <p className="text-xs text-muted-foreground">
                       Enrolled students
                     </p>
                   </CardContent>
@@ -914,28 +934,30 @@ export default function LMSDashboard() {
                     Manage recruitment for the current cohort
                   </CardDescription>
                 </CardHeader>
-                <CardContent className='grid gap-4 md:grid-cols-3'>
+                <CardContent className="grid gap-4 md:grid-cols-3">
                   <Button
-                    variant='outline'
+                    variant="outline"
                     onClick={() =>
-                      (window.location.href = '/lms/recruitment/applications')
+                      (window.location.href = "/lms/recruitment/applications")
                     }
                   >
-                    <FileText className='w-4 h-4 mr-2' />
+                    <FileText className="w-4 h-4 mr-2" />
                     Review Applications
                   </Button>
                   <Button
-                    variant='outline'
-                    onClick={() => (window.location.href = '/lms/assessments')}
+                    variant="outline"
+                    onClick={() =>
+                      (window.location.href = "/lms/recruitment/assessments")
+                    }
                   >
-                    <CheckCircle className='w-4 h-4 mr-2' />
+                    <CheckCircle className="w-4 h-4 mr-2" />
                     Manage Assessments
                   </Button>
                   <Button
-                    variant='outline'
-                    onClick={() => (window.location.href = '/lms/cohorts')}
+                    variant="outline"
+                    onClick={() => (window.location.href = "/lms/cohorts")}
                   >
-                    <Users className='w-4 h-4 mr-2' />
+                    <Users className="w-4 h-4 mr-2" />
                     Cohort Settings
                   </Button>
                 </CardContent>
@@ -949,9 +971,11 @@ export default function LMSDashboard() {
       <CreateStreamDialog
         isOpen={createStreamOpen}
         onClose={() => setCreateStreamOpen(false)}
-        cohortId={currentCohort?._id || ''}
+        cohortId={currentCohort?._id || ""}
         trackId={selectedTrack}
-        trackName={userTracks.find(track => track._id === selectedTrack)?.name}
+        trackName={
+          userTracks.find((track) => track._id === selectedTrack)?.name
+        }
         onSuccess={() => {
           fetchStreams();
         }}
@@ -960,9 +984,11 @@ export default function LMSDashboard() {
       <CreateTaskDialog
         isOpen={createTaskOpen}
         onClose={() => setCreateTaskOpen(false)}
-        cohortId={currentCohort?._id || ''}
+        cohortId={currentCohort?._id || ""}
         trackId={selectedTrack}
-        trackName={userTracks.find(track => track._id === selectedTrack)?.name}
+        trackName={
+          userTracks.find((track) => track._id === selectedTrack)?.name
+        }
         onSuccess={() => {
           fetchTasks();
         }}

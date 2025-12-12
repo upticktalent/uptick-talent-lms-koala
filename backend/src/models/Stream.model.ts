@@ -169,7 +169,7 @@ const StreamSchema = new Schema(
 );
 
 // Indexes for performance
-StreamSchema.index({ cohort: 1, track: 1 });
+StreamSchema.index({ track: 1 });
 StreamSchema.index({ createdBy: 1 });
 StreamSchema.index({ type: 1 });
 StreamSchema.index({ isPublished: 1 });

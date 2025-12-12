@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { User } from "../models/User.model";
 import { Track } from "../models/Track.model";
 import { hashPassword, generatePassword } from "../utils/auth";
@@ -404,8 +405,14 @@ export const getStudents = asyncHandler(async (req: Request, res: Response) => {
   // Handle cohort/track filtering with new trackAssignments structure
   if (cohortId || trackId) {
     const assignmentFilter: any = {};
-    if (cohortId) assignmentFilter["trackAssignments.cohort"] = cohortId;
-    if (trackId) assignmentFilter["trackAssignments.track"] = trackId;
+    if (cohortId)
+      assignmentFilter["trackAssignments.cohort"] = new mongoose.Types.ObjectId(
+        cohortId as string,
+      );
+    if (trackId)
+      assignmentFilter["trackAssignments.track"] = new mongoose.Types.ObjectId(
+        trackId as string,
+      );
     Object.assign(filter, assignmentFilter);
   }
 
@@ -553,7 +560,11 @@ export const getStudentsByCohort = asyncHandler(
       });
     }
 
-    const filter: any = { role: "student", assignedCohort: cohortId };
+    const filter: any = {
+      role: "student",
+      "trackAssignments.cohort": new mongoose.Types.ObjectId(cohortId),
+      "trackAssignments.isActive": true,
+    };
 
     if (trackId) {
       if (!isValidObjectId(trackId as string)) {
@@ -562,14 +573,17 @@ export const getStudentsByCohort = asyncHandler(
           message: "Invalid track ID",
         });
       }
-      filter.assignedTracks = trackId;
+      filter["trackAssignments.track"] = new mongoose.Types.ObjectId(
+        trackId as string,
+      );
     }
 
     const skip = (Number(page) - 1) * Number(limit);
 
     const students = await User.find(filter)
-      .populate("assignedTracks", "name trackId")
-      .populate("assignedCohort", "name cohortNumber")
+      .populate("trackAssignments.track", "name trackId description color")
+      .populate("trackAssignments.cohort", "name cohortNumber")
+      .populate("assignedTracks", "name trackId") // Keep for backward compatibility
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));

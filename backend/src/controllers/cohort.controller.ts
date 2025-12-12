@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import mongoose from "mongoose";
 import { Cohort } from "../models/Cohort.model";
 import { Track } from "../models/Track.model";
 import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
@@ -517,7 +518,8 @@ export const getTrackInActiveCohort = asyncHandler(
 
     // Find the track within this cohort
     const cohortTrack = activeCohort.tracks.find(
-      (ct: any) => ct.track.trackId === trackId || ct.track._id.toString() === trackId
+      (ct: any) =>
+        ct.track.trackId === trackId || ct.track._id.toString() === trackId,
     );
 
     if (!cohortTrack) {
@@ -531,9 +533,11 @@ export const getTrackInActiveCohort = asyncHandler(
     const User = require("../models/User.model").User;
     const students = await User.find({
       role: "student",
-      currentCohort: activeCohort._id,
-      currentTrack: cohortTrack.track._id,
-      isActive: true,
+      "trackAssignments.cohort": new mongoose.Types.ObjectId(activeCohort._id),
+      "trackAssignments.track": new mongoose.Types.ObjectId(
+        cohortTrack.track._id,
+      ),
+      "trackAssignments.isActive": true,
     }).select("firstName lastName email");
 
     const trackDetails = {
@@ -544,10 +548,13 @@ export const getTrackInActiveCohort = asyncHandler(
         startDate: activeCohort.startDate,
         endDate: activeCohort.endDate,
       },
-      track: cohortTrack.track,
+      track: {
+        ...((cohortTrack.track as any)._doc || cohortTrack.track),
+        students: students, // Add students array to track object for frontend compatibility
+      },
       mentors: cohortTrack.mentors,
       maxStudents: cohortTrack.maxStudents,
-      currentStudents: cohortTrack.currentStudents,
+      currentStudents: students.length, // Use actual count from query
       students: students,
     };
 
@@ -589,7 +596,7 @@ export const getCohortComplete = asyncHandler(
       message: "Complete cohort data retrieved successfully",
       data: completeData,
     });
-  }
+  },
 );
 
 export const getCohortTrackData = asyncHandler(
@@ -624,7 +631,7 @@ export const getCohortTrackData = asyncHandler(
     // Get complete data for this specific track
     const completeData = await cohort.getCompleteData();
     const trackData = completeData.trackData.find(
-      (td: any) => td.track._id.toString() === trackId
+      (td: any) => td.track._id.toString() === trackId,
     );
 
     res.status(200).json({
@@ -632,7 +639,7 @@ export const getCohortTrackData = asyncHandler(
       message: "Track data retrieved successfully",
       data: trackData,
     });
-  }
+  },
 );
 
 export const getCohortStatistics = asyncHandler(
@@ -676,12 +683,12 @@ export const getCohortStatistics = asyncHandler(
         totalTracks: updatedCohort!.tracks.length,
         totalMentors: updatedCohort!.tracks.reduce(
           (sum, track) => sum + track.mentors.length,
-          0
+          0,
         ),
         totalStudents: updatedCohort!.currentStudents,
         totalApplications: updatedCohort!.tracks.reduce(
           (sum, track) => sum + (track.statistics?.totalApplications || 0),
-          0
+          0,
         ),
       },
       trackStatistics: updatedCohort!.tracks.map((cohortTrack) => ({
@@ -700,7 +707,7 @@ export const getCohortStatistics = asyncHandler(
       message: "Cohort statistics retrieved successfully",
       data: statistics,
     });
-  }
+  },
 );
 
 export const getCohortApplications = asyncHandler(
@@ -785,7 +792,7 @@ export const getCohortApplications = asyncHandler(
         },
       },
     });
-  }
+  },
 );
 
 export const getCohortStudents = asyncHandler(
@@ -809,10 +816,10 @@ export const getCohortStudents = asyncHandler(
       });
     }
 
-    // Build filter query
+    // Build filter query - Convert to ObjectId for proper MongoDB querying
     const filter: any = {
       role: "student",
-      "trackAssignments.cohort": cohortId,
+      "trackAssignments.cohort": new mongoose.Types.ObjectId(cohortId),
       "trackAssignments.isActive": true,
     };
 
@@ -823,7 +830,9 @@ export const getCohortStudents = asyncHandler(
           message: "Invalid track ID format",
         });
       }
-      filter["trackAssignments.track"] = trackId;
+      filter["trackAssignments.track"] = new mongoose.Types.ObjectId(
+        trackId as string,
+      );
     }
 
     const User = require("../models/User.model").User;
@@ -831,7 +840,9 @@ export const getCohortStudents = asyncHandler(
     const students = await User.find(filter)
       .populate("trackAssignments.track", "name trackId")
       .populate("trackAssignments.cohort", "name cohortNumber")
-      .select("firstName lastName email phoneNumber trackAssignments createdAt");
+      .select(
+        "firstName lastName email phoneNumber trackAssignments createdAt",
+      );
 
     // Group students by track if no specific track is requested
     if (!trackId) {
@@ -839,10 +850,11 @@ export const getCohortStudents = asyncHandler(
         const trackStudents = students.filter((student: any) =>
           student.trackAssignments.some(
             (assignment: any) =>
-              assignment.track._id.toString() === cohortTrack.track.toString() &&
+              assignment.track._id.toString() ===
+                cohortTrack.track.toString() &&
               assignment.cohort._id.toString() === cohortId &&
-              assignment.isActive
-          )
+              assignment.isActive,
+          ),
         );
 
         return {
@@ -881,5 +893,5 @@ export const getCohortStudents = asyncHandler(
         totalStudents: students.length,
       },
     });
-  }
+  },
 );

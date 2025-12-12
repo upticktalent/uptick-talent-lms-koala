@@ -294,42 +294,56 @@ CohortSchema.methods.addMentorToTrack = async function (
 };
 
 // Instance method to get track by ID
-CohortSchema.methods.getTrackById = function (trackId: string): ICohortTrack | null {
-  return this.tracks.find(
-    (ct: ICohortTrack) => ct.track.toString() === trackId
-  ) || null;
+CohortSchema.methods.getTrackById = function (
+  trackId: string,
+): ICohortTrack | null {
+  return (
+    this.tracks.find((ct: ICohortTrack) => ct.track.toString() === trackId) ||
+    null
+  );
 };
 
 // Instance method to update track statistics
-CohortSchema.methods.updateTrackStatistics = async function (trackId: string): Promise<void> {
+CohortSchema.methods.updateTrackStatistics = async function (
+  trackId: string,
+): Promise<void> {
   const trackIndex = this.tracks.findIndex(
-    (ct: ICohortTrack) => ct.track.toString() === trackId
+    (ct: ICohortTrack) => ct.track.toString() === trackId,
   );
 
   if (trackIndex === -1) return;
 
   // Import models here to avoid circular dependencies
-  const Application = mongoose.model('Application');
-  const Assessment = mongoose.model('Assessment');
-  const Interview = mongoose.model('Interview');
-  const User = mongoose.model('User');
+  const Application = mongoose.model("Application");
+  const Assessment = mongoose.model("Assessment");
+  const Interview = mongoose.model("Interview");
+  const User = mongoose.model("User");
 
   // Get statistics for this track
   const applications = await Application.find({ track: trackId });
-  const assessments = await Assessment.find({ application: { $in: applications.map(app => app._id) } });
-  const interviews = await Interview.find({ application: { $in: applications.map(app => app._id) } });
+  const assessments = await Assessment.find({
+    application: { $in: applications.map((app) => app._id) },
+  });
+  const interviews = await Interview.find({
+    application: { $in: applications.map((app) => app._id) },
+  });
   const students = await User.find({
-    role: 'student',
-    'trackAssignments.track': trackId,
-    'trackAssignments.cohort': this._id
+    role: "student",
+    "trackAssignments.track": trackId,
+    "trackAssignments.cohort": this._id,
   });
 
   // Update statistics
   this.tracks[trackIndex].statistics = {
     totalApplications: applications.length,
-    pendingApplications: applications.filter(app => app.status === 'pending').length,
-    acceptedApplications: applications.filter(app => app.status === 'accepted').length,
-    rejectedApplications: applications.filter(app => app.status === 'rejected').length,
+    pendingApplications: applications.filter((app) => app.status === "pending")
+      .length,
+    acceptedApplications: applications.filter(
+      (app) => app.status === "accepted",
+    ).length,
+    rejectedApplications: applications.filter(
+      (app) => app.status === "rejected",
+    ).length,
     totalStudents: students.length,
     totalAssessments: assessments.length,
     totalInterviews: interviews.length,
@@ -343,58 +357,95 @@ CohortSchema.methods.updateTrackStatistics = async function (trackId: string): P
 
 // Instance method to get complete cohort data with all relations
 CohortSchema.methods.getCompleteData = async function (): Promise<any> {
-  const Application = mongoose.model('Application');
-  const Assessment = mongoose.model('Assessment');
-  const Interview = mongoose.model('Interview');
-  const Stream = mongoose.model('Stream');
-  const Task = mongoose.model('Task');
-  const Material = mongoose.model('Material');
-  const User = mongoose.model('User');
+  const Application = mongoose.model("Application");
+  const Assessment = mongoose.model("Assessment");
+  const Interview = mongoose.model("Interview");
+  const Stream = mongoose.model("Stream");
+  const Task = mongoose.model("Task");
+  const Material = mongoose.model("Material");
+  const User = mongoose.model("User");
 
   await this.populate([
-    { path: 'tracks.track', select: 'name trackId description isActive' },
-    { path: 'tracks.mentors', select: 'firstName lastName email role' }
+    { path: "tracks.track", select: "name trackId description isActive" },
+    { path: "tracks.mentors", select: "firstName lastName email role" },
   ]);
 
   const trackIds = this.tracks.map((ct: any) => ct.track._id);
 
   // Get all data for tracks in this cohort
-  const [applications, assessments, interviews, streams, tasks, materials, students] = await Promise.all([
-    Application.find({ track: { $in: trackIds } }).populate('applicant', 'firstName lastName email'),
+  const [
+    applications,
+    assessments,
+    interviews,
+    streams,
+    tasks,
+    materials,
+    students,
+  ] = await Promise.all([
+    Application.find({ track: { $in: trackIds } }).populate(
+      "applicant",
+      "firstName lastName email",
+    ),
     Assessment.find({}).populate({
-      path: 'application',
+      path: "application",
       match: { track: { $in: trackIds } },
-      populate: { path: 'applicant', select: 'firstName lastName email' }
+      populate: { path: "applicant", select: "firstName lastName email" },
     }),
     Interview.find({}).populate({
-      path: 'application',
+      path: "application",
       match: { track: { $in: trackIds } },
-      populate: { path: 'applicant', select: 'firstName lastName email' }
+      populate: { path: "applicant", select: "firstName lastName email" },
     }),
-    Stream.find({ track: { $in: trackIds } }).populate('createdBy', 'firstName lastName'),
-    Task.find({ track: { $in: trackIds } }).populate('createdBy', 'firstName lastName'),
-    Material.find({ track: { $in: trackIds } }).populate('createdBy', 'firstName lastName'),
+    Stream.find({ track: { $in: trackIds } }).populate(
+      "createdBy",
+      "firstName lastName",
+    ),
+    Task.find({ track: { $in: trackIds } }).populate(
+      "createdBy",
+      "firstName lastName",
+    ),
+    Material.find({ track: { $in: trackIds } }).populate(
+      "createdBy",
+      "firstName lastName",
+    ),
     User.find({
-      role: 'student',
-      'trackAssignments.track': { $in: trackIds },
-      'trackAssignments.cohort': this._id
-    })
+      role: "student",
+      "trackAssignments.track": { $in: trackIds },
+      "trackAssignments.cohort": this._id,
+    }),
   ]);
 
   // Organize data by track
   const trackData = this.tracks.map((cohortTrack: any) => {
     const trackId = cohortTrack.track._id.toString();
 
-    const trackApplications = applications.filter(app => app.track.toString() === trackId);
-    const trackAssessments = assessments.filter(assess => assess.application && assess.application.track.toString() === trackId);
-    const trackInterviews = interviews.filter(interview => interview.application && interview.application.track.toString() === trackId);
-    const trackStreams = streams.filter(stream => stream.track.toString() === trackId);
-    const trackTasks = tasks.filter(task => task.track.toString() === trackId);
-    const trackMaterials = materials.filter(material => material.track.toString() === trackId);
-    const trackStudents = students.filter(student =>
-      student.trackAssignments.some((assignment: any) =>
-        assignment.track.toString() === trackId && assignment.cohort.toString() === this._id.toString()
-      )
+    const trackApplications = applications.filter(
+      (app) => app.track.toString() === trackId,
+    );
+    const trackAssessments = assessments.filter(
+      (assess) =>
+        assess.application && assess.application.track.toString() === trackId,
+    );
+    const trackInterviews = interviews.filter(
+      (interview) =>
+        interview.application &&
+        interview.application.track.toString() === trackId,
+    );
+    const trackStreams = streams.filter(
+      (stream) => stream.track.toString() === trackId,
+    );
+    const trackTasks = tasks.filter(
+      (task) => task.track.toString() === trackId,
+    );
+    const trackMaterials = materials.filter(
+      (material) => material.track.toString() === trackId,
+    );
+    const trackStudents = students.filter((student) =>
+      student.trackAssignments.some(
+        (assignment: any) =>
+          assignment.track.toString() === trackId &&
+          assignment.cohort.toString() === this._id.toString(),
+      ),
     );
 
     return {
@@ -408,16 +459,22 @@ CohortSchema.methods.getCompleteData = async function (): Promise<any> {
       students: trackStudents,
       statistics: {
         totalApplications: trackApplications.length,
-        pendingApplications: trackApplications.filter(app => app.status === 'pending').length,
-        acceptedApplications: trackApplications.filter(app => app.status === 'accepted').length,
-        rejectedApplications: trackApplications.filter(app => app.status === 'rejected').length,
+        pendingApplications: trackApplications.filter(
+          (app) => app.status === "pending",
+        ).length,
+        acceptedApplications: trackApplications.filter(
+          (app) => app.status === "accepted",
+        ).length,
+        rejectedApplications: trackApplications.filter(
+          (app) => app.status === "rejected",
+        ).length,
         totalStudents: trackStudents.length,
         totalAssessments: trackAssessments.length,
         totalInterviews: trackInterviews.length,
         totalStreams: trackStreams.length,
         totalTasks: trackTasks.length,
         totalMaterials: trackMaterials.length,
-      }
+      },
     };
   });
 
@@ -427,21 +484,43 @@ CohortSchema.methods.getCompleteData = async function (): Promise<any> {
     overallStatistics: {
       totalApplications: applications.length,
       totalStudents: students.length,
-      totalMentors: this.tracks.reduce((sum: any, track: any) => sum + track.mentors.length, 0),
+      totalMentors: this.tracks.reduce(
+        (sum: any, track: any) => sum + track.mentors.length,
+        0,
+      ),
       totalTracks: this.tracks.length,
       totalStreams: streams.length,
       totalTasks: tasks.length,
       totalMaterials: materials.length,
-    }
+    },
   };
 };
 
 // Static method to get the current active cohort
-CohortSchema.statics.getCurrentActive = function (): Promise<ICohort | null> {
-  return this.findOne({ isCurrentlyActive: true })
-    .populate("tracks.track", "name trackId description isActive")
-    .populate("tracks.mentors", "firstName lastName email");
-};
+CohortSchema.statics.getCurrentActive =
+  async function (): Promise<ICohort | null> {
+    const cohort = await this.findOne({ isCurrentlyActive: true })
+      .populate("tracks.track", "name trackId description isActive")
+      .populate("tracks.mentors", "firstName lastName email");
+
+    if (!cohort) return null;
+
+    // Add current student counts for each track
+    const User = require("./User.model").User;
+
+    for (let i = 0; i < cohort.tracks.length; i++) {
+      const trackId = cohort.tracks[i].track._id;
+      const studentCount = await User.countDocuments({
+        role: "student",
+        "trackAssignments.cohort": cohort._id,
+        "trackAssignments.track": trackId,
+        "trackAssignments.isActive": true,
+      });
+      cohort.tracks[i].currentStudents = studentCount;
+    }
+
+    return cohort;
+  };
 
 // Static method to set a cohort as currently active (deactivates others)
 CohortSchema.statics.setCurrentlyActive = async function (

@@ -7,8 +7,10 @@ import { asyncHandler } from "../utils/mongooseErrorHandler";
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  // Find user by email
-  const user = await User.findOne({ email: email.toLowerCase() });
+  // Find user by email with populated trackAssignments
+  const user = await User.findOne({ email: email.toLowerCase() })
+    .populate("trackAssignments.track", "name trackId description color")
+    .populate("trackAssignments.cohort", "name cohortNumber");
   if (!user) {
     return res.status(401).json({
       success: false,
@@ -57,6 +59,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     role: user.role,
     isPasswordDefault: user.isPasswordDefault,
     lastLogin: user.lastLogin,
+    trackAssignments: user.trackAssignments,
     createdAt: user.createdAt,
   };
 
@@ -128,6 +131,7 @@ export const getProfile = asyncHandler(
       role: user.role,
       isPasswordDefault: user.isPasswordDefault,
       lastLogin: user.lastLogin,
+      trackAssignments: user.trackAssignments,
       createdAt: user.createdAt,
     };
 

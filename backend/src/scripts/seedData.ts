@@ -199,7 +199,6 @@ const seedDatabase = async () => {
         gender: "male",
         country: "Nigeria",
         state: "Lagos",
-        assignedTracks: [createdTracks[0]._id, createdTracks[2]._id], // Frontend and Fullstack
       },
       {
         firstName: "Sarah",
@@ -209,7 +208,6 @@ const seedDatabase = async () => {
         gender: "female",
         country: "Nigeria",
         state: "Abuja",
-        assignedTracks: [createdTracks[1]._id, createdTracks[7]._id], // Backend and DevOps
       },
       {
         firstName: "Michael",
@@ -219,7 +217,6 @@ const seedDatabase = async () => {
         gender: "male",
         country: "Nigeria",
         state: "Port Harcourt",
-        assignedTracks: [createdTracks[3]._id, createdTracks[8]._id], // Mobile and Blockchain
       },
       {
         firstName: "Grace",
@@ -229,7 +226,6 @@ const seedDatabase = async () => {
         gender: "female",
         country: "Nigeria",
         state: "Kano",
-        assignedTracks: [createdTracks[4]._id, createdTracks[5]._id], // Product Management and Design
       },
       {
         firstName: "David",
@@ -239,7 +235,6 @@ const seedDatabase = async () => {
         gender: "male",
         country: "Nigeria",
         state: "Enugu",
-        assignedTracks: [createdTracks[6]._id], // Data Science
       },
     ];
 
@@ -417,6 +412,44 @@ const seedDatabase = async () => {
     );
 
     console.log("✅ Updated cohorts with ICohortTrack structure");
+
+    // Update mentors with track assignments based on cohort assignments
+    console.log("🏗️  Updating mentors with track assignments...");
+
+    // Get updated cohorts to extract mentor-track mappings
+    const updatedCohorts = await Cohort.find({});
+
+    for (const mentor of createdMentors) {
+      const mentorTrackAssignments = [];
+
+      // Find all tracks this mentor is assigned to across all cohorts
+      for (const cohort of updatedCohorts) {
+        for (const cohortTrack of cohort.tracks) {
+          if (
+            cohortTrack.mentors.some(
+              (mentorId: any) => mentorId.toString() === mentor._id.toString(),
+            )
+          ) {
+            mentorTrackAssignments.push({
+              cohort: cohort._id,
+              track: cohortTrack.track,
+              role: "mentor",
+              assignedAt: new Date(),
+              isActive: true,
+            });
+          }
+        }
+      }
+
+      // Update mentor with track assignments
+      if (mentorTrackAssignments.length > 0) {
+        await User.findByIdAndUpdate(mentor._id, {
+          trackAssignments: mentorTrackAssignments,
+        });
+      }
+    }
+
+    console.log("✅ Updated mentors with track assignments");
 
     // Create LMS data (Streams, Tasks, Materials)
     console.log("📚 Creating LMS content...");
@@ -1054,7 +1087,7 @@ const seedDatabase = async () => {
           const shuffledTracks = [...availableTracks].sort(
             () => Math.random() - 0.5,
           );
-          slotData.track = shuffledTracks[0]; // Pick one track for this slot
+          slotData.tracks = [shuffledTracks[0]]; // Use tracks array with one track for this slot
           slotData.isGeneral = false;
         }
 
@@ -1213,8 +1246,15 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Anambra",
         role: "student",
-        currentCohort: "1", // Completed cohort
-        currentTrack: createdTracks[0]._id, // Frontend Development
+        trackAssignments: [
+          {
+            cohort: activeCohort._id,
+            track: createdTracks[0]._id, // Frontend Development
+            role: "student",
+            assignedAt: new Date(),
+            isActive: true,
+          },
+        ],
       },
       {
         firstName: "Kunle",
@@ -1225,8 +1265,15 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Oyo",
         role: "student",
-        currentCohort: "1", // Completed cohort
-        currentTrack: createdTracks[1]._id, // Backend Development
+        trackAssignments: [
+          {
+            cohort: activeCohort._id,
+            track: createdTracks[1]._id, // Backend Development
+            role: "student",
+            assignedAt: new Date(),
+            isActive: true,
+          },
+        ],
       },
       {
         firstName: "Zainab",
@@ -1237,8 +1284,15 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Kano",
         role: "student",
-        currentCohort: "1", // Completed cohort
-        currentTrack: createdTracks[2]._id, // Full Stack Development
+        trackAssignments: [
+          {
+            cohort: activeCohort._id,
+            track: createdTracks[2]._id, // Full Stack Development
+            role: "student",
+            assignedAt: new Date(),
+            isActive: true,
+          },
+        ],
       },
       {
         firstName: "Chinedu",
@@ -1249,8 +1303,15 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Rivers",
         role: "student",
-        currentCohort: "1", // Completed cohort
-        currentTrack: createdTracks[4]._id, // Product Management
+        trackAssignments: [
+          {
+            cohort: activeCohort._id,
+            track: createdTracks[4]._id, // Product Management
+            role: "student",
+            assignedAt: new Date(),
+            isActive: true,
+          },
+        ],
       },
       {
         firstName: "Amina",
@@ -1261,8 +1322,15 @@ const seedDatabase = async () => {
         country: "Nigeria",
         state: "Kaduna",
         role: "student",
-        currentCohort: "1", // Completed cohort
-        currentTrack: createdTracks[5]._id, // Product Design
+        trackAssignments: [
+          {
+            cohort: activeCohort._id,
+            track: createdTracks[5]._id, // Product Design
+            role: "student",
+            assignedAt: new Date(),
+            isActive: true,
+          },
+        ],
       },
     ];
 
@@ -1285,7 +1353,7 @@ const seedDatabase = async () => {
     // Seed email templates
     console.log("🌱 Seeding email templates...");
     const adminId =
-      createdAdmins[Math.floor(Math.random() * createdAdmins.length - 1)]._id;
+      createdAdmins[Math.floor(Math.random() * createdAdmins.length)]._id;
     await seedEmailTemplates(adminId);
 
     console.log("\n🎉 Comprehensive database seeding completed successfully!");

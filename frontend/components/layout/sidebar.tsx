@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils/cn";
 import { useUser } from "@/hooks/useUser";
+import { useCohortContext } from "@/contexts/CohortContext";
 import {
   LayoutDashboard,
   Users,
@@ -30,8 +31,61 @@ interface SidebarProps {
 export function Sidebar({ className, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, canManageRecruitment, isStudent } = useUser();
+  const { currentCohort } = useCohortContext();
+
+  // Get student's track slug for track-specific navigation
+  let trackSlug = "";
+
+  if (isStudent) {
+    // Debug log to see what we're working with
+    console.log("Student debug:", {
+      user: user?.firstName,
+      trackAssignments: user?.trackAssignments,
+      currentCohort: currentCohort?.name,
+      cohortTracks: currentCohort?.tracks?.map((ct: any) => ({
+        trackId: ct.track?.trackId,
+        trackName: ct.track?.name,
+        _id: ct.track?._id,
+      })),
+    });
+
+    // First, try to get from user's track assignments
+    if (user?.trackAssignments && user.trackAssignments.length > 0) {
+      const activeAssignment = user.trackAssignments.find(
+        (assignment: any) => assignment.isActive
+      );
+
+      if (activeAssignment?.track) {
+        const track = activeAssignment.track;
+
+        if (typeof track === "object") {
+          trackSlug = track.trackId || track._id || "";
+        } else if (typeof track === "string") {
+          trackSlug = track;
+        }
+      }
+    }
+
+    // If no trackSlug yet and we have cohort data, try to use the first track as fallback
+    // (assuming students typically have access to one track)
+    if (
+      !trackSlug &&
+      currentCohort?.tracks &&
+      currentCohort.tracks.length > 0
+    ) {
+      const firstTrack = currentCohort.tracks[0]?.track;
+      if (firstTrack && typeof firstTrack === "object") {
+        trackSlug = firstTrack.trackId || firstTrack._id || "";
+      } else if (typeof firstTrack === "string") {
+        trackSlug = firstTrack;
+      }
+    }
+
+    console.log("Final trackSlug:", trackSlug);
+  }
 
   const navigation = [
+    // Admin/Mentor navigation
     {
       name: "Dashboard",
       href: "/lms/dashboard",
@@ -55,6 +109,11 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
           icon: ClipboardList,
         },
         {
+          name: "Interview Slots",
+          href: "/lms/recruitment/interview-slots",
+          icon: Calendar,
+        },
+        {
           name: "Interviews",
           href: "/lms/recruitment/interviews",
           icon: Calendar,
@@ -65,34 +124,52 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
       name: "Tracks",
       href: "/lms/tracks",
       icon: BookOpen,
-      show: true,
+      show: canManageRecruitment, // Only show for admin/mentor
     },
     {
       name: "Emails",
       href: "/lms/emails",
       icon: Mail,
       show: canManageRecruitment,
-    }, {
-      name: 'Stream',
-      href:'/lms/stream',
-      icon:BookOpen,
-      show:isStudent
-    }, {
-      name:'Classwork',
-      href:'/lms/classwork',
-      icon:BookOpen,
-      show:isStudent
-    }, {
-      name: 'People',
-      href:'/lms/people',
-      icon:Users,
-      show:isStudent
-    }, {
-      name:'Grades',
-      href:'/lms/grades',
-      icon:GraduationCap,
-      show:isStudent
-    }
+    },
+    // Student navigation - track-specific
+    {
+      name: "Stream",
+      href: trackSlug ? `/lms/track/${trackSlug}/stream` : "/lms/stream",
+      icon: Megaphone,
+      show: isStudent,
+    },
+    {
+      name: "Classwork",
+      href: trackSlug ? `/lms/track/${trackSlug}/classwork` : "/lms/classwork",
+      icon: BookOpen,
+      show: isStudent,
+    },
+    {
+      name: "People",
+      href: (() => {
+        const href = trackSlug
+          ? `/lms/track/${trackSlug}/people`
+          : "/lms/people";
+        console.log(
+          "People navigation href:",
+          href,
+          "trackSlug:",
+          trackSlug,
+          "isStudent:",
+          isStudent
+        );
+        return href;
+      })(),
+      icon: Users,
+      show: isStudent,
+    },
+    {
+      name: "Grades",
+      href: trackSlug ? `/lms/track/${trackSlug}/grades` : "/lms/grades",
+      icon: GraduationCap,
+      show: isStudent,
+    },
   ];
 
   useEffect(() => {
@@ -301,7 +378,7 @@ export function Sidebar({ className, open = false, onClose }: SidebarProps) {
               if (hasChildren) {
                 return (
                   <div key={item.name} className="space-y-1">
-                    <div className="flex items-center px-3 py-2 text-sm font-medium text-[hsl(var(--muted-foreground))] uppercase text-xs tracking-wider">
+                    <div className="flex items-center px-3 py-2 text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
                       <Icon className="h-4 w-4 mr-3" />
                       {item.name}
                     </div>

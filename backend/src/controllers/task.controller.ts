@@ -172,6 +172,22 @@ export const createTask = asyncHandler(
       });
     }
 
+    // Validate dueDate
+    if (!dueDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Due date is required",
+      });
+    }
+
+    const parsedDueDate = new Date(dueDate);
+    if (isNaN(parsedDueDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid due date format",
+      });
+    }
+
     const task = new Task({
       cohort: cohortId,
       track: trackId,
@@ -181,7 +197,7 @@ export const createTask = asyncHandler(
       difficulty,
       estimatedHours,
       maxScore,
-      dueDate: new Date(dueDate),
+      dueDate: parsedDueDate,
       createdBy: req.user!.id,
       requirements,
       resources,

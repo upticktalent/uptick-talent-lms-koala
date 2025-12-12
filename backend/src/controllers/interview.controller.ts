@@ -83,10 +83,14 @@ export const createInterviewSlots = asyncHandler(
           notes,
           meetingLink,
         } = slot;
-        await validateCohortTracks(cohortId, tracks[index++]);
-        if (!date || !startTime || !endTime || !tracks.length) continue;
+        // Validate tracks if provided
+        if (tracks && tracks.length > 0) {
+          await validateCohortTracks(cohortId, tracks[index++]);
+        }
+        if (!date || !startTime || !endTime) continue;
 
         const slotDate = new Date(date);
+        const isGeneral = !tracks || tracks.length === 0;
 
         // Check conflicts
         const conflict = await InterviewSlot.findOne({
@@ -103,7 +107,8 @@ export const createInterviewSlots = asyncHandler(
 
         const newSlot = await InterviewSlot.create({
           interviewer: interviewerId,
-          tracks,
+          tracks: isGeneral ? [] : tracks,
+          isGeneral,
           date: slotDate,
           startTime,
           endTime,
@@ -175,10 +180,12 @@ export const createInterviewSlots = asyncHandler(
       }
 
       // Create all slots
+      const isGeneral = !tracks || tracks.length === 0;
       const created = await InterviewSlot.insertMany(
         slotsToCreate.map((s) => ({
           interviewer: interviewerId,
-          tracks,
+          tracks: isGeneral ? [] : tracks,
+          isGeneral,
           date: s.date,
           startTime: s.startTime,
           endTime: s.endTime,
@@ -300,7 +307,7 @@ export const getAvailableSlots = asyncHandler(
       acc[dateKey].push({
         _id: slot._id,
         interviewer: slot.interviewer,
-        track: slot.track,
+        tracks: slot.tracks,
         startTime: slot.startTime,
         endTime: slot.endTime,
         duration: slot.duration,

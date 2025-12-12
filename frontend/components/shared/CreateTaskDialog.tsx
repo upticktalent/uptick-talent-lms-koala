@@ -28,7 +28,7 @@ import { FileUploadComponent } from "./FileUploadComponent";
 import { UploadedFile } from "@/services/uploadService";
 
 interface LinkAttachment {
-  type: 'link';
+  type: "link";
   url: string;
   title: string;
   description?: string;
@@ -40,8 +40,8 @@ type AttachmentItem = UploadedFile | LinkAttachment;
 interface TaskFormData {
   title: string;
   description: string;
-  type: 'assignment' | 'project' | 'quiz' | 'reading';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  type: "assignment" | "project" | "quiz" | "reading";
+  difficulty: "beginner" | "intermediate" | "advanced";
   estimatedHours: number;
   maxScore: number;
   dueDate: string;
@@ -68,68 +68,73 @@ export default function CreateTaskDialog({
   onSuccess,
 }: CreateTaskDialogProps) {
   const [taskFormData, setTaskFormData] = useState<TaskFormData>({
-    title: '',
-    description: '',
-    type: 'assignment',
-    difficulty: 'beginner',
+    title: "",
+    description: "",
+    type: "assignment",
+    difficulty: "beginner",
     estimatedHours: 1,
     maxScore: 100,
-    dueDate: '',
+    dueDate: "",
     requirements: [],
     allowLateSubmissions: true,
     resources: [],
   });
 
-  const [newRequirement, setNewRequirement] = useState('');
+  const [newRequirement, setNewRequirement] = useState("");
 
   const resetForm = () => {
     setTaskFormData({
-      title: '',
-      description: '',
-      type: 'assignment',
-      difficulty: 'beginner',
+      title: "",
+      description: "",
+      type: "assignment",
+      difficulty: "beginner",
       estimatedHours: 1,
       maxScore: 100,
-      dueDate: '',
+      dueDate: "",
       requirements: [],
       allowLateSubmissions: true,
       resources: [],
     });
-    setNewRequirement('');
+    setNewRequirement("");
   };
 
   const handleResourcesChange = (resources: AttachmentItem[]) => {
-    setTaskFormData(prev => ({
+    setTaskFormData((prev) => ({
       ...prev,
-      resources
+      resources,
     }));
   };
 
   const addRequirement = () => {
     if (newRequirement.trim()) {
-      setTaskFormData(prev => ({
+      setTaskFormData((prev) => ({
         ...prev,
-        requirements: [...prev.requirements, newRequirement.trim()]
+        requirements: [...prev.requirements, newRequirement.trim()],
       }));
-      setNewRequirement('');
+      setNewRequirement("");
     }
   };
 
   const removeRequirement = (index: number) => {
-    setTaskFormData(prev => ({
+    setTaskFormData((prev) => ({
       ...prev,
-      requirements: prev.requirements.filter((_, i) => i !== index)
+      requirements: prev.requirements.filter((_, i) => i !== index),
     }));
   };
 
   const handleCreateTask = async () => {
     if (!cohortId || !trackId) {
-      toast.error('Missing cohort or track information');
+      toast.error("Missing cohort or track information");
       return;
     }
 
     if (!taskFormData.title.trim() || !taskFormData.description.trim()) {
-      toast.error('Please fill in both title and description');
+      toast.error("Please fill in both title and description");
+      return;
+    }
+
+    if (!taskFormData.dueDate) {
+      toast.error("Please select a due date");
       return;
     }
 
@@ -147,24 +152,24 @@ export default function CreateTaskDialog({
         allowLateSubmissions: taskFormData.allowLateSubmissions,
         resources: taskFormData.resources,
       };
-      
+
       if (taskFormData.dueDate) {
         taskPayload.dueDate = taskFormData.dueDate;
       }
-      
+
       const response = await taskService.createTask(taskPayload);
 
       if (response.success) {
-        toast.success('Task created successfully!');
+        toast.success("Task created successfully!");
         onClose();
         resetForm();
         onSuccess?.();
       } else {
-        toast.error(response.message || 'Failed to create task');
+        toast.error(response.message || "Failed to create task");
       }
     } catch (error) {
-      console.error('Error creating task:', error);
-      toast.error('Failed to create task');
+      console.error("Error creating task:", error);
+      toast.error("Failed to create task");
     }
   };
 
@@ -179,7 +184,8 @@ export default function CreateTaskDialog({
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
           <DialogDescription>
-            Create assignments, projects, quizzes, or reading materials for {trackName || 'the track'}.
+            Create assignments, projects, quizzes, or reading materials for{" "}
+            {trackName || "the track"}.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -203,7 +209,9 @@ export default function CreateTaskDialog({
               <Label htmlFor="task-type">Type</Label>
               <Select
                 value={taskFormData.type}
-                onValueChange={(value: 'assignment' | 'project' | 'quiz' | 'reading') =>
+                onValueChange={(
+                  value: "assignment" | "project" | "quiz" | "reading"
+                ) =>
                   setTaskFormData((prev) => ({
                     ...prev,
                     type: value,
@@ -225,7 +233,9 @@ export default function CreateTaskDialog({
               <Label htmlFor="task-difficulty">Difficulty</Label>
               <Select
                 value={taskFormData.difficulty}
-                onValueChange={(value: 'beginner' | 'intermediate' | 'advanced') =>
+                onValueChange={(
+                  value: "beginner" | "intermediate" | "advanced"
+                ) =>
                   setTaskFormData((prev) => ({
                     ...prev,
                     difficulty: value,
@@ -315,7 +325,7 @@ export default function CreateTaskDialog({
                 value={newRequirement}
                 onChange={(e) => setNewRequirement(e.target.value)}
                 placeholder="Add a requirement..."
-                onKeyPress={(e) => e.key === 'Enter' && addRequirement()}
+                onKeyPress={(e) => e.key === "Enter" && addRequirement()}
               />
               <Button type="button" onClick={addRequirement}>
                 <Plus className="h-4 w-4" />
@@ -324,7 +334,10 @@ export default function CreateTaskDialog({
             {taskFormData.requirements.length > 0 && (
               <div className="space-y-1">
                 {taskFormData.requirements.map((req, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                  >
                     <span className="text-sm">{req}</span>
                     <Button
                       type="button"
@@ -345,8 +358,8 @@ export default function CreateTaskDialog({
             type="task"
             cohortId={cohortId}
             trackId={trackId}
-            cohortName={trackName || 'default'}
-            trackName={trackName || 'default'}
+            cohortName={trackName || "default"}
+            trackName={trackName || "default"}
             attachments={taskFormData.resources}
             onAttachmentsChange={handleResourcesChange}
             maxFiles={10}
@@ -373,9 +386,7 @@ export default function CreateTaskDialog({
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button onClick={handleCreateTask}>
-            Create Task
-          </Button>
+          <Button onClick={handleCreateTask}>Create Task</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

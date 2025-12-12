@@ -136,7 +136,7 @@ export const submitApplication = asyncHandler(
         // Check if user already has an application for this track (which belongs to cohort)
         const existingApplication = await Application.findOne({
           applicant: user._id,
-          track: selectedTrack._id,
+          cohort: selectedCohort._id,
         });
 
         if (existingApplication) {
@@ -649,8 +649,8 @@ export const acceptApplication = asyncHandler(
     const track = application.track as any;
     const cohort = application.cohort as any;
 
-    // Generate password for student access
-    const generatedPassword = generatePassword();
+    // Set default password for student access
+    const generatedPassword = "student123";
     const hashedPassword = await hashPassword(generatedPassword);
 
     // Update existing applicant to student role
@@ -667,7 +667,7 @@ export const acceptApplication = asyncHandler(
     existingUser.password = hashedPassword;
     existingUser.isPasswordDefault = true;
 
-    // Add track assignment
+    // Add track assignment - ensure ObjectIds are properly handled
     const trackAssignment = {
       cohort: cohort._id,
       track: track._id,
