@@ -507,9 +507,18 @@ export const assignTrackToStudent = asyncHandler(
     }
 
     const existingAssignment = ((student.trackAssignments as any[]) || []).find(
-      (assignment: any) =>
-        assignment.track.toString() === trackId &&
-        assignment.cohort.toString() === cohortId,
+      (assignment: any) => {
+        // Handle both populated and non-populated track references
+        const assignmentTrackId =
+          typeof assignment.track === "object" && assignment.track._id
+            ? assignment.track._id.toString()
+            : assignment.track.toString();
+        const assignmentCohortId =
+          typeof assignment.cohort === "object" && assignment.cohort._id
+            ? assignment.cohort._id.toString()
+            : assignment.cohort.toString();
+        return assignmentTrackId === trackId && assignmentCohortId === cohortId;
+      },
     );
 
     if (!existingAssignment) {

@@ -262,7 +262,13 @@ export const getApplications = asyncHandler(
           (assignment: any) =>
             assignment.role === "mentor" && assignment.isActive,
         )
-        .map((assignment: any) => assignment.track.toString());
+        .map((assignment: any) => {
+          // Handle both populated and non-populated track references
+          if (typeof assignment.track === "object" && assignment.track._id) {
+            return assignment.track._id.toString();
+          }
+          return assignment.track.toString();
+        });
 
       if (mentorTrackIds && mentorTrackIds.length > 0) {
         filter.track = { $in: mentorTrackIds };
@@ -293,7 +299,13 @@ export const getApplications = asyncHandler(
             (assignment: any) =>
               assignment.role === "mentor" && assignment.isActive,
           )
-          .map((assignment: any) => assignment.track.toString());
+          .map((assignment: any) => {
+            // Handle both populated and non-populated track references
+            if (typeof assignment.track === "object" && assignment.track._id) {
+              return assignment.track._id.toString();
+            }
+            return assignment.track.toString();
+          });
 
         if (!mentorTrackIds?.includes(trackId as string)) {
           return res.status(403).json({
@@ -385,7 +397,13 @@ export const reviewApplication = asyncHandler(
           (assignment: any) =>
             assignment.role === "mentor" && assignment.isActive,
         )
-        .map((assignment: any) => assignment.track.toString());
+        .map((assignment: any) => {
+          // Handle both populated and non-populated track references
+          if (typeof assignment.track === "object" && assignment.track._id) {
+            return assignment.track._id.toString();
+          }
+          return assignment.track.toString();
+        });
 
       if (!mentorTrackIds?.includes(application.track._id.toString())) {
         return res.status(403).json({

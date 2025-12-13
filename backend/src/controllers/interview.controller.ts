@@ -558,7 +558,13 @@ export const getInterviews = asyncHandler(
           (assignment: any) =>
             assignment.role === "mentor" && assignment.isActive,
         )
-        .map((assignment: any) => assignment.track.toString());
+        .map((assignment: any) => {
+          // Handle both populated and non-populated track references
+          if (typeof assignment.track === "object" && assignment.track._id) {
+            return assignment.track._id.toString();
+          }
+          return assignment.track.toString();
+        });
 
       if (mentorTrackIds && mentorTrackIds.length > 0) {
         interviews = interviews.filter((interview: any) => {
@@ -794,7 +800,13 @@ export const reviewInterview = asyncHandler(
           (assignment: any) =>
             assignment.role === "mentor" && assignment.isActive,
         )
-        .map((assignment: any) => assignment.track.toString());
+        .map((assignment: any) => {
+          // Handle both populated and non-populated track references
+          if (typeof assignment.track === "object" && assignment.track._id) {
+            return assignment.track._id.toString();
+          }
+          return assignment.track.toString();
+        });
 
       const applicationTrackId = (
         interview.application as any
