@@ -36,8 +36,27 @@ export const createCohortAwareServices = (cohortId: string | null) => {
       getByCohort: async (): Promise<
         ApiResponse<IPaginatedApplicationsResponse>
       > => {
-        // Direct cohort endpoint - more explicit but same result as getAll above
-        return applicationService.getApplicationsByCohort(cohortId);
+        // Direct cohort endpoint - transform to paginated response format
+        const response = await applicationService.getApplicationsByCohort(
+          cohortId
+        );
+        if (response.success && Array.isArray(response.data)) {
+          // Transform direct array to paginated format for consistency
+          return {
+            success: true,
+            data: {
+              applications: response.data,
+              pagination: {
+                total: response.data.length,
+                page: 1,
+                limit: response.data.length,
+                pages: 1,
+              },
+            },
+            message: response.message,
+          };
+        }
+        return response as any;
       },
 
       getById: async (applicationId: string) => {
