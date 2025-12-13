@@ -81,7 +81,7 @@ const StatCard = ({
 
 export default function TracksPage() {
   const router = useRouter();
-  const { isAdmin } = useUser();
+  const { isAdmin, isMentor, user } = useUser();
   const { currentCohort, loading, error, refreshCohort } = useCohortContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -105,6 +105,28 @@ export default function TracksPage() {
     ) || [];
 
   console.log("Filtered Tracks:", filteredTracks);
+
+  // Helper function to check if current user (mentor) is assigned to a track
+  const isMentorAssignedToTrack = (trackId: string) => {
+    if (!isMentor || !user?.trackAssignments || !trackId) return false;
+
+    return user.trackAssignments.some((assignment: any) => {
+      const assignmentTrackId =
+        typeof assignment.track === "object" && assignment.track._id
+          ? assignment.track._id.toString()
+          : assignment.track.toString();
+      const assignmentTrackSlug =
+        typeof assignment.track === "object" && assignment.track.trackId
+          ? assignment.track.trackId
+          : null;
+
+      return (
+        assignment.role === "mentor" &&
+        assignment.isActive &&
+        (assignmentTrackId === trackId || assignmentTrackSlug === trackId)
+      );
+    });
+  };
 
   // Calculate stats based on cohort tracks
   const totalTracks = cohortTracks?.length || 0;
@@ -321,7 +343,13 @@ export default function TracksPage() {
                 return (
                   <TableRow
                     key={cohortTrack._id || track?._id}
-                    className="hover:bg-gray-50"
+                    className={`cursor-pointer transition-colors duration-200 group ${
+                      isMentor &&
+                      (isMentorAssignedToTrack(track?._id) ||
+                        isMentorAssignedToTrack(track?.trackId))
+                        ? "hover:bg-green-50 bg-green-25 border-l-2 border-l-green-400"
+                        : "hover:bg-blue-50"
+                    }`}
                     onClick={() =>
                       router.push(`/lms/track/${track?.trackId}/stream`)
                     }
@@ -329,14 +357,40 @@ export default function TracksPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200 flex items-center gap-2">
                             {track?.name || "Unknown Track"}
+                            {isMentor &&
+                              (isMentorAssignedToTrack(track?._id) ||
+                                isMentorAssignedToTrack(track?.trackId)) && (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-green-100 text-green-800 text-xs px-2 py-0.5 border-green-200"
+                                >
+                                  Your Track
+                                </Badge>
+                              )}
+                            <div className="text-gray-400 group-hover:text-blue-500 transition-colors duration-200">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500 truncate max-w-[200px]">
+                          <div className="text-sm text-gray-500 truncate max-w-[200px] group-hover:text-gray-600 transition-colors duration-200">
                             {track?.description || "No description available"}
                           </div>
-                          <div className="text-xs text-blue-600 mt-1">
-                            Cohort: {currentCohort?.name}
+                          <div className="text-xs text-blue-600 mt-1 group-hover:text-blue-700 transition-colors duration-200">
+                            Cohort: {currentCohort?.name} • Click to view
+                            details
                           </div>
                         </div>
                       </div>
