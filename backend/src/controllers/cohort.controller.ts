@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import { Cohort } from "../models/Cohort.model";
 import { Track } from "../models/Track.model";
+import { User } from "../models/User.model";
 import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
 
 export const getCohorts = asyncHandler(async (req: Request, res: Response) => {
@@ -27,13 +28,29 @@ export const getCohorts = asyncHandler(async (req: Request, res: Response) => {
     .skip(skip)
     .limit(Number(limit));
 
+  // Calculate currentStudents for each cohort
+  const cohortsWithStudentCount = await Promise.all(
+    cohorts.map(async (cohort) => {
+      const studentCount = await User.countDocuments({
+        "trackAssignments.cohort": cohort._id,
+        role: "student",
+        isActive: true,
+      });
+
+      return {
+        ...cohort.toObject(),
+        currentStudents: studentCount,
+      };
+    }),
+  );
+
   const total = await Cohort.countDocuments(filter);
 
   res.status(200).json({
     success: true,
     message: "Cohorts retrieved successfully",
     data: {
-      cohorts,
+      cohorts: cohortsWithStudentCount,
       pagination: {
         total,
         page: Number(page),
@@ -108,10 +125,22 @@ export const getCohortDetails = asyncHandler(
       });
     }
 
+    // Calculate currentStudents for this cohort
+    const studentCount = await User.countDocuments({
+      "trackAssignments.cohort": cohort._id,
+      role: "student",
+      isActive: true,
+    });
+
+    const cohortWithStudentCount = {
+      ...cohort.toObject(),
+      currentStudents: studentCount,
+    };
+
     res.status(200).json({
       success: true,
       message: "Cohort details retrieved successfully",
-      data: cohort,
+      data: cohortWithStudentCount,
     });
   },
 );
