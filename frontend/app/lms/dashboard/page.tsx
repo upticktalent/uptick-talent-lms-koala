@@ -187,6 +187,8 @@ export default function LMSDashboard() {
                 (app: any) => app.status === "rejected"
               ).length,
             });
+          } else {
+            console.log("No applications data found in response");
           }
         } catch (recruitmentError) {
           console.error("Error fetching recruitment data:", recruitmentError);

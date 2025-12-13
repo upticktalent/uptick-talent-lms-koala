@@ -97,13 +97,14 @@ export default function CohortsPage() {
   const fetchCohorts = async () => {
     try {
       const response: any = await cohortService.getCohorts();
-      console.log(response.data, "response");
       if (response.success) {
-        setCohorts(response.data.cohorts || []);
+        const cohorts = response.data?.cohorts || [];
+        setCohorts(cohorts);
       } else {
         toast.error("Failed to fetch cohorts");
       }
     } catch (error) {
+      console.error("Error fetching cohorts:", error);
       toast.error("Error fetching cohorts");
     } finally {
       setLoading(false);
@@ -934,14 +935,23 @@ export default function CohortsPage() {
                             Set as Active
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`/admin/cohorts/${cohort._id}/applications`}
-                          >
-                            <Users className="mr-2 h-4 w-4" />
-                            Applications
-                          </Link>
-                        </DropdownMenuItem>
+                        {cohort.status === "active" ? (
+                          <DropdownMenuItem asChild>
+                            <Link href="/lms/dashboard">
+                              <Users className="mr-2 h-4 w-4" />
+                              LMS Dashboard
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem asChild>
+                            <Link
+                              href={`/admin/cohorts/${cohort._id}/applications`}
+                            >
+                              <Users className="mr-2 h-4 w-4" />
+                              Applications
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
