@@ -46,6 +46,7 @@ function Initials({
 
 export default function ProfilePage() {
   const {
+    response,
     data: profile,
     loading,
     error,
@@ -54,41 +55,60 @@ export default function ProfilePage() {
 
   const { refreshUser } = useAuth();
 
+  // Use response data if profile is null (due to nested data structure)
+  const profileData = profile || response;
+
+  // Debug logging
+  console.log("Profile data:", profileData);
+  console.log("Raw response:", response);
+  console.log("Loading:", loading);
+  console.log("Error:", error);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
-    isActive: true,
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   useEffect(() => {
-    if (profile) {
+    if (profileData) {
       setFormData({
-        firstName: profile.firstName || "",
-        lastName: profile.lastName || "",
-        email: profile.email || "",
-        isActive: profile.isActive ?? true,
+        firstName: profileData.firstName || "",
+        lastName: profileData.lastName || "",
       });
     }
-  }, [profile]);
+  }, [profileData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSwitchChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isActive: checked }));
+  const handlePasswordInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleUpdateProfile = async () => {
-    if (!profile?._id) return;
+    if (!profileData?._id) return;
 
     setIsUpdating(true);
     try {
-      await userService.updateUser(profile._id, formData);
+      // Only update name fields that users are allowed to change
+      await userService.updateUser(profileData._id, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+      });
       toast.success("Profile updated successfully");
       setIsDialogOpen(false);
       refetch();
@@ -97,6 +117,38 @@ export default function ProfilePage() {
       toast.error(err.response?.data?.message || "Failed to update profile");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("New passwords don't match");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await authService.changePassword(
+        passwordData.currentPassword,
+        passwordData.newPassword
+      );
+      toast.success("Password updated successfully");
+      setIsPasswordDialogOpen(false);
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      refetch();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to update password");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -124,15 +176,17 @@ export default function ProfilePage() {
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4 sm:gap-6">
                   <Initials
-                    firstName={profile?.firstName}
-                    lastName={profile?.lastName}
+                    firstName={profileData?.firstName}
+                    lastName={profileData?.lastName}
                   />
                   <div className="flex-1 min-w-0">
                     <h2 className="text-2xl sm:text-3xl font-bold text-white truncate">
                       {loading ? (
                         <Skeleton className="h-8 w-48 bg-white/20" />
                       ) : (
-                        `${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`
+                        `${profileData?.firstName ?? ""} ${
+                          profileData?.lastName ?? ""
+                        }`
                       )}
                     </h2>
                     <div className="mt-2 sm:mt-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
@@ -141,7 +195,7 @@ export default function ProfilePage() {
                       ) : (
                         <Badge className="uppercase w-fit bg-white/20 text-white border-white/30 hover:bg-white/30 backdrop-blur-sm">
                           <Shield className="w-3 h-3 mr-1" />
-                          {profile?.role}
+                          {profileData?.role}
                         </Badge>
                       )}
 
@@ -151,7 +205,8 @@ export default function ProfilePage() {
                         ) : (
                           <>
                             <Calendar className="w-4 h-4" />
-                            Member since {formatDate(profile?.createdAt ?? "")}
+                            Member since{" "}
+                            {formatDate(profileData?.createdAt ?? "")}
                           </>
                         )}
                       </span>
@@ -173,7 +228,8 @@ export default function ProfilePage() {
                       <DialogHeader>
                         <DialogTitle>Edit Profile</DialogTitle>
                         <DialogDescription>
-                          Make changes to your profile here. Click save when you're done.
+                          Make changes to your profile here. Click save when
+                          you're done.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
@@ -201,37 +257,85 @@ export default function ProfilePage() {
                             className="col-span-3"
                           />
                         </div>
-                        <div className="flex flex-col gap-4">
-                          <Label htmlFor="email" className="text-right">
-                            Email
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          type="submit"
+                          onClick={handleUpdateProfile}
+                          disabled={isUpdating}
+                        >
+                          {isUpdating ? "Saving..." : "Save changes"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog
+                    open={isPasswordDialogOpen}
+                    onOpenChange={setIsPasswordDialogOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full sm:w-auto bg-white/10 text-white border-white/50 hover:bg-white/20 font-semibold cursor-pointer transition-all hover:scale-105"
+                        size="lg"
+                      >
+                        <Key className="w-4 h-4 mr-2" />
+                        Change Password
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Change Password</DialogTitle>
+                        <DialogDescription>
+                          Enter your current password and choose a new one.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="currentPassword">
+                            Current Password
                           </Label>
                           <Input
-                            id="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            className="col-span-3"
+                            id="currentPassword"
+                            name="currentPassword"
+                            type="password"
+                            value={passwordData.currentPassword}
+                            onChange={handlePasswordInputChange}
                           />
                         </div>
-                        <div className="flex flex-col gap-4">
-                          <Label htmlFor="isActive" className="text-right">
-                            Active Status
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="newPassword">New Password</Label>
+                          <Input
+                            id="newPassword"
+                            name="newPassword"
+                            type="password"
+                            value={passwordData.newPassword}
+                            onChange={handlePasswordInputChange}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="confirmPassword">
+                            Confirm New Password
                           </Label>
-                          <div className="flex space-x-2">
-                            <Switch
-                              id="isActive"
-                              checked={formData.isActive}
-                              onCheckedChange={handleSwitchChange}
-                            />
-                            <Label htmlFor="isActive">
-                              {formData.isActive ? "Active" : "Inactive"}
-                            </Label>
-                          </div>
+                          <Input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type="password"
+                            value={passwordData.confirmPassword}
+                            onChange={handlePasswordInputChange}
+                          />
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button type="submit" onClick={handleUpdateProfile} disabled={isUpdating}>
-                          {isUpdating ? "Saving..." : "Save changes"}
+                        <Button
+                          type="submit"
+                          onClick={handleChangePassword}
+                          disabled={isChangingPassword}
+                        >
+                          {isChangingPassword
+                            ? "Changing..."
+                            : "Change Password"}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -275,7 +379,7 @@ export default function ProfilePage() {
                     {loading ? (
                       <Skeleton className="h-5 w-full" />
                     ) : (
-                      profile?.email
+                      profileData?.email
                     )}
                   </dd>
                 </div>
@@ -288,7 +392,7 @@ export default function ProfilePage() {
                     {loading ? (
                       <Skeleton className="h-5 w-32" />
                     ) : (
-                      profile?.phoneNumber || "Not provided"
+                      profileData?.phoneNumber || "Not provided"
                     )}
                   </dd>
                 </div>
@@ -300,8 +404,12 @@ export default function ProfilePage() {
                   <dd className="text-sm font-medium text-foreground bg-slate-50 px-3 py-2 rounded-lg">
                     {loading ? (
                       <Skeleton className="h-5 w-40" />
+                    ) : profileData?.state && profileData?.country ? (
+                      `${profileData.state}, ${profileData.country}`
                     ) : (
-                      `${profile?.state ?? "N/A"}, ${profile?.country ?? "N/A"}`
+                      profileData?.country ||
+                      profileData?.state ||
+                      "Not provided"
                     )}
                   </dd>
                 </div>
@@ -314,7 +422,7 @@ export default function ProfilePage() {
                     {loading ? (
                       <Skeleton className="h-5 w-20" />
                     ) : (
-                      profile?.gender || "Not specified"
+                      profileData?.gender || "Not specified"
                     )}
                   </dd>
                 </div>
@@ -340,8 +448,10 @@ export default function ProfilePage() {
                       <p className="text-sm font-bold text-foreground">
                         {loading ? (
                           <Skeleton className="h-5 w-40" />
+                        ) : profileData?.lastLogin ? (
+                          formatDateTime(profileData.lastLogin)
                         ) : (
-                          formatDateTime(profile?.lastLogin ?? "")
+                          "Never"
                         )}
                       </p>
                     </div>
@@ -356,7 +466,7 @@ export default function ProfilePage() {
                       <div className="mt-2">
                         {loading ? (
                           <Skeleton className="h-6 w-32" />
-                        ) : profile?.isPasswordDefault ? (
+                        ) : profileData?.isPasswordDefault ? (
                           <Badge className="bg-[hsl(var(--danger))] text-white hover:bg-[hsl(var(--danger))]/90 font-semibold">
                             Using default password
                           </Badge>
@@ -381,7 +491,7 @@ export default function ProfilePage() {
                         {loading ? (
                           <Skeleton className="h-4 w-full" />
                         ) : (
-                          profile?._id
+                          profileData?._id
                         )}
                       </pre>
                     </div>
