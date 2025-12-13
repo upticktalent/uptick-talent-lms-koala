@@ -1,6 +1,6 @@
 # Uptick Talent LMS - Comprehensive Learning Management System
 
-> 🐨 **Built with ❤️ by Team Koala** | *Uptick Talent Africa Cohort 3*
+> 🐨 **Built with ❤️ by Team Koala** | _Uptick Talent Africa Cohort 3_
 
 Welcome to the Uptick Talent Africa Learning Management System (LMS) project! This repository contains a comprehensive, production-ready platform designed to automate and streamline the end-to-end operations of Uptick's mentorship and cohort-based learning programs.
 
@@ -8,12 +8,9 @@ Welcome to the Uptick Talent Africa Learning Management System (LMS) project! Th
 
 **See the Uptick Talent LMS in Action!**
 
-[![Demo 1](https://img.shields.io/badge/🎬_Demo_1-Live_System_Showcase-blue?style=for-the-badge&logo=youtube)](https://streamable.com/ag856b)
+[![Demo ](https://img.shields.io/badge/🎬_Demo-Live_System_Showcase-blue?style=for-the-badge&logo=youtube)](https://drive.google.com/file/d/10iUmrWKfSsZ5fPVTSDzzE0K9fX4ZmS_K/view?usp=sharing)
 
-[![Demo 2](https://img.shields.io/badge/🎬_Demo_2-Live_System_Showcase-blue?style=for-the-badge&logo=youtube)](https://streamable.com/da9pgs)
-
-> 📹 **Demo Videos**: Watch our comprehensive system walkthrough showcasing all features including the Google Classroom-style LMS, recruitment system, email management, and administrative capabilities.
-
+> 📹 **Demo Video**: Watch our comprehensive system walkthrough showcasing all features including the Google Classroom-style LMS, recruitment system, email management, and administrative capabilities.
 
 ---
 
@@ -33,6 +30,7 @@ Uptick Talent Africa's mission is to transform beginners into tech professionals
 ## 🚀 Key Features
 
 ### 📚 **Learning Management System (Google Classroom-Style)**
+
 - **Streams**: Announcements, lessons, and updates with multimedia attachments
 - **Tasks**: Assignments, projects, quizzes with submission tracking and grading
 - **Materials**: Document library with videos, PDFs, and external resources
@@ -41,6 +39,7 @@ Uptick Talent Africa's mission is to transform beginners into tech professionals
 - **File Management**: Cloudinary integration for seamless file uploads and organization
 
 ### 🎓 **Complete Recruitment System**
+
 - **Application Management**: End-to-end application processing with file uploads
 - **Assessment System**: File/URL submissions with mentor review and scoring
 - **Interview Scheduling**: Calendly-style interview booking with ICS calendar integration
@@ -48,6 +47,7 @@ Uptick Talent Africa's mission is to transform beginners into tech professionals
 - **Communication Hub**: Integrated email system for candidate communications
 
 ### 📧 **Professional Email System**
+
 - **Template Management**: 13 professional email templates covering all scenarios
   - Application confirmations with Application ID tracking
   - Assessment invitations and confirmations
@@ -59,12 +59,14 @@ Uptick Talent Africa's mission is to transform beginners into tech professionals
 - **Variable System**: Dynamic content insertion with applicant/user data
 
 ### 👥 **Role-Based Access Control**
+
 - **Admins**: Full system management and oversight
 - **Mentors**: Content creation, student management, and assessment review
 - **Students**: Access to learning materials and progress tracking
 - **Applicants**: Application submission and status monitoring
 
 ### 🏗️ **Multi-Cohort & Track Support**
+
 - **Flexible Structure**: Support for multiple cohorts running simultaneously
 - **Track Specialization**: Frontend, Backend, Fullstack, Mobile, Data Science, etc.
 - **Mentor Assignment**: Track-specific mentor allocation and management
@@ -73,6 +75,7 @@ Uptick Talent Africa's mission is to transform beginners into tech professionals
 ## 🛠️ Tech Stack
 
 ### **Frontend** (`/frontend/`)
+
 - **Framework**: Next.js 14+ with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -82,6 +85,7 @@ Uptick Talent Africa's mission is to transform beginners into tech professionals
 - **File Uploads**: Cloudinary integration with progress tracking
 
 ### **Backend** (`/backend/`)
+
 - **Runtime**: Node.js (v20+)
 - **Framework**: Express.js with TypeScript
 - **Database**: MongoDB with Mongoose ODM
@@ -92,6 +96,7 @@ Uptick Talent Africa's mission is to transform beginners into tech professionals
 - **Error Handling**: Structured error responses and logging
 
 ### **External Integrations**
+
 - **Brevo Email Service**: Professional email delivery and templates
 - **Cloudinary**: File upload, storage, and optimization
 - **ICS Calendar**: Calendar integration for interview scheduling
@@ -140,13 +145,17 @@ uptick-talent-lms-koala/
 This repository is organized into two main applications that work together:
 
 ### **Frontend Setup**
+
 See [`frontend/README.md`](./frontend/README.md) for detailed setup instructions including:
+
 - Environment configuration
 - Development server setup
 - Build and deployment processes
 
 ### **Backend Setup**
+
 See [`backend/ReadMe.md`](./backend/ReadMe.md) for comprehensive backend setup including:
+
 - Database configuration
 - Email service setup
 - Environment variables
@@ -155,12 +164,14 @@ See [`backend/ReadMe.md`](./backend/ReadMe.md) for comprehensive backend setup i
 ### **Quick Start Guide**
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/upticktalent/uptick-talent-lms-koala.git
    cd uptick-talent-lms-koala
    ```
 
 2. **Setup Backend**
+
    ```bash
    cd backend
    npm install
@@ -180,6 +191,7 @@ See [`backend/ReadMe.md`](./backend/ReadMe.md) for comprehensive backend setup i
 ## 📊 System Features Breakdown
 
 ### **🎓 Learning Management**
+
 - **Content Creation**: Rich text editor with file attachments for streams and tasks
 - **Assignment Management**: Task creation with requirements, resources, and due dates
 - **Submission Tracking**: Student submission monitoring with grading capabilities
@@ -187,6 +199,7 @@ See [`backend/ReadMe.md`](./backend/ReadMe.md) for comprehensive backend setup i
 - **Resource Library**: Organized materials with categories and difficulty levels
 
 ### **🏢 Recruitment Management**
+
 - **Application Portal**: Public application form with file upload capabilities
 - **Assessment System**: Comprehensive assessment creation and review workflows
 - **Interview Coordination**: Automated interview scheduling with email notifications
@@ -194,6 +207,7 @@ See [`backend/ReadMe.md`](./backend/ReadMe.md) for comprehensive backend setup i
 - **Status Management**: Real-time application status updates and tracking
 
 ### **💼 Administrative Features**
+
 - **User Management**: Complete user lifecycle management across all roles
 - **Cohort Management**: Multi-cohort support with track assignments
 - **Email System**: Professional communication tools with template management
@@ -201,6 +215,7 @@ See [`backend/ReadMe.md`](./backend/ReadMe.md) for comprehensive backend setup i
 - **Data Export**: Export capabilities for reporting and analysis
 
 ### **🔐 Security & Authentication**
+
 - **JWT Authentication**: Secure token-based authentication system
 - **Role-Based Permissions**: Fine-grained access control across all features
 - **Input Validation**: Comprehensive data validation and sanitization
@@ -212,6 +227,7 @@ See [`backend/ReadMe.md`](./backend/ReadMe.md) for comprehensive backend setup i
 The system provides a comprehensive RESTful API with the following endpoints:
 
 ### **Core Modules**
+
 - `/api/auth` - Authentication and user management
 - `/api/applications` - Application submission and management
 - `/api/assessments` - Assessment creation and review
@@ -223,6 +239,7 @@ The system provides a comprehensive RESTful API with the following endpoints:
 - `/api/emails` - Email system and templates
 
 ### **API Features**
+
 - **Swagger Documentation**: Auto-generated API documentation
 - **Request Validation**: Comprehensive input validation
 - **Error Handling**: Structured error responses
@@ -232,7 +249,9 @@ The system provides a comprehensive RESTful API with the following endpoints:
 ## 🧪 Development & Testing
 
 ### **Database Seeding**
+
 The system includes comprehensive seeding scripts that create:
+
 - **9 Technology Tracks**: Frontend, Backend, Fullstack, Mobile, etc.
 - **3 Sample Cohorts**: With realistic timelines and assignments
 - **Test Users**: Admins, mentors, students, and applicants with default credentials
@@ -241,6 +260,7 @@ The system includes comprehensive seeding scripts that create:
 - **Interview System**: Sample interview slots and bookings
 
 ### **Default Credentials**
+
 ```
 ADMINS (Password: admin123)
 • admin@upticktalent.com (System Administrator)
@@ -262,6 +282,7 @@ APPLICANTS (Password: applicant123)
 ```
 
 ### **Test Data Includes**
+
 - Various application statuses (pending, shortlisted, rejected)
 - Different assessment types (file uploads and URLs)
 - Sample assessment reviews and scoring
@@ -274,16 +295,19 @@ APPLICANTS (Password: applicant123)
 ## 🎯 Use Cases & Target Audience
 
 ### **For Educational Institutions**
+
 - **Bootcamps**: Complete program management from application to graduation
 - **Online Courses**: Structured learning paths with progress tracking
 - **Mentorship Programs**: Mentor-student relationship management
 
 ### **For Corporate Training**
+
 - **Employee Onboarding**: Structured onboarding programs with assessments
 - **Skill Development**: Track-based learning for technical skills
 - **Internal Training**: Company-specific learning management
 
 ### **For Developers**
+
 - **Complete Codebase**: Production-ready code with best practices
 - **API Integration**: RESTful API for external integrations
 - **Customizable**: Modular architecture for easy customization
@@ -293,6 +317,7 @@ APPLICANTS (Password: applicant123)
 We welcome contributions from developers of all skill levels!
 
 ### **Getting Involved**
+
 1. **Fork the repository** and create your feature branch
 2. **Read the Contributing Guidelines**: Check `backend/CONTRIBUTING.md` for detailed guidelines
 3. **Follow Code Standards**: Maintain consistent coding style and practices
@@ -300,6 +325,7 @@ We welcome contributions from developers of all skill levels!
 5. **Submit Pull Requests**: Create clear, well-documented pull requests
 
 ### **Areas for Contribution**
+
 - **Frontend Features**: UI/UX improvements and new functionality
 - **Backend API**: New endpoints and business logic enhancements
 - **Documentation**: Help improve documentation and tutorials
@@ -309,6 +335,7 @@ We welcome contributions from developers of all skill levels!
 ## 📋 Roadmap & Future Features
 
 ### **Planned Enhancements**
+
 - **Mobile Application**: React Native mobile app for students and mentors
 - **Advanced Analytics**: Detailed performance analytics and reporting
 - **Integration Hub**: Third-party integrations (Slack, Discord, Zoom)
@@ -317,6 +344,7 @@ We welcome contributions from developers of all skill levels!
 - **Live Streaming**: Integrated live class functionality
 
 ### **Technical Improvements**
+
 - **Microservices Architecture**: Breaking down into smaller, focused services
 - **Real-time Features**: WebSocket integration for live updates
 - **Advanced Caching**: Redis integration for improved performance
@@ -325,12 +353,14 @@ We welcome contributions from developers of all skill levels!
 ## 🆘 Support & Community
 
 ### **Getting Help**
+
 - **Issues**: Use GitHub issues for bug reports and feature requests
 - **Documentation**: Check the comprehensive documentation in each module
 - **Community**: Join our developer community discussions
 - **Contact**: Reach out to project maintainers for direct support
 
 ### **Resources**
+
 - **API Documentation**: Available via Swagger UI when running the backend
 - **Database Schema**: ERD and model documentation in `/backend/`
 - **Frontend Components**: Storybook documentation for UI components
@@ -339,12 +369,14 @@ We welcome contributions from developers of all skill levels!
 ## 📈 Performance & Scalability
 
 ### **Current Capabilities**
+
 - **Concurrent Users**: Supports hundreds of concurrent users
 - **Data Storage**: Efficient MongoDB queries with indexing
 - **File Handling**: Optimized Cloudinary integration for multimedia
 - **Email Delivery**: Professional email delivery via Brevo service
 
 ### **Scalability Features**
+
 - **Horizontal Scaling**: Designed for multi-instance deployment
 - **Database Optimization**: Efficient queries and data structure
 - **CDN Integration**: Cloudinary CDN for global content delivery
@@ -357,6 +389,7 @@ We welcome contributions from developers of all skill levels!
 **Uptick Talent Africa** is dedicated to empowering Africa's next generation of tech professionals through comprehensive, hands-on learning experiences. Our mission is to bridge the skills gap in the African tech ecosystem by providing world-class training and mentorship opportunities.
 
 ### **Our Impact**
+
 - **500+ Graduates**: Successfully trained tech professionals across various tracks
 - **Industry Partnerships**: Collaborations with leading tech companies
 - **Job Placement**: High employment rate among program graduates
@@ -369,26 +402,30 @@ We welcome contributions from developers of all skill levels!
 This comprehensive Learning Management System was proudly developed by **Team Koala** as part of the Uptick Talent Africa Cohort 3 program. Our team applied the skills learned throughout the program to create a production-ready platform that showcases the quality of education and mentorship provided by Uptick Talent Africa.
 
 ### **Development Achievement**
+
 - **🏆 Capstone Project**: Complete end-to-end system demonstrating full-stack development expertise
 - **🤝 Team Collaboration**: Collaborative development showcasing modern software engineering practices
 - **📚 Applied Learning**: Real-world application of technologies and concepts learned in the program
 - **🌟 Production Ready**: Professional-grade system suitable for actual educational institutions
 
 ### **Technologies Mastered**
+
 Through building this LMS, Team Koala demonstrated proficiency in:
+
 - **Frontend**: Next.js, React, TypeScript, Tailwind CSS, Modern UI/UX Design
 - **Backend**: Node.js, Express.js, MongoDB, RESTful API Development
 - **DevOps**: Database Management, Cloud Integration, Version Control
 - **Professional Skills**: Project Management, Code Documentation, Testing
 
-*Team Koala is a testament to the transformative power of the Uptick Talent Africa program!* 🎓
+_Team Koala is a testament to the transformative power of the Uptick Talent Africa program!_ 🎓
 
 ---
 
 **Ready to transform tech education in Africa? Get started with Uptick Talent LMS today!** 🚀
 
 For detailed setup instructions, visit the respective README files:
+
 - **Frontend**: [`frontend/README.md`](./frontend/README.md)
 - **Backend**: [`backend/ReadMe.md`](./backend/ReadMe.md)
 
-*Building the future of African tech talent, one cohort at a time.* ✨
+_Building the future of African tech talent, one cohort at a time._ ✨
