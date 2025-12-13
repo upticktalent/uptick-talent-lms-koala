@@ -411,7 +411,9 @@ export default function CohortsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cohorts</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Cohorts
+          </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
             Manage student cohorts and track assignments
           </p>
@@ -727,7 +729,6 @@ export default function CohortsPage() {
           </DialogContent>
         </Dialog>
       </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -779,7 +780,6 @@ export default function CohortsPage() {
           </CardContent>
         </Card>
       </div>
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 sm:max-w-sm">
@@ -792,7 +792,7 @@ export default function CohortsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">           
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -804,165 +804,165 @@ export default function CohortsPage() {
           </SelectContent>
         </Select>
       </div>
-
       {/* Cohorts Table */}
       <Card>
         <div className="overflow-x-auto">
           <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cohort</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Students</TableHead>
-              <TableHead>Tracks</TableHead>
-              <TableHead>Application Deadline</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredCohorts.length === 0 ? (
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-center py-8 text-muted-foreground"
-                >
-                  No cohorts found
-                </TableCell>
+                <TableHead>Cohort</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Students</TableHead>
+                <TableHead>Tracks</TableHead>
+                <TableHead>Application Deadline</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : (
-              filteredCohorts.map((cohort) => (
-                <TableRow key={cohort._id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{cohort.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {cohort.cohortNumber}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={`${getStatusColor(
-                        cohort.status
-                      )} flex items-center gap-1 w-fit`}
-                    >
-                      {getStatusIcon(cohort.status)}
-                      {cohort.status}
-                      {cohort.isCurrentlyActive && (
-                        <span className="text-xs">(Current)</span>
-                      )}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>
-                        {new Date(cohort.startDate).toLocaleDateString()}
-                      </div>
-                      <div className="text-muted-foreground">
-                        to {new Date(cohort.endDate).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span>
-                        {cohort.currentStudents}/{cohort.maxStudents}
-                      </span>
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{
-                            width: `${
-                              (cohort.currentStudents / cohort.maxStudents) *
-                              100
-                            }%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 flex-wrap">
-                      {cohort.tracks.slice(0, 2).map((track, index) => (
-                        <Badge
-                          key={index}
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          {typeof track.track === "string"
-                            ? track.track
-                            : track.track.name}
-                        </Badge>
-                      ))}
-                      {cohort.tracks.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{cohort.tracks.length - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {new Date(
-                        cohort.applicationDeadline
-                      ).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/cohorts/${cohort._id}`}>
-                            View Details
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleEditCohort(cohort)}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        {!cohort.isCurrentlyActive && (
-                          <DropdownMenuItem
-                            onClick={() => handleSetActive(cohort._id)}
-                          >
-                            <Play className="mr-2 h-4 w-4" />
-                            Set as Active
-                          </DropdownMenuItem>
-                        )}
-                        {cohort.status === "active" ? (
-                          <DropdownMenuItem asChild>
-                            <Link href="/lms/dashboard">
-                              <Users className="mr-2 h-4 w-4" />
-                              LMS Dashboard
-                            </Link>
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem asChild>
-                            <Link
-                              href={`/admin/cohorts/${cohort._id}/applications`}
-                            >
-                              <Users className="mr-2 h-4 w-4" />
-                              Applications
-                            </Link>
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            </TableHeader>
+            <TableBody>
+              {filteredCohorts.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-8 text-muted-foreground"
+                  >
+                    No cohorts found
                   </TableCell>
                 </TableRow>
+              ) : (
+                filteredCohorts.map((cohort) => (
+                  <TableRow key={cohort._id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{cohort.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {cohort.cohortNumber}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`${getStatusColor(
+                          cohort.status
+                        )} flex items-center gap-1 w-fit`}
+                      >
+                        {getStatusIcon(cohort.status)}
+                        {cohort.status}
+                        {cohort.isCurrentlyActive && (
+                          <span className="text-xs">(Current)</span>
+                        )}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div>
+                          {new Date(cohort.startDate).toLocaleDateString()}
+                        </div>
+                        <div className="text-muted-foreground">
+                          to {new Date(cohort.endDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span>
+                          {cohort.currentStudents}/{cohort.maxStudents}
+                        </span>
+                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{
+                              width: `${
+                                (cohort.currentStudents / cohort.maxStudents) *
+                                100
+                              }%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1 flex-wrap">
+                        {cohort.tracks.slice(0, 2).map((track, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {typeof track.track === "string"
+                              ? track.track
+                              : track.track.name}
+                          </Badge>
+                        ))}
+                        {cohort.tracks.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{cohort.tracks.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {new Date(
+                          cohort.applicationDeadline
+                        ).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/admin/cohorts/${cohort._id}`}>
+                              View Details
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleEditCohort(cohort)}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          {!cohort.isCurrentlyActive && (
+                            <DropdownMenuItem
+                              onClick={() => handleSetActive(cohort._id)}
+                            >
+                              <Play className="mr-2 h-4 w-4" />
+                              Set as Active
+                            </DropdownMenuItem>
+                          )}
+                          {cohort.status === "active" ? (
+                            <DropdownMenuItem asChild>
+                              <Link href="/lms/dashboard">
+                                <Users className="mr-2 h-4 w-4" />
+                                LMS Dashboard
+                              </Link>
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem asChild>
+                              <Link
+                                href={`/admin/cohorts/${cohort._id}/applications`}
+                              >
+                                <Users className="mr-2 h-4 w-4" />
+                                Applications
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
                 ))
-            )}
-          </TableBody>
-        </Table>
+              )}
+            </TableBody>
+          </Table>
         </div>
-      </Card>      {/* Edit Dialog */}
+      </Card>{" "}
+      {/* Edit Dialog */}
       <Dialog
         open={!!editingCohort}
         onOpenChange={(open) => !open && setEditingCohort(null)}

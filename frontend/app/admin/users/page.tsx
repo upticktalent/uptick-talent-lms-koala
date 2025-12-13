@@ -351,10 +351,12 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4'>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className='text-2xl sm:text-3xl font-bold tracking-tight'>Users</h1>
-          <p className='text-sm sm:text-base text-muted-foreground'>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Users
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Manage users, mentors, and administrators
           </p>
         </div>
@@ -605,113 +607,113 @@ export default function UsersPage() {
           <Card>
             <div className="overflow-x-auto">
               <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length === 0 ? (
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      No users found
-                    </TableCell>
+                    <TableHead>User</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Login</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user._id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {user.firstName} {user.lastName}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {user.email}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={`${getRoleColor(
-                            user.role
-                          )} flex items-center gap-1 w-fit`}
-                        >
-                          {getRoleIcon(user.role)}
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div>
-                            {user.state}, {user.country}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={user.isActive ? "default" : "secondary"}
-                        >
-                          {user.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {user.lastLogin
-                            ? new Date(user.lastLogin).toLocaleDateString()
-                            : "Never"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => openEditDialog(user)}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleToggleUserStatus(user._id)}
-                            >
-                              {user.isActive ? (
-                                <>
-                                  <UserX className="mr-2 h-4 w-4" />
-                                  Deactivate
-                                </>
-                              ) : (
-                                <>
-                                  <UserCheck className="mr-2 h-4 w-4" />
-                                  Activate
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleResetPassword(user._id)}
-                            >
-                              <Key className="mr-2 h-4 w-4" />
-                              Reset Password
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        No users found
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <TableRow key={user._id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">
+                              {user.firstName} {user.lastName}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {user.email}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={`${getRoleColor(
+                              user.role
+                            )} flex items-center gap-1 w-fit`}
+                          >
+                            {getRoleIcon(user.role)}
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div>
+                              {user.state}, {user.country}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={user.isActive ? "default" : "secondary"}
+                          >
+                            {user.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {user.lastLogin
+                              ? new Date(user.lastLogin).toLocaleDateString()
+                              : "Never"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => openEditDialog(user)}
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleToggleUserStatus(user._id)}
+                              >
+                                {user.isActive ? (
+                                  <>
+                                    <UserX className="mr-2 h-4 w-4" />
+                                    Deactivate
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Activate
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleResetPassword(user._id)}
+                              >
+                                <Key className="mr-2 h-4 w-4" />
+                                Reset Password
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
 
             {/* Pagination Controls */}

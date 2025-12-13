@@ -194,8 +194,12 @@ export default function StreamPage() {
       {/* Banner */}
       <div className="relative space-y-4 sm:space-y-6 mt-4 sm:mt-6 w-full h-48 sm:h-60 rounded-xl overflow-hidden bg-linear-to-r from-blue-600 to-blue-400 text-white p-4 sm:p-6 md:p-8 flex flex-col justify-end">
         <div className="relative z-10">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 break-words">{track?.name}</h1>
-          <p className="text-base sm:text-lg md:text-xl opacity-90">Uptick Talent Fellowship</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 break-words">
+            {track?.name}
+          </h1>
+          <p className="text-base sm:text-lg md:text-xl opacity-90">
+            Uptick Talent Fellowship
+          </p>
         </div>
         {/* Decorative Circle/Graphic Placeholder */}
         <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-1/4 translate-y-1/4">
@@ -236,7 +240,9 @@ export default function StreamPage() {
                           {task.title}
                         </h4>
                         <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-1 text-xs text-gray-500">
-                          <span className="capitalize shrink-0">{task.type}</span>
+                          <span className="capitalize shrink-0">
+                            {task.type}
+                          </span>
                           <span className="shrink-0">
                             Due {new Date(task.dueDate).toLocaleDateString()}
                           </span>
@@ -292,7 +298,10 @@ export default function StreamPage() {
                       Create announcements, lessons, or updates
                     </p>
                   </div>
-                  <Button onClick={() => setCreateStreamOpen(true)} className="shrink-0">
+                  <Button
+                    onClick={() => setCreateStreamOpen(true)}
+                    className="shrink-0"
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     <span className="hidden xs:inline">Create Stream</span>
                     <span className="xs:hidden">Create</span>
