@@ -114,17 +114,22 @@ class BrevoEmailService {
       if (recipientType === "applicant") {
         const application = await Application.findById(recipientId)
           .populate("applicant", "firstName lastName email")
-          .populate("cohort", "name")
           .populate("track", "name");
 
         if (application && application.applicant) {
           const applicant = application.applicant as any;
+          const track = application.track as any;
+
+          // Find cohort through track
+          const { Cohort } = await import("../models/Cohort.model");
+          const cohort = track ? await Cohort.findOne({ 'tracks.track': track._id }) : null;
+
           return {
             ...baseData,
             applicantName: `${applicant.firstName} ${applicant.lastName}`,
             applicantEmail: applicant.email,
-            cohortName: (application.cohort as any)?.name || "",
-            trackName: (application.track as any)?.name || "",
+            cohortName: cohort?.name || "",
+            trackName: track?.name || "",
             applicationId: application._id.toString(),
             applicationStatus: application.status,
             applicationDate: application.createdAt.toLocaleDateString(),
@@ -390,7 +395,7 @@ class BrevoEmailService {
     applicantName: string,
     cohortName: string,
     applicationId?: string,
-    ): Promise<void> {
+  ): Promise<void> {
     await this.sendTemplatedEmail({
       templateType: "application_confirmation",
       recipient: {
@@ -618,8 +623,8 @@ class BrevoEmailService {
       applicantEmail,
       interviewerName || "Interviewer",
       interviewerEmail ||
-        process.env.SENDER_EMAIL ||
-        "noreply@upticktalent.com",
+      process.env.SENDER_EMAIL ||
+      "noreply@upticktalent.com",
       trackName,
       interviewDate,
       30, // 30 minutes duration
@@ -814,8 +819,8 @@ class BrevoEmailService {
       applicantEmail,
       interviewerName || "Interviewer",
       interviewerEmail ||
-        process.env.SENDER_EMAIL ||
-        "noreply@upticktalent.com",
+      process.env.SENDER_EMAIL ||
+      "noreply@upticktalent.com",
       trackName,
       interviewDate,
       30, // 30 minutes duration

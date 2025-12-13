@@ -3,7 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IInterviewSlot extends Document {
   _id: string;
   interviewer: mongoose.Types.ObjectId; // Admin/Mentor who will conduct interview
-  tracks: mongoose.Types.ObjectId[]; // Tracks this slot is available for
+  tracks?: mongoose.Types.ObjectId[]; // Tracks this slot is for (optional for general slots)
+  isGeneral: boolean; // If true, this slot is available for all tracks
   date: Date; // Date of availability
   startTime: string; // Format: "14:00" (2:00 PM)
   endTime: string; // Format: "15:00" (3:00 PM)
@@ -25,13 +26,22 @@ const InterviewSlotSchema: Schema = new Schema(
       ref: "User",
       required: [true, "Interviewer is required"],
     },
+    cohort: {
+      type: Schema.Types.ObjectId,
+      ref: "Cohort",
+      required: false,
+    },
     tracks: [
       {
         type: Schema.Types.ObjectId,
         ref: "Track",
-        required: [true, "At least one track is required"],
+        required: false,
       },
     ],
+    isGeneral: {
+      type: Boolean,
+      default: false,
+    },
     date: {
       type: Date,
       required: [true, "Date is required"],
@@ -113,6 +123,7 @@ InterviewSlotSchema.index(
 );
 
 // Index for querying available slots
+InterviewSlotSchema.index({ cohort: 1 });
 InterviewSlotSchema.index({ date: 1, isAvailable: 1 });
 InterviewSlotSchema.index({ interviewer: 1, date: 1 });
 
@@ -126,6 +137,19 @@ InterviewSlotSchema.virtual("isFullyBooked").get(function (
 // Update isAvailable based on booking status
 InterviewSlotSchema.pre("save", function (this: IInterviewSlot, next) {
   this.isAvailable = this.bookedCount < this.maxInterviews;
+  next();
+});
+
+// Validation to ensure either tracks are provided or isGeneral is true
+InterviewSlotSchema.pre("validate", function (this: IInterviewSlot, next) {
+  if (this.isGeneral && this.tracks && this.tracks.length > 0) {
+    return next(
+      new Error("General slots cannot have specific tracks assigned"),
+    );
+  }
+  if (!this.isGeneral && (!this.tracks || this.tracks.length === 0)) {
+    return next(new Error("Non-general slots must have tracks assigned"));
+  }
   next();
 });
 

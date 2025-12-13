@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticate, authorize } from "../middleware/auth";
+import { ensureTrackAssignments } from "../middleware/trackPermissions";
 import {
   // Interview Slots (Admin/Mentor)
   createInterviewSlots,
@@ -83,12 +84,19 @@ router.delete(
 router.post("/schedule", scheduleInterview);
 
 // Get all interviews (Admin/Mentor only)
-router.get("/", authenticate, authorize("admin", "mentor"), getInterviews);
+router.get(
+  "/",
+  authenticate,
+  ensureTrackAssignments,
+  authorize("admin", "mentor"),
+  getInterviews,
+);
 
 // Get interview details by ID (Admin/Mentor only)
 router.get(
   "/:id",
   authenticate,
+  ensureTrackAssignments,
   authorize("admin", "mentor"),
   getInterviewDetails,
 );

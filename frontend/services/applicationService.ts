@@ -1,20 +1,20 @@
-import apiClient from './apiClient';
+import apiClient from "./apiClient";
 import {
   IApplication,
   ApplicationForm,
   ApiResponse,
   IApplicationSubmissionResponse,
   IPaginatedApplicationsResponse,
-} from '@/types';
+} from "@/types";
 
 export const applicationService = {
   // Submit application with form data (including file upload)
   submitApplication: async (
     formData: FormData
   ): Promise<ApiResponse<IApplicationSubmissionResponse>> => {
-    const response = await apiClient.post('/applications/apply', formData, {
+    const response = await apiClient.post("/applications/apply", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -22,13 +22,13 @@ export const applicationService = {
 
   // Get available tracks for current active cohort
   getAvailableTracks: async (): Promise<ApiResponse<any[]>> => {
-    const response = await apiClient.get('/tracks/active');
+    const response = await apiClient.get("/tracks/active");
     return response.data;
   },
 
   // Get current active cohort (accepting applications)
   getCurrentActiveCohort: async (): Promise<ApiResponse<any>> => {
-    const response = await apiClient.get('/cohorts/current-active');
+    const response = await apiClient.get("/cohorts/current-active");
     return response.data;
   },
 
@@ -40,17 +40,15 @@ export const applicationService = {
     page?: number;
     limit?: number;
   }): Promise<ApiResponse<IPaginatedApplicationsResponse>> => {
-    const response = await apiClient.get('/applications', { params });
+    const response = await apiClient.get("/applications", { params });
     return response.data;
   },
 
-  // Get applications by cohort (admin/mentor) - Using main endpoint with filter
+  // Get applications by cohort (admin/mentor) - Using dedicated endpoint
   getApplicationsByCohort: async (
     cohortId: string
-  ): Promise<ApiResponse<IPaginatedApplicationsResponse>> => {
-    const response = await apiClient.get('/applications', {
-      params: { cohort: cohortId },
-    });
+  ): Promise<ApiResponse<IApplication[]>> => {
+    const response = await apiClient.get(`/applications/cohort/${cohortId}`);
     return response.data;
   },
 
@@ -58,7 +56,7 @@ export const applicationService = {
   getApplicationsByTrack: async (
     trackId: string
   ): Promise<ApiResponse<IPaginatedApplicationsResponse>> => {
-    const response = await apiClient.get('/applications', {
+    const response = await apiClient.get("/applications", {
       params: { track: trackId },
     });
     return response.data;
@@ -76,7 +74,7 @@ export const applicationService = {
   reviewApplication: async (
     applicationId: string,
     reviewData: {
-      status: 'under-review' | 'accepted' | 'rejected' | 'shortlisted';
+      status: "under-review" | "accepted" | "rejected" | "shortlisted";
       reviewNotes?: string;
       rejectionReason?: string;
     }
@@ -94,7 +92,7 @@ export const applicationService = {
   ): Promise<ApiResponse<IApplication>> => {
     const response = await apiClient.patch(
       `/applications/${applicationId}/review`,
-      { status: 'accepted' }
+      { status: "accepted" }
     );
     return response.data;
   },
@@ -105,7 +103,7 @@ export const applicationService = {
   ): Promise<ApiResponse<IApplication>> => {
     const response = await apiClient.patch(
       `/applications/${applicationId}/review`,
-      { status: 'shortlisted' }
+      { status: "shortlisted" }
     );
     return response.data;
   },
@@ -118,7 +116,7 @@ export const applicationService = {
     const response = await apiClient.patch(
       `/applications/${applicationId}/review`,
       {
-        status: 'rejected',
+        status: "rejected",
         rejectionReason,
       }
     );
@@ -154,7 +152,7 @@ export const applicationService = {
 
   // Legacy methods for backward compatibility
   getTracks: async (): Promise<ApiResponse<any[]>> => {
-    const response = await apiClient.get('/tracks/active');
+    const response = await apiClient.get("/tracks/active");
     return response.data;
   },
 

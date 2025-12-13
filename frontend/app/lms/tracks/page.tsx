@@ -42,7 +42,7 @@ import {
 import Link from "next/link";
 import { useFetch } from "@/hooks/useFetch";
 import { trackService } from "@/services/trackService";
-import { cohortService } from "@/services/cohortService";
+import { useCohortContext } from "@/contexts/CohortContext";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -80,14 +80,9 @@ const StatCard = ({
 );
 
 export default function TracksPage() {
-  const router = useRouter()
-  const { isAdmin } = useUser();
-  const {
-    response: currentCohort,
-    loading,
-    error,
-    refetch,
-  } = useFetch(cohortService.getCurrentActiveCohort);
+  const router = useRouter();
+  const { isAdmin, isMentor, user } = useUser();
+  const { currentCohort, loading, error, refreshCohort } = useCohortContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTrack, setNewTrack] = useState({
@@ -96,32 +91,57 @@ export default function TracksPage() {
     description: "",
     isActive: true,
   });
-  
-  console.log('Cohort Data:', currentCohort);
-  
+
+  console.log("Cohort Data:", currentCohort);
+
   // Extract tracks from current active cohort
-  
+
   const cohortTracks = currentCohort?.tracks || [];
-  console.log(cohortTracks);
   const [isCreating, setIsCreating] = useState(false);
 
-  const filteredTracks = cohortTracks?.filter((cohortTrack: any) =>
-    cohortTrack.track?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
-  
-  console.log('Filtered Tracks:', filteredTracks);
-  
+  const filteredTracks =
+    cohortTracks?.filter((cohortTrack: any) =>
+      cohortTrack.track?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
+
+  console.log("Filtered Tracks:", filteredTracks);
+
+  // Helper function to check if current user (mentor) is assigned to a track
+  const isMentorAssignedToTrack = (trackId: string) => {
+    if (!isMentor || !user?.trackAssignments || !trackId) return false;
+
+    return user.trackAssignments.some((assignment: any) => {
+      const assignmentTrackId =
+        typeof assignment.track === "object" && assignment.track._id
+          ? assignment.track._id.toString()
+          : assignment.track.toString();
+      const assignmentTrackSlug =
+        typeof assignment.track === "object" && assignment.track.trackId
+          ? assignment.track.trackId
+          : null;
+
+      return (
+        assignment.role === "mentor" &&
+        assignment.isActive &&
+        (assignmentTrackId === trackId || assignmentTrackSlug === trackId)
+      );
+    });
+  };
+
   // Calculate stats based on cohort tracks
   const totalTracks = cohortTracks?.length || 0;
-  const activeTracks = cohortTracks?.filter((ct: any) => ct.track?.isActive).length || 0;
-  const totalStudents = cohortTracks?.reduce(
-    (acc: number, curr: any) => acc + (curr.currentStudents || 0),
-    0
-  ) || 0;
-  const totalMentors = cohortTracks?.reduce(
-    (acc: number, curr: any) => acc + (curr.mentors?.length || 0),
-    0
-  ) || 0;
+  const activeTracks =
+    cohortTracks?.filter((ct: any) => ct.track?.isActive).length || 0;
+  const totalStudents =
+    cohortTracks?.reduce(
+      (acc: number, curr: any) => acc + (curr.currentStudents || 0),
+      0
+    ) || 0;
+  const totalMentors =
+    cohortTracks?.reduce(
+      (acc: number, curr: any) => acc + (curr.mentors?.length || 0),
+      0
+    ) || 0;
 
   const handleCreateTrack = async () => {
     try {
@@ -131,13 +151,13 @@ export default function TracksPage() {
         toast.error("Name and Track ID are required");
         return;
       }
-      
+
       await trackService.createTrack(newTrack);
-      
+
       toast.success("Track created successfully");
       setIsCreateDialogOpen(false);
       setNewTrack({ name: "", trackId: "", description: "", isActive: true });
-      refetch();
+      refreshCohort();
     } catch (error) {
       toast.error("Failed to create track");
       console.error(error);
@@ -153,7 +173,7 @@ export default function TracksPage() {
   if (error) {
     return (
       <div className="text-center text-red-600 p-4">
-        Failed to load tracks. Please try again later.
+        Failed to load cohort data. Please try again later.
       </div>
     );
   }
@@ -166,9 +186,13 @@ export default function TracksPage() {
         <p className="text-gray-600 mt-2">
           {currentCohort ? (
             <>
-              Managing tracks for <span className="font-semibold text-blue-600">{currentCohort.name}</span>
+              Managing tracks for{" "}
+              <span className="font-semibold text-blue-600">
+                {currentCohort.name}
+              </span>
               <span className="text-sm text-gray-500 ml-2">
-                ({new Date(currentCohort.startDate).toLocaleDateString()} - {new Date(currentCohort.endDate).toLocaleDateString()})
+                ({new Date(currentCohort.startDate).toLocaleDateString()} -{" "}
+                {new Date(currentCohort.endDate).toLocaleDateString()})
               </span>
             </>
           ) : (
@@ -217,7 +241,10 @@ export default function TracksPage() {
           />
         </div>
         {isAdmin && (
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" /> Create New Track
@@ -236,7 +263,9 @@ export default function TracksPage() {
                   <Input
                     id="name"
                     value={newTrack.name}
-                    onChange={(e) => setNewTrack({ ...newTrack, name: e.target.value })}
+                    onChange={(e) =>
+                      setNewTrack({ ...newTrack, name: e.target.value })
+                    }
                     placeholder="e.g. Cloud Computing"
                   />
                 </div>
@@ -245,7 +274,9 @@ export default function TracksPage() {
                   <Input
                     id="trackId"
                     value={newTrack.trackId}
-                    onChange={(e) => setNewTrack({ ...newTrack, trackId: e.target.value })}
+                    onChange={(e) =>
+                      setNewTrack({ ...newTrack, trackId: e.target.value })
+                    }
                     placeholder="e.g. cloud-computing"
                   />
                 </div>
@@ -254,18 +285,24 @@ export default function TracksPage() {
                   <Textarea
                     id="description"
                     value={newTrack.description}
-                    onChange={(e) => setNewTrack({ ...newTrack, description: e.target.value })}
+                    onChange={(e) =>
+                      setNewTrack({ ...newTrack, description: e.target.value })
+                    }
                     placeholder="Provide a brief description of the track..."
                     className="min-h-[100px]"
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="status" className="text-base">Status</Label>
+                  <Label htmlFor="status" className="text-base">
+                    Status
+                  </Label>
                   <div className="flex items-center gap-2">
                     <Switch
                       id="status"
                       checked={newTrack.isActive}
-                      onCheckedChange={(checked) => setNewTrack({ ...newTrack, isActive: checked })}
+                      onCheckedChange={(checked) =>
+                        setNewTrack({ ...newTrack, isActive: checked })
+                      }
                     />
                     <span className="text-sm text-gray-600">
                       {newTrack.isActive ? "Active" : "Inactive"}
@@ -274,7 +311,11 @@ export default function TracksPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleCreateTrack} disabled={isCreating} className="w-full">
+                <Button
+                  onClick={handleCreateTrack}
+                  disabled={isCreating}
+                  className="w-full"
+                >
                   {isCreating ? "Creating..." : "Create Track"}
                 </Button>
               </DialogFooter>
@@ -300,18 +341,56 @@ export default function TracksPage() {
               filteredTracks.map((cohortTrack: any) => {
                 const track = cohortTrack.track;
                 return (
-                  <TableRow key={cohortTrack._id || track?._id} className="hover:bg-gray-50" onClick={() => router.push(`/lms/track/${track?.trackId}/stream`)}>
+                  <TableRow
+                    key={cohortTrack._id || track?._id}
+                    className={`cursor-pointer transition-colors duration-200 group ${
+                      isMentor &&
+                      (isMentorAssignedToTrack(track?._id) ||
+                        isMentorAssignedToTrack(track?.trackId))
+                        ? "hover:bg-green-50 bg-green-25 border-l-2 border-l-green-400"
+                        : "hover:bg-blue-50"
+                    }`}
+                    onClick={() =>
+                      router.push(`/lms/track/${track?.trackId}/stream`)
+                    }
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div>
-                          <div className="font-medium text-gray-900">
-                            {track?.name || 'Unknown Track'}
+                          <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200 flex items-center gap-2">
+                            {track?.name || "Unknown Track"}
+                            {isMentor &&
+                              (isMentorAssignedToTrack(track?._id) ||
+                                isMentorAssignedToTrack(track?.trackId)) && (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-green-100 text-green-800 text-xs px-2 py-0.5 border-green-200"
+                                >
+                                  Your Track
+                                </Badge>
+                              )}
+                            <div className="text-gray-400 group-hover:text-blue-500 transition-colors duration-200">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500 truncate max-w-[200px]">
-                            {track?.description || 'No description available'}
+                          <div className="text-sm text-gray-500 truncate max-w-[200px] group-hover:text-gray-600 transition-colors duration-200">
+                            {track?.description || "No description available"}
                           </div>
-                          <div className="text-xs text-blue-600 mt-1">
-                            Cohort: {currentCohort?.name}
+                          <div className="text-xs text-blue-600 mt-1 group-hover:text-blue-700 transition-colors duration-200">
+                            Cohort: {currentCohort?.name} • Click to view
+                            details
                           </div>
                         </div>
                       </div>
@@ -331,7 +410,9 @@ export default function TracksPage() {
                     <TableCell>
                       <div className="flex items-center gap-2 text-gray-600">
                         <Users className="w-4 h-4" />
-                        <span className="font-medium">{cohortTrack.currentStudents || 0}</span>
+                        <span className="font-medium">
+                          {cohortTrack.currentStudents || 0}
+                        </span>
                         {cohortTrack.maxStudents && (
                           <span className="text-xs text-gray-400">
                             / {cohortTrack.maxStudents}
@@ -342,17 +423,28 @@ export default function TracksPage() {
                     <TableCell>
                       <div className="flex items-center gap-2 text-gray-600">
                         <UserCheck className="w-4 h-4" />
-                        <span className="font-medium">{cohortTrack.mentors?.length || 0}</span>
+                        <span className="font-medium">
+                          {cohortTrack.mentors?.length || 0}
+                        </span>
                         {cohortTrack.mentors?.length > 0 && (
                           <div className="text-xs text-gray-500 ml-1">
-                            {cohortTrack.mentors.slice(0, 2).map((mentor: any, index: number) => (
-                              <span key={mentor._id || index}>
-                                {mentor.firstName} {mentor.lastName}
-                                {index < Math.min(cohortTrack.mentors.length - 1, 1) && ", "}
-                              </span>
-                            ))}
+                            {cohortTrack.mentors
+                              .slice(0, 2)
+                              .map((mentor: any, index: number) => (
+                                <span key={mentor._id || index}>
+                                  {mentor.firstName} {mentor.lastName}
+                                  {index <
+                                    Math.min(
+                                      cohortTrack.mentors.length - 1,
+                                      1
+                                    ) && ", "}
+                                </span>
+                              ))}
                             {cohortTrack.mentors.length > 2 && (
-                              <span> +{cohortTrack.mentors.length - 2} more</span>
+                              <span>
+                                {" "}
+                                +{cohortTrack.mentors.length - 2} more
+                              </span>
                             )}
                           </div>
                         )}
@@ -394,10 +486,9 @@ export default function TracksPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center">
-                  {currentCohort ? 
-                    "No tracks found in the current active cohort." : 
-                    "No active cohort found. Please create or activate a cohort first."
-                  }
+                  {currentCohort
+                    ? "No tracks found in the current active cohort."
+                    : "No active cohort found. Please create or activate a cohort first."}
                 </TableCell>
               </TableRow>
             )}

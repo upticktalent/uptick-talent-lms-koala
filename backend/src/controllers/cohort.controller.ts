@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
+import mongoose from "mongoose";
 import { Cohort } from "../models/Cohort.model";
 import { Track } from "../models/Track.model";
+import { User } from "../models/User.model";
 import { asyncHandler, isValidObjectId } from "../utils/mongooseErrorHandler";
 
 export const getCohorts = asyncHandler(async (req: Request, res: Response) => {
@@ -20,11 +22,27 @@ export const getCohorts = asyncHandler(async (req: Request, res: Response) => {
   const skip = (Number(page) - 1) * Number(limit);
 
   const cohorts = await Cohort.find(filter)
-    .populate("tracks.track", "name trackId description color")
+    .populate("tracks.track", "name trackId description isActive")
     .populate("tracks.mentors", "firstName lastName email")
     .sort({ startDate: -1 })
     .skip(skip)
     .limit(Number(limit));
+
+  // Calculate currentStudents for each cohort
+  const cohortsWithStudentCount = await Promise.all(
+    cohorts.map(async (cohort) => {
+      const studentCount = await User.countDocuments({
+        "trackAssignments.cohort": cohort._id,
+        role: "student",
+        isActive: true,
+      });
+
+      return {
+        ...cohort.toObject(),
+        currentStudents: studentCount,
+      };
+    }),
+  );
 
   const total = await Cohort.countDocuments(filter);
 
@@ -32,7 +50,7 @@ export const getCohorts = asyncHandler(async (req: Request, res: Response) => {
     success: true,
     message: "Cohorts retrieved successfully",
     data: {
-      cohorts,
+      cohorts: cohortsWithStudentCount,
       pagination: {
         total,
         page: Number(page),
@@ -53,7 +71,7 @@ export const getActiveCohorts = asyncHandler(
       isAcceptingApplications: true,
       applicationDeadline: { $gt: now }, // Application deadline hasn't passed
     })
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email")
       .sort({ startDate: 1 });
 
@@ -97,7 +115,7 @@ export const getCohortDetails = asyncHandler(
     }
 
     const cohort = await Cohort.findById(id)
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     if (!cohort) {
@@ -107,10 +125,22 @@ export const getCohortDetails = asyncHandler(
       });
     }
 
+    // Calculate currentStudents for this cohort
+    const studentCount = await User.countDocuments({
+      "trackAssignments.cohort": cohort._id,
+      role: "student",
+      isActive: true,
+    });
+
+    const cohortWithStudentCount = {
+      ...cohort.toObject(),
+      currentStudents: studentCount,
+    };
+
     res.status(200).json({
       success: true,
       message: "Cohort details retrieved successfully",
-      data: cohort,
+      data: cohortWithStudentCount,
     });
   },
 );
@@ -179,7 +209,7 @@ export const createCohort = asyncHandler(
     });
 
     await cohort.save();
-    await cohort.populate("tracks.track", "name trackId description color");
+    await cohort.populate("tracks.track", "name trackId description isActive");
     await cohort.populate("tracks.mentors", "firstName lastName email");
 
     res.status(201).json({
@@ -219,7 +249,7 @@ export const updateCohort = asyncHandler(
       { ...updates, updatedAt: new Date() },
       { new: true, runValidators: true },
     )
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     if (!cohort) {
@@ -338,12 +368,19 @@ export const addTrackToCohort = asyncHandler(
       mentors: mentorIds,
       maxStudents,
       currentStudents: 0,
-    });
+      isActive: true,
+      settings: {
+        allowLateSubmissions: false,
+        autoGrading: false,
+        discussionEnabled: true,
+        resourceSharing: true,
+      },
+    } as any);
 
     await cohort.save();
 
     const updatedCohort = await Cohort.findById(id)
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     res.status(200).json({
@@ -382,7 +419,7 @@ export const removeTrackFromCohort = asyncHandler(
     await cohort.save();
 
     const updatedCohort = await Cohort.findById(id)
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     res.status(200).json({
@@ -422,7 +459,7 @@ export const addMentorToTrack = asyncHandler(
       await cohort.addMentorToTrack(trackId, mentorId);
 
       const updatedCohort = await Cohort.findById(id)
-        .populate("tracks.track", "name trackId description color")
+        .populate("tracks.track", "name trackId description isActive")
         .populate("tracks.mentors", "firstName lastName email");
 
       res.status(200).json({
@@ -482,7 +519,7 @@ export const removeMentorFromTrack = asyncHandler(
     await cohort.save();
 
     const updatedCohort = await Cohort.findById(id)
-      .populate("tracks.track", "name trackId description color")
+      .populate("tracks.track", "name trackId description isActive")
       .populate("tracks.mentors", "firstName lastName email");
 
     res.status(200).json({
@@ -510,7 +547,8 @@ export const getTrackInActiveCohort = asyncHandler(
 
     // Find the track within this cohort
     const cohortTrack = activeCohort.tracks.find(
-      (ct: any) => ct.track.trackId === trackId || ct.track._id.toString() === trackId
+      (ct: any) =>
+        ct.track.trackId === trackId || ct.track._id.toString() === trackId,
     );
 
     if (!cohortTrack) {
@@ -524,9 +562,11 @@ export const getTrackInActiveCohort = asyncHandler(
     const User = require("../models/User.model").User;
     const students = await User.find({
       role: "student",
-      currentCohort: activeCohort._id,
-      currentTrack: cohortTrack.track._id,
-      isActive: true,
+      "trackAssignments.cohort": new mongoose.Types.ObjectId(activeCohort._id),
+      "trackAssignments.track": new mongoose.Types.ObjectId(
+        cohortTrack.track._id,
+      ),
+      "trackAssignments.isActive": true,
     }).select("firstName lastName email");
 
     const trackDetails = {
@@ -537,10 +577,13 @@ export const getTrackInActiveCohort = asyncHandler(
         startDate: activeCohort.startDate,
         endDate: activeCohort.endDate,
       },
-      track: cohortTrack.track,
+      track: {
+        ...((cohortTrack.track as any)._doc || cohortTrack.track),
+        students: students, // Add students array to track object for frontend compatibility
+      },
       mentors: cohortTrack.mentors,
       maxStudents: cohortTrack.maxStudents,
-      currentStudents: cohortTrack.currentStudents,
+      currentStudents: students.length, // Use actual count from query
       students: students,
     };
 
@@ -548,6 +591,336 @@ export const getTrackInActiveCohort = asyncHandler(
       success: true,
       message: "Track details retrieved successfully",
       data: trackDetails,
+    });
+  },
+);
+
+// New Cohort-Centric Methods
+
+export const getCohortComplete = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { cohortId } = req.params;
+
+    if (!isValidObjectId(cohortId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort ID format",
+      });
+    }
+
+    const cohort = await Cohort.findById(cohortId);
+
+    if (!cohort) {
+      return res.status(404).json({
+        success: false,
+        message: "Cohort not found",
+      });
+    }
+
+    // Get complete cohort data with all relations
+    const completeData = await cohort.getCompleteData();
+
+    res.status(200).json({
+      success: true,
+      message: "Complete cohort data retrieved successfully",
+      data: completeData,
+    });
+  },
+);
+
+export const getCohortTrackData = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { cohortId, trackId } = req.params;
+
+    if (!isValidObjectId(cohortId) || !isValidObjectId(trackId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort or track ID format",
+      });
+    }
+
+    const cohort = await Cohort.findById(cohortId);
+
+    if (!cohort) {
+      return res.status(404).json({
+        success: false,
+        message: "Cohort not found",
+      });
+    }
+
+    const cohortTrack = cohort.getTrackById(trackId);
+
+    if (!cohortTrack) {
+      return res.status(404).json({
+        success: false,
+        message: "Track not found in this cohort",
+      });
+    }
+
+    // Get complete data for this specific track
+    const completeData = await cohort.getCompleteData();
+    const trackData = completeData.trackData.find(
+      (td: any) => td.track._id.toString() === trackId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Track data retrieved successfully",
+      data: trackData,
+    });
+  },
+);
+
+export const getCohortStatistics = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { cohortId } = req.params;
+
+    if (!isValidObjectId(cohortId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort ID format",
+      });
+    }
+
+    const cohort = await Cohort.findById(cohortId);
+
+    if (!cohort) {
+      return res.status(404).json({
+        success: false,
+        message: "Cohort not found",
+      });
+    }
+
+    // Update statistics for all tracks
+    for (const cohortTrack of cohort.tracks) {
+      await cohort.updateTrackStatistics(cohortTrack.track.toString());
+    }
+
+    // Get updated cohort with fresh statistics
+    const updatedCohort = await Cohort.findById(cohortId)
+      .populate("tracks.track", "name trackId description")
+      .populate("tracks.mentors", "firstName lastName email");
+
+    const statistics = {
+      cohort: {
+        _id: updatedCohort!._id,
+        name: updatedCohort!.name,
+        cohortNumber: updatedCohort!.cohortNumber,
+        status: updatedCohort!.status,
+      },
+      overallStatistics: {
+        totalTracks: updatedCohort!.tracks.length,
+        totalMentors: updatedCohort!.tracks.reduce(
+          (sum, track) => sum + track.mentors.length,
+          0,
+        ),
+        totalStudents: updatedCohort!.currentStudents,
+        totalApplications: updatedCohort!.tracks.reduce(
+          (sum, track) => sum + (track.statistics?.totalApplications || 0),
+          0,
+        ),
+      },
+      trackStatistics: updatedCohort!.tracks.map((cohortTrack) => ({
+        track: cohortTrack.track,
+        mentors: cohortTrack.mentors,
+        settings: cohortTrack.settings,
+        statistics: cohortTrack.statistics,
+        currentStudents: cohortTrack.currentStudents,
+        maxStudents: cohortTrack.maxStudents,
+        isActive: cohortTrack.isActive,
+      })),
+    };
+
+    res.status(200).json({
+      success: true,
+      message: "Cohort statistics retrieved successfully",
+      data: statistics,
+    });
+  },
+);
+
+export const getCohortApplications = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { cohortId } = req.params;
+    const { trackId, status, page = 1, limit = 10 } = req.query;
+
+    if (!isValidObjectId(cohortId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort ID format",
+      });
+    }
+
+    const cohort = await Cohort.findById(cohortId);
+
+    if (!cohort) {
+      return res.status(404).json({
+        success: false,
+        message: "Cohort not found",
+      });
+    }
+
+    // Get track IDs for this cohort
+    let trackIds = cohort.tracks.map((ct) => ct.track);
+
+    // Filter by specific track if provided
+    if (trackId) {
+      if (!isValidObjectId(trackId as string)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid track ID format",
+        });
+      }
+
+      if (!cohort.hasTrack(trackId as string)) {
+        return res.status(404).json({
+          success: false,
+          message: "Track not found in this cohort",
+        });
+      }
+
+      trackIds = [trackId as any];
+    }
+
+    // Build filter query
+    const filter: any = { track: { $in: trackIds } };
+
+    if (status) {
+      filter.status = status;
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const Application = require("../models/Application.model").Application;
+
+    const applications = await Application.find(filter)
+      .populate("applicant", "firstName lastName email phoneNumber")
+      .populate("track", "name trackId description")
+      .populate("reviewedBy", "firstName lastName email")
+      .sort({ submittedAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    const total = await Application.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      message: "Cohort applications retrieved successfully",
+      data: {
+        applications,
+        cohort: {
+          _id: cohort._id,
+          name: cohort.name,
+          cohortNumber: cohort.cohortNumber,
+        },
+        pagination: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          pages: Math.ceil(total / Number(limit)),
+        },
+      },
+    });
+  },
+);
+
+export const getCohortStudents = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { cohortId } = req.params;
+    const { trackId } = req.query;
+
+    if (!isValidObjectId(cohortId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cohort ID format",
+      });
+    }
+
+    const cohort = await Cohort.findById(cohortId);
+
+    if (!cohort) {
+      return res.status(404).json({
+        success: false,
+        message: "Cohort not found",
+      });
+    }
+
+    // Build filter query - Convert to ObjectId for proper MongoDB querying
+    const filter: any = {
+      role: "student",
+      "trackAssignments.cohort": new mongoose.Types.ObjectId(cohortId),
+      "trackAssignments.isActive": true,
+    };
+
+    if (trackId) {
+      if (!isValidObjectId(trackId as string)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid track ID format",
+        });
+      }
+      filter["trackAssignments.track"] = new mongoose.Types.ObjectId(
+        trackId as string,
+      );
+    }
+
+    const User = require("../models/User.model").User;
+
+    const students = await User.find(filter)
+      .populate("trackAssignments.track", "name trackId")
+      .populate("trackAssignments.cohort", "name cohortNumber")
+      .select(
+        "firstName lastName email phoneNumber trackAssignments createdAt",
+      );
+
+    // Group students by track if no specific track is requested
+    if (!trackId) {
+      const studentsByTrack = cohort.tracks.map((cohortTrack) => {
+        const trackStudents = students.filter((student: any) =>
+          student.trackAssignments.some(
+            (assignment: any) =>
+              assignment.track._id.toString() ===
+                cohortTrack.track.toString() &&
+              assignment.cohort._id.toString() === cohortId &&
+              assignment.isActive,
+          ),
+        );
+
+        return {
+          track: cohortTrack.track,
+          mentors: cohortTrack.mentors,
+          students: trackStudents,
+          count: trackStudents.length,
+        };
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Cohort students retrieved successfully",
+        data: {
+          cohort: {
+            _id: cohort._id,
+            name: cohort.name,
+            cohortNumber: cohort.cohortNumber,
+          },
+          studentsByTrack,
+          totalStudents: students.length,
+        },
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Track students retrieved successfully",
+      data: {
+        cohort: {
+          _id: cohort._id,
+          name: cohort.name,
+          cohortNumber: cohort.cohortNumber,
+        },
+        students,
+        totalStudents: students.length,
+      },
     });
   },
 );

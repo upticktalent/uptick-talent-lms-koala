@@ -3,21 +3,32 @@ export interface ICohortAssignment {
   tracks: string[];
 }
 
+export interface ITrackAssignment {
+  cohort: string | ICohort;
+  track: string | ITrack;
+  role: "mentor" | "student";
+  assignedAt: string;
+  isActive: boolean;
+}
+
 export interface IUser {
   _id: string;
   firstName: string;
   lastName: string;
   email: string;
   phoneNumber: string;
-  gender: 'male' | 'female';
+  gender: "male" | "female";
   country: string;
   state: string;
-  role: 'applicant' | 'student' | 'mentor' | 'admin';
+  role: "applicant" | "student" | "mentor" | "admin";
 
-  // For mentors: tracks they can review
+  // New cohort-centric track assignments
+  trackAssignments?: ITrackAssignment[];
+
+  // For mentors: tracks they can review (legacy)
   assignedTracks?: string[] | ITrack[];
 
-  // For students: current cohort and track they're enrolled in
+  // For students: current cohort and track they're enrolled in (legacy)
   currentTrack?: string | ITrack;
   currentCohort?: string;
 
@@ -41,7 +52,7 @@ export interface IApplication {
   track: string | ITrack;
   cvUrl: string;
   tools: string[];
-  status: 'pending' | 'under-review' | 'accepted' | 'rejected' | 'shortlisted';
+  status: "pending" | "under-review" | "accepted" | "rejected" | "shortlisted";
   reviewedBy?: string | IUser;
   reviewedAt?: string;
   generatedPassword?: string;
@@ -74,7 +85,7 @@ export interface IAssessment {
   answers: Record<string, any>;
   score?: number;
   feedback?: string;
-  status: 'pending' | 'submitted' | 'graded';
+  status: "pending" | "submitted" | "graded";
   submittedAt?: string;
   gradedAt?: string;
   createdAt: string;
@@ -84,7 +95,7 @@ export interface IAssessment {
 export interface IAssessmentQuestion {
   _id: string;
   question: string;
-  type: 'multiple-choice' | 'short-answer' | 'essay' | 'code';
+  type: "multiple-choice" | "short-answer" | "essay" | "code";
   options?: string[];
   correctAnswer?: string;
   points: number;
@@ -109,7 +120,7 @@ export interface ICurriculumItem {
   _id: string;
   title: string;
   description: string;
-  type: 'lesson' | 'assignment' | 'project' | 'assessment';
+  type: "lesson" | "assignment" | "project" | "assessment";
   content?: string;
   resources: IResource[];
   dueDate?: string;
@@ -119,7 +130,7 @@ export interface ICurriculumItem {
 export interface IResource {
   _id: string;
   title: string;
-  type: 'link' | 'file' | 'video';
+  type: "link" | "file" | "video";
   url: string;
   description?: string;
 }
@@ -142,7 +153,7 @@ export interface ICohort {
   maxStudents: number;
   currentStudents: number;
   tracks: ICohortTrack[];
-  status: 'upcoming' | 'active' | 'completed' | 'cancelled';
+  status: "upcoming" | "active" | "completed" | "cancelled";
   isAcceptingApplications: boolean;
   isCurrentlyActive: boolean;
   createdAt: string;
@@ -163,7 +174,7 @@ export interface IClassroom {
 export interface IClassroomMaterial {
   _id: string;
   title: string;
-  type: 'document' | 'video' | 'link' | 'slides';
+  type: "document" | "video" | "link" | "slides";
   url: string;
   description?: string;
   uploadedAt: string;
@@ -198,7 +209,7 @@ export interface IAnnouncement {
   content: string;
   trackId?: string;
   authorId: string;
-  priority: 'low' | 'medium' | 'high';
+  priority: "low" | "medium" | "high";
   isGlobal: boolean;
   createdAt: string;
   updatedAt: string;
@@ -223,9 +234,9 @@ export interface IInterview {
   interviewDate: string;
   interviewTime: string;
   interviewLink?: string;
-  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+  status: "scheduled" | "completed" | "cancelled" | "rescheduled";
   feedback?: string;
-  result?: 'passed' | 'failed';
+  result?: "passed" | "failed";
   notes?: string;
   interviewerId?: string;
   createdAt: string;
@@ -243,7 +254,7 @@ export interface ApiResponse<T = any> {
 // Application submission response type
 export interface IApplicationSubmissionResponse {
   applicationId: string;
-  status: 'pending' | 'under-review' | 'accepted' | 'rejected' | 'shortlisted';
+  status: "pending" | "under-review" | "accepted" | "rejected" | "shortlisted";
   submittedAt: string;
 }
 
@@ -277,7 +288,7 @@ export interface ApplicationForm {
   lastName: string;
   email: string;
   phoneNumber: string;
-  gender: 'male' | 'female';
+  gender: "male" | "female";
   country: string;
   state: string;
   educationalBackground: string;
@@ -300,7 +311,7 @@ export interface IStream {
   track: string | ITrack;
   title: string;
   content: string;
-  type: 'announcement' | 'lesson' | 'update';
+  type: "announcement" | "lesson" | "update";
   createdBy: string | IUser;
   isPublished: boolean;
   scheduledFor?: string;
@@ -315,7 +326,7 @@ export interface IStreamAttachment {
   _id: string;
   title: string;
   url: string;
-  type: 'link' | 'file' | 'video' | 'image';
+  type: "link" | "file" | "video" | "image";
   size?: number;
   uploadedAt: string;
 }
@@ -323,7 +334,7 @@ export interface IStreamAttachment {
 export interface IStreamReaction {
   _id: string;
   user: string | IUser;
-  type: 'like' | 'love' | 'helpful' | 'confused';
+  type: "like" | "love" | "helpful" | "confused";
   createdAt: string;
 }
 
@@ -349,8 +360,8 @@ export interface ITask {
   track: string | ITrack;
   title: string;
   description: string;
-  type: 'assignment' | 'project' | 'quiz' | 'reading';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  type: "assignment" | "project" | "quiz" | "reading";
+  difficulty: "beginner" | "intermediate" | "advanced";
   estimatedHours: number;
   maxScore: number;
   dueDate: string;
@@ -368,7 +379,7 @@ export interface ITaskResource {
   _id: string;
   title: string;
   description?: string;
-  type: 'link' | 'file' | 'video' | 'reading';
+  type: "link" | "file" | "video" | "reading";
   url: string;
   isRequired: boolean;
 }
@@ -379,7 +390,7 @@ export interface ITaskSubmission {
   student: string | IUser;
   content?: string;
   attachments: ITaskSubmissionAttachment[];
-  status: 'draft' | 'submitted' | 'graded' | 'returned';
+  status: "draft" | "submitted" | "graded" | "returned";
   score?: number;
   maxScore: number;
   feedback?: string;
@@ -408,10 +419,10 @@ export interface IMaterial {
   track: string | ITrack;
   title: string;
   description?: string;
-  type: 'document' | 'video' | 'link' | 'slides' | 'book' | 'article';
+  type: "document" | "video" | "link" | "slides" | "book" | "article";
   url: string;
-  category: 'lesson' | 'resource' | 'reference' | 'supplementary';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: "lesson" | "resource" | "reference" | "supplementary";
+  difficulty: "beginner" | "intermediate" | "advanced";
   estimatedReadTime?: number;
   isRequired: boolean;
   isPublished: boolean;
@@ -436,7 +447,7 @@ export interface IInterviewSlot {
   application?: string | IApplication;
   meetingLink?: string;
   notes?: string;
-  status: 'available' | 'booked' | 'completed' | 'cancelled';
+  status: "available" | "booked" | "completed" | "cancelled";
   createdAt: string;
   updatedAt: string;
 }

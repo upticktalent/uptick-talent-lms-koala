@@ -38,7 +38,8 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      await login(email, password);
+      const response = await login(email, password);
+      // Let the home page handle role-specific redirection
       router.push("/");
     } catch (err) {
       const message = handleApiError(err) || "Failed to log in";
@@ -55,7 +56,8 @@ export default function LoginPage() {
           Welcome!
         </h1>
         <p className="text-[hsl(var(--muted-foreground))] text-sm leading-relaxed max-w-xs mx-auto">
-          Access your courses, submit assignments, track your progress, and stay on top of your learning goals all in one place.
+          Access your courses, submit assignments, track your progress, and stay
+          on top of your learning goals all in one place.
         </p>
       </div>
 

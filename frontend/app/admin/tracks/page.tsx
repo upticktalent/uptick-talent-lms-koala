@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -21,21 +21,21 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Plus,
   Search,
@@ -46,22 +46,23 @@ import {
   Users,
   Eye,
   EyeOff,
-} from 'lucide-react';
-import { trackService } from '@/services/trackService';
-import { ITrack } from '@/types';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { trackService } from "@/services/trackService";
+import { ITrack } from "@/types";
+import { toast } from "sonner";
 
 export default function AdminTracksPage() {
   const [tracks, setTracks] = useState<ITrack[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<ITrack | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    color: '#3B82F6',
+    name: "",
+    description: "",
+    color: "#3B82F6",
+    trackId: "",
     isActive: true,
   });
 
@@ -72,19 +73,19 @@ export default function AdminTracksPage() {
   const fetchTracks = async () => {
     try {
       const response: any = await trackService.getTracks();
-      console.log('Tracks response:', response);
-      
+      console.log("Tracks response:", response);
+
       if (response.success && response.data?.tracks) {
         // Response format: { success: true, data: { tracks: [], pagination: {...} } }
         setTracks(response.data.tracks);
       } else {
-        console.error('Unexpected response format:', response);
-        toast.error('Failed to fetch tracks');
+        console.error("Unexpected response format:", response);
+        toast.error("Failed to fetch tracks");
         setTracks([]);
       }
     } catch (error) {
-      console.error('Error fetching tracks:', error);
-      toast.error('Error fetching tracks');
+      console.error("Error fetching tracks:", error);
+      toast.error("Error fetching tracks");
       setTracks([]);
     } finally {
       setLoading(false);
@@ -95,63 +96,73 @@ export default function AdminTracksPage() {
     try {
       const response = await trackService.createTrack(formData);
       if (response.success) {
-        toast.success('Track created successfully');
+        toast.success("Track created successfully");
         setIsCreateDialogOpen(false);
         setFormData({
-          name: '',
-          description: '',
-          color: '#3B82F6',
+          name: "",
+          description: "",
+          trackId: "",
+          color: "#3B82F6",
           isActive: true,
         });
         fetchTracks();
       } else {
-        toast.error(response.message || 'Failed to create track');
+        toast.error(response.message || "Failed to create track");
       }
     } catch (error) {
-      console.error('Error creating track:', error);
-      toast.error('Error creating track');
+      console.error("Error creating track:", error);
+      toast.error("Error creating track");
     }
   };
 
   const handleEditTrack = async () => {
     if (!selectedTrack) return;
-    
+
     try {
-      const response = await trackService.updateTrack(selectedTrack._id, formData);
+      const response = await trackService.updateTrack(
+        selectedTrack._id,
+        formData
+      );
       if (response.success) {
-        toast.success('Track updated successfully');
+        toast.success("Track updated successfully");
         setIsEditDialogOpen(false);
         setSelectedTrack(null);
         setFormData({
-          name: '',
-          description: '',
-          color: '#3B82F6',
+          name: "",
+          description: "",
+          trackId: "",
+          color: "#3B82F6",
           isActive: true,
         });
         fetchTracks();
       } else {
-        toast.error(response.message || 'Failed to update track');
+        toast.error(response.message || "Failed to update track");
       }
     } catch (error) {
-      console.error('Error updating track:', error);
-      toast.error('Error updating track');
+      console.error("Error updating track:", error);
+      toast.error("Error updating track");
     }
   };
 
-  const handleToggleActive = async (trackId: string, currentStatus: boolean) => {
+  const handleToggleActive = async (
+    trackId: string,
+    currentStatus: boolean
+  ) => {
     try {
       const response = await trackService.updateTrack(trackId, {
         isActive: !currentStatus,
       });
       if (response.success) {
-        toast.success(`Track ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
+        toast.success(
+          `Track ${!currentStatus ? "activated" : "deactivated"} successfully`
+        );
         fetchTracks();
       } else {
-        toast.error('Failed to update track status');
+        toast.error("Failed to update track status");
       }
     } catch (error) {
-      console.error('Error updating track status:', error);
-      toast.error('Error updating track status');
+      console.error("Error updating track status:", error);
+      toast.error("Error updating track status");
     }
   };
 
@@ -159,18 +170,18 @@ export default function AdminTracksPage() {
     if (!confirm(`Are you sure you want to delete the track "${trackName}"?`)) {
       return;
     }
-    
+
     try {
       const response = await trackService.deleteTrack(trackId);
       if (response.success) {
-        toast.success('Track deleted successfully');
+        toast.success("Track deleted successfully");
         fetchTracks();
       } else {
-        toast.error(response.message || 'Failed to delete track');
+        toast.error(response.message || "Failed to delete track");
       }
     } catch (error) {
-      console.error('Error deleting track:', error);
-      toast.error('Error deleting track');
+      console.error("Error deleting track:", error);
+      toast.error("Error deleting track");
     }
   };
 
@@ -178,16 +189,18 @@ export default function AdminTracksPage() {
     setSelectedTrack(track);
     setFormData({
       name: track.name,
-      description: track.description || '',
-      color: track.color || '#3B82F6',
+      trackId: track.trackId || "",
+      description: track.description || "",
+      color: track.color || "#3B82F6",
       isActive: track.isActive,
     });
     setIsEditDialogOpen(true);
   };
 
-  const filteredTracks = tracks.filter((track) =>
-    track.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    track.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTracks = tracks.filter(
+    (track) =>
+      track.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      track.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -235,6 +248,17 @@ export default function AdminTracksPage() {
                     setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder="Enter track name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="name">Track ID</Label>
+                <Input
+                  id="name"
+                  value={formData.trackId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, trackId: e.target.value })
+                  }
+                  placeholder="e.g cloud-computing"
                 />
               </div>
               <div>
@@ -297,7 +321,9 @@ export default function AdminTracksPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Inactive Tracks</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Inactive Tracks
+            </CardTitle>
             <EyeOff className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -351,24 +377,26 @@ export default function AdminTracksPage() {
                       />
                       <div>
                         <p className="font-medium">{track.name}</p>
-                        <p className="text-sm text-gray-500">Slug: {track?.trackId}</p>
+                        <p className="text-sm text-gray-500">
+                          trackId: {track?.trackId}
+                        </p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <p className="max-w-xs truncate">
-                      {track.description || 'No description'}
+                      {track.description || "No description"}
                     </p>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={track.isActive ? 'default' : 'secondary'}>
-                      {track.isActive ? 'Active' : 'Inactive'}
+                    <Badge variant={track.isActive ? "default" : "secondary"}>
+                      {track.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     {track.createdAt
                       ? new Date(track.createdAt).toLocaleDateString()
-                      : 'N/A'}
+                      : "N/A"}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -383,7 +411,9 @@ export default function AdminTracksPage() {
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleToggleActive(track._id, track.isActive)}
+                          onClick={() =>
+                            handleToggleActive(track._id, track.isActive)
+                          }
                         >
                           {track.isActive ? (
                             <>
@@ -398,7 +428,9 @@ export default function AdminTracksPage() {
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDeleteTrack(track._id, track.name)}
+                          onClick={() =>
+                            handleDeleteTrack(track._id, track.name)
+                          }
                           className="text-red-600"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
@@ -419,9 +451,7 @@ export default function AdminTracksPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Track</DialogTitle>
-            <DialogDescription>
-              Update the track information
-            </DialogDescription>
+            <DialogDescription>Update the track information</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

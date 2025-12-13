@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IAssessment extends Document {
   _id: string;
-  application: mongoose.Types.ObjectId; // Required - links to Application
+  application: mongoose.Types.ObjectId; // Required - links to Application (which contains track info)
   fileUrl?: string;
   linkUrl?: string;
   notes?: string; // Optional notes from applicant

@@ -1,131 +1,105 @@
 import apiClient from './apiClient';
-import { IInterviewSlot, ApiResponse } from '@/types';
 
 export const interviewSlotService = {
   // Create interview slots (admin/mentor)
-  createSlots: async (data: {
-    cohortId: string;
-    trackId: string;
-    startDate: string;
-    endDate: string;
-    startTime: string;
-    endTime: string;
-    slotDuration: number;
-    meetingLink?: string;
-    notes?: string;
-  }): Promise<ApiResponse<IInterviewSlot[]>> => {
+  createSlots: async (
+    data:
+      | {
+        mode: 'bulk';
+        startDate: string;
+        endDate: string;
+        startTime: string;
+        endTime: string;
+        slotDuration: number;
+        maxInterviews?: number;
+        tracks: string[];
+        meetingLink?: string;
+        notes?: string;
+        cohortId: string;
+      }
+      | {
+        mode: 'manual';
+        cohortId: string;
+        slots: {
+          date: string;
+          startTime: string;
+          endTime: string;
+          duration: number;
+          maxInterviews?: number;
+          tracks: string[];
+          meetingLink?: string;
+          notes?: string;
+        }[];
+      }
+  ) => {
     return apiClient.post('/interviews/slots', data);
   },
 
   // Get all interview slots (Admin only)
   getAllSlots: async (params?: {
-    cohortId?: string;
-    trackId?: string;
-    mentorId?: string;
+    interviewer?: string;
     date?: string;
+    track?: string;
     status?: string;
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<IInterviewSlot[]>> => {
-    return apiClient.get('/interviews/slots', { params });
+  }) => {
+    const response = await apiClient.get('/interviews/slots/all', { params });
+    return response.data
   },
 
-  // Get mentor's interview slots
-  getMentorSlots: async (params?: {
-    cohortId?: string;
-    trackId?: string;
+  // Get current user's interview slots
+  getSlots: async (params?: {
+    interviewer?: string;
     date?: string;
-    status?: string;
+    available?: boolean;
+    interviewType?: string;
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<IInterviewSlot[]>> => {
-    return apiClient.get('/interviews/slots/mentor', { params });
+  }) => {
+    return apiClient.get('/interviews/slots/my-slots', { params });
   },
 
-  // Get available slots for booking (for current active cohort)
-  getAvailableSlots: async (
-    trackId?: string
-  ): Promise<ApiResponse<IInterviewSlot[]>> => {
-    return apiClient.get('/interviews/slots/available', {
-      params: trackId ? { trackId } : {},
-    });
+  // Get available slots for booking
+  getAvailableSlots: async (params?: {
+    startDate?: string;
+    endDate?: string;
+    interviewType?: string;
+  }) => {
+    return apiClient.get('/interviews/slots/available', { params });
   },
 
-  // Get slot by ID
-  getSlotById: async (slotId: string): Promise<ApiResponse<IInterviewSlot>> => {
-    return apiClient.get(`/interviews/slots/${slotId}`);
-  },
-
-  // Legacy method alias
-  getSlot: async (slotId: string): Promise<ApiResponse<IInterviewSlot>> => {
-    return apiClient.get(`/interviews/slots/${slotId}`);
-  },
-
-  // Update interview slot (mentor/admin)
+  // Update interview slot
   updateSlot: async (
     slotId: string,
     data: {
       date?: string;
       startTime?: string;
       endTime?: string;
+      status?: string;
+      duration?: number;
+      maxInterviews?: number;
       meetingLink?: string;
       notes?: string;
-      status?: 'available' | 'booked' | 'completed' | 'cancelled';
+      isAvailable?: boolean;
+      tracks?: string[];
     }
-  ): Promise<ApiResponse<IInterviewSlot>> => {
+  ) => {
     return apiClient.patch(`/interviews/slots/${slotId}`, data);
   },
 
-  // Delete interview slot (mentor/admin)
-  deleteSlot: async (slotId: string): Promise<ApiResponse<void>> => {
+  // Delete interview slot
+  deleteSlot: async (slotId: string) => {
     return apiClient.delete(`/interviews/slots/${slotId}`);
   },
 
-  // Book an interview slot (for application)
-  bookSlot: async (
-    slotId: string,
-    applicationId: string
-  ): Promise<ApiResponse<IInterviewSlot>> => {
-    return apiClient.post(`/interviews/slots/${slotId}/book`, {
-      applicationId,
-    });
+  // Book an interview slot (applicant)
+  bookSlot: async (slotId: string, applicantId: string) => {
+    return apiClient.post(`/interviews/schedule`, { applicantId, slotId });
   },
 
-  // Cancel booked slot
-  cancelBooking: async (
-    slotId: string
-  ): Promise<ApiResponse<IInterviewSlot>> => {
-    return apiClient.post(`/interviews/slots/${slotId}/cancel`);
-  },
-
-  // Mark slot as completed with feedback
-  completeInterview: async (
-    slotId: string,
-    feedback: {
-      notes?: string;
-      passed?: boolean;
-    }
-  ): Promise<ApiResponse<IInterviewSlot>> => {
-    return apiClient.post(`/interviews/slots/${slotId}/complete`, feedback);
-  },
-
-  // Get slots for a specific cohort and track
-  getSlotsByCohortTrack: async (
-    cohortId: string,
-    trackId: string
-  ): Promise<ApiResponse<IInterviewSlot[]>> => {
-    return apiClient.get(
-      `/interviews/slots/cohort/${cohortId}/track/${trackId}`
-    );
-  },
-
-  // Get interview statistics
-  getInterviewStats: async (
-    cohortId?: string,
-    trackId?: string
-  ): Promise<ApiResponse<any>> => {
-    return apiClient.get('/interviews/stats', {
-      params: { cohortId, trackId },
-    });
+  // Get slot details
+  getSlot: async (slotId: string) => {
+    return apiClient.get(`/interviews/slots/${slotId}`);
   },
 };

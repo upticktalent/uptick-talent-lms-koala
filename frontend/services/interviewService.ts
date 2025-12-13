@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import apiClient from "./apiClient";
 
 export const interviewService = {
   // Create interview (admin/mentor)
@@ -11,7 +11,7 @@ export const interviewService = {
     interviewLink?: string;
     notes?: string;
   }) => {
-    return apiClient.post('/interviews', data);
+    return apiClient.post("/interviews", data);
   },
 
   // Schedule interview (public - for applicants)
@@ -19,7 +19,7 @@ export const interviewService = {
     applicationId: string;
     slotId: string;
   }) => {
-    return apiClient.post('/interviews/schedule', data);
+    return apiClient.post("/interviews/schedule", data);
   },
 
   // Get all interviews (admin/mentor)
@@ -31,8 +31,9 @@ export const interviewService = {
     interviewType?: string;
     page?: number;
     limit?: number;
+    cohort?: string;
   }) => {
-    return apiClient.get('/interviews', { params });
+    return apiClient.get("/interviews", { params });
   },
 
   // Update interview (admin/mentor)
@@ -59,7 +60,7 @@ export const interviewService = {
     interviewId: string,
     data: {
       feedback: string;
-      status: 'accepted' | 'rejected';
+      status: "accepted" | "rejected";
       rating?: number;
       notes?: string;
     }
@@ -116,7 +117,7 @@ export const interviewService = {
     applicationId?: string;
     date?: string;
   }) => {
-    return apiClient.get('/interviews/slots/available', { params });
+    return apiClient.get("/interviews/slots/available", { params });
   },
 
   // Get interviews for applicant
@@ -130,6 +131,6 @@ export const interviewService = {
     endDate?: string;
     interviewer?: string;
   }) => {
-    return apiClient.get('/interviews/stats', { params });
+    return apiClient.get("/interviews/stats", { params });
   },
 };

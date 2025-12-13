@@ -14,15 +14,8 @@ export const getStreams = asyncHandler(
     // Build filter
     const filter: any = { isPublished: true };
 
-    if (cohortId) {
-      if (!isValidObjectId(cohortId as string)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid cohort ID",
-        });
-      }
-      filter.cohort = cohortId;
-    }
+    // Note: cohortId is used for validation but streams are filtered by track
+    // since tracks belong to cohorts. Cohort validation happens in track filtering.
 
     if (trackId) {
       if (!isValidObjectId(trackId as string)) {
@@ -41,15 +34,14 @@ export const getStreams = asyncHandler(
     const skip = (Number(page) - 1) * Number(limit);
 
     const streams = await Stream.find(filter)
-      .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role")
       .populate("reactions.user", "firstName lastName")
       .populate("comments.user", "firstName lastName")
-      .populate("comments.replies.user", "firstName lastName")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+      .populate("comments.replies.user", "firstName lastName");
 
     const total = await Stream.countDocuments(filter);
 
@@ -82,8 +74,7 @@ export const getStreamById = asyncHandler(
     }
 
     const stream = await Stream.findById(id)
-      .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role")
       .populate("reactions.user", "firstName lastName")
       .populate("comments.user", "firstName lastName")
@@ -148,7 +139,6 @@ export const createStream = asyncHandler(
     }
 
     const stream = new Stream({
-      cohort: cohortId,
       track: trackId,
       title,
       content,
@@ -161,8 +151,7 @@ export const createStream = asyncHandler(
     await stream.save();
 
     const populatedStream = await Stream.findById(stream._id)
-      .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role");
 
     res.status(201).json({
@@ -206,13 +195,10 @@ export const updateStream = asyncHandler(
       });
     }
 
-    const updatedStream = await Stream.findByIdAndUpdate(
-      id,
-      { ...updates, updatedAt: new Date() },
-      { new: true, runValidators: true },
-    )
-      .populate("cohort", "name cohortNumber description")
-      .populate("track", "name trackId description color")
+    const updatedStream = await Stream.findByIdAndUpdate(id, updates, {
+      new: true,
+    })
+      .populate("track", "name trackId description isActive")
       .populate("createdBy", "firstName lastName email role");
 
     res.status(200).json({
@@ -461,20 +447,28 @@ export const getStudentStreams = asyncHandler(
     const userId = req.user!.id;
 
     // Get user's current cohort and track
-    const user = await User.findById(userId).select(
-      "currentCohort currentTrack",
-    );
+    const user = await User.findById(req.user._id).select("trackAssignments");
 
-    if (!user || !user.currentCohort || !user.currentTrack) {
+    if (!user || !user.trackAssignments || user.trackAssignments.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "User is not enrolled in any cohort or track",
+        message: "User is not enrolled in any track",
+      });
+    }
+
+    // Use the first active track assignment
+    const activeAssignment = (user.trackAssignments as any[]).find(
+      (assignment: any) => assignment.isActive,
+    );
+    if (!activeAssignment) {
+      return res.status(400).json({
+        success: false,
+        message: "User has no active track assignment",
       });
     }
 
     const streams = await Stream.find({
-      cohort: user.currentCohort,
-      track: user.currentTrack,
+      track: activeAssignment.track,
       isPublished: true,
       $or: [
         { scheduledFor: { $exists: false } },
@@ -503,19 +497,25 @@ export const getMentorStreams = asyncHandler(
     const userId = req.user!.id;
 
     // Get user's assigned tracks
-    const user = await User.findById(userId).select("assignedTracks");
+    const user = await User.findById(userId).select("trackAssignments");
 
-    if (!user || !user.assignedTracks || user.assignedTracks.length === 0) {
+    if (!user || !user.trackAssignments || user.trackAssignments.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Mentor is not assigned to any tracks",
       });
     }
 
+    const mentorTrackIds = (user.trackAssignments as any[])
+      .filter(
+        (assignment: any) =>
+          assignment.role === "mentor" && assignment.isActive,
+      )
+      .map((assignment: any) => assignment.track);
+
     const streams = await Stream.find({
-      track: { $in: user.assignedTracks },
+      track: { $in: mentorTrackIds },
     })
-      .populate("cohort", "name cohortNumber")
       .populate("track", "name trackId")
       .populate("createdBy", "firstName lastName")
       .populate("reactions.user", "firstName lastName")
@@ -536,7 +536,7 @@ export const uploadAttachment = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     try {
       const files = req.files as Express.Multer.File[];
-      
+
       if (!files || files.length === 0) {
         return res.status(400).json({
           success: false,
@@ -546,15 +546,17 @@ export const uploadAttachment = asyncHandler(
 
       const uploadedFiles = files.map((file: any) => {
         // Determine file type based on mimetype
-        let fileType = 'file';
-        if (file.mimetype.startsWith('image/')) {
-          fileType = 'image';
-        } else if (file.mimetype.startsWith('video/')) {
-          fileType = 'video';
-        } else if (file.mimetype === 'application/pdf' || 
-                   file.mimetype.includes('document') || 
-                   file.mimetype === 'text/plain') {
-          fileType = 'document';
+        let fileType = "file";
+        if (file.mimetype.startsWith("image/")) {
+          fileType = "image";
+        } else if (file.mimetype.startsWith("video/")) {
+          fileType = "video";
+        } else if (
+          file.mimetype === "application/pdf" ||
+          file.mimetype.includes("document") ||
+          file.mimetype === "text/plain"
+        ) {
+          fileType = "document";
         }
 
         return {

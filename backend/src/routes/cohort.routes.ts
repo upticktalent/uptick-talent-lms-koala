@@ -13,6 +13,11 @@ import {
   addMentorToTrack,
   removeMentorFromTrack,
   getTrackInActiveCohort,
+  getCohortComplete,
+  getCohortTrackData,
+  getCohortStatistics,
+  getCohortApplications,
+  getCohortStudents,
 } from "../controllers/cohort.controller";
 import { authenticate, authorize } from "../middleware/auth";
 
@@ -43,5 +48,12 @@ router.delete("/:id/tracks/:trackId", removeTrackFromCohort);
 // Mentor management within cohort tracks
 router.post("/:id/tracks/:trackId/mentors", addMentorToTrack);
 router.delete("/:id/tracks/:trackId/mentors/:mentorId", removeMentorFromTrack);
+
+// New Cohort-Centric Routes
+router.get("/:cohortId/complete", getCohortComplete);
+router.get("/:cohortId/tracks/:trackId", getCohortTrackData);
+router.get("/:cohortId/statistics", getCohortStatistics);
+router.get("/:cohortId/applications", getCohortApplications);
+router.get("/:cohortId/students", getCohortStudents);
 
 export default router;

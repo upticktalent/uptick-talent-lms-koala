@@ -3,8 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IApplication extends Document {
   _id: string;
   applicant: mongoose.Types.ObjectId;
-  cohort: mongoose.Types.ObjectId;
-  track: mongoose.Types.ObjectId;
+  cohort: mongoose.Types.ObjectId; // Cohort reference for cohort-centric approach
+  track: mongoose.Types.ObjectId; // Track within the cohort
   cvUrl: string;
   tools: string[];
   status: "pending" | "under-review" | "accepted" | "rejected" | "shortlisted";
