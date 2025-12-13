@@ -326,174 +326,176 @@ export default function TracksPage() {
 
       {/* Tracks Table */}
       <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader className="bg-gray-50">
-            <TableRow>
-              <TableHead className="w-[300px]">Track Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Students</TableHead>
-              <TableHead>Mentors</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTracks.length > 0 ? (
-              filteredTracks.map((cohortTrack: any) => {
-                const track = cohortTrack.track;
-                return (
-                  <TableRow
-                    key={cohortTrack._id || track?._id}
-                    className={`cursor-pointer transition-colors duration-200 group ${
-                      isMentor &&
-                      (isMentorAssignedToTrack(track?._id) ||
-                        isMentorAssignedToTrack(track?.trackId))
-                        ? "hover:bg-green-50 bg-green-25 border-l-2 border-l-green-400"
-                        : "hover:bg-blue-50"
-                    }`}
-                    onClick={() =>
-                      router.push(`/lms/track/${track?.trackId}/stream`)
-                    }
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200 flex items-center gap-2">
-                            {track?.name || "Unknown Track"}
-                            {isMentor &&
-                              (isMentorAssignedToTrack(track?._id) ||
-                                isMentorAssignedToTrack(track?.trackId)) && (
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-green-100 text-green-800 text-xs px-2 py-0.5 border-green-200"
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-gray-50">
+              <TableRow>
+                <TableHead className="w-[300px]">Track Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Students</TableHead>
+                <TableHead>Mentors</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTracks.length > 0 ? (
+                filteredTracks.map((cohortTrack: any) => {
+                  const track = cohortTrack.track;
+                  return (
+                    <TableRow
+                      key={cohortTrack._id || track?._id}
+                      className={`cursor-pointer transition-colors duration-200 group ${
+                        isMentor &&
+                        (isMentorAssignedToTrack(track?._id) ||
+                          isMentorAssignedToTrack(track?.trackId))
+                          ? "hover:bg-green-50 bg-green-25 border-l-2 border-l-green-400"
+                          : "hover:bg-blue-50"
+                      }`}
+                      onClick={() =>
+                        router.push(`/lms/track/${track?.trackId}/stream`)
+                      }
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-200 flex items-center gap-2">
+                              {track?.name || "Unknown Track"}
+                              {isMentor &&
+                                (isMentorAssignedToTrack(track?._id) ||
+                                  isMentorAssignedToTrack(track?.trackId)) && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-green-100 text-green-800 text-xs px-2 py-0.5 border-green-200"
+                                  >
+                                    Your Track
+                                  </Badge>
+                                )}
+                              <div className="text-gray-400 group-hover:text-blue-500 transition-colors duration-200">
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
                                 >
-                                  Your Track
-                                </Badge>
-                              )}
-                            <div className="text-gray-400 group-hover:text-blue-500 transition-colors duration-200">
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 5l7 7-7 7"
-                                />
-                              </svg>
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 5l7 7-7 7"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-500 truncate max-w-[200px] group-hover:text-gray-600 transition-colors duration-200">
+                              {track?.description || "No description available"}
+                            </div>
+                            <div className="text-xs text-blue-600 mt-1 group-hover:text-blue-700 transition-colors duration-200">
+                              Cohort: {currentCohort?.name} • Click to view
+                              details
                             </div>
                           </div>
-                          <div className="text-sm text-gray-500 truncate max-w-[200px] group-hover:text-gray-600 transition-colors duration-200">
-                            {track?.description || "No description available"}
-                          </div>
-                          <div className="text-xs text-blue-600 mt-1 group-hover:text-blue-700 transition-colors duration-200">
-                            Cohort: {currentCohort?.name} • Click to view
-                            details
-                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={track?.isActive ? "default" : "secondary"}
-                        className={
-                          track?.isActive
-                            ? "bg-green-100 text-green-800 hover:bg-green-200"
-                            : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-                        }
-                      >
-                        {track?.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Users className="w-4 h-4" />
-                        <span className="font-medium">
-                          {cohortTrack.currentStudents || 0}
-                        </span>
-                        {cohortTrack.maxStudents && (
-                          <span className="text-xs text-gray-400">
-                            / {cohortTrack.maxStudents}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={track?.isActive ? "default" : "secondary"}
+                          className={
+                            track?.isActive
+                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                              : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                          }
+                        >
+                          {track?.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Users className="w-4 h-4" />
+                          <span className="font-medium">
+                            {cohortTrack.currentStudents || 0}
                           </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <UserCheck className="w-4 h-4" />
-                        <span className="font-medium">
-                          {cohortTrack.mentors?.length || 0}
-                        </span>
-                        {cohortTrack.mentors?.length > 0 && (
-                          <div className="text-xs text-gray-500 ml-1">
-                            {cohortTrack.mentors
-                              .slice(0, 2)
-                              .map((mentor: any, index: number) => (
-                                <span key={mentor._id || index}>
-                                  {mentor.firstName} {mentor.lastName}
-                                  {index <
-                                    Math.min(
-                                      cohortTrack.mentors.length - 1,
-                                      1
-                                    ) && ", "}
-                                </span>
-                              ))}
-                            {cohortTrack.mentors.length > 2 && (
-                              <span>
-                                {" "}
-                                +{cohortTrack.mentors.length - 2} more
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <Link href={`/lms/track/${track?.trackId}`}>
-                            <DropdownMenuItem className="cursor-pointer">
-                              View Details
-                            </DropdownMenuItem>
-                          </Link>
-                          {isAdmin && (
-                            <>
-                              <DropdownMenuItem className="cursor-pointer">
-                                Edit Track
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="cursor-pointer">
-                                Manage Mentors
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600 cursor-pointer">
-                                Remove from Cohort
-                              </DropdownMenuItem>
-                            </>
+                          {cohortTrack.maxStudents && (
+                            <span className="text-xs text-gray-400">
+                              / {cohortTrack.maxStudents}
+                            </span>
                           )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  {currentCohort
-                    ? "No tracks found in the current active cohort."
-                    : "No active cohort found. Please create or activate a cohort first."}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <UserCheck className="w-4 h-4" />
+                          <span className="font-medium">
+                            {cohortTrack.mentors?.length || 0}
+                          </span>
+                          {cohortTrack.mentors?.length > 0 && (
+                            <div className="text-xs text-gray-500 ml-1">
+                              {cohortTrack.mentors
+                                .slice(0, 2)
+                                .map((mentor: any, index: number) => (
+                                  <span key={mentor._id || index}>
+                                    {mentor.firstName} {mentor.lastName}
+                                    {index <
+                                      Math.min(
+                                        cohortTrack.mentors.length - 1,
+                                        1
+                                      ) && ", "}
+                                  </span>
+                                ))}
+                              {cohortTrack.mentors.length > 2 && (
+                                <span>
+                                  {" "}
+                                  +{cohortTrack.mentors.length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <Link href={`/lms/track/${track?.trackId}`}>
+                              <DropdownMenuItem className="cursor-pointer">
+                                View Details
+                              </DropdownMenuItem>
+                            </Link>
+                            {isAdmin && (
+                              <>
+                                <DropdownMenuItem className="cursor-pointer">
+                                  Edit Track
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="cursor-pointer">
+                                  Manage Mentors
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-600 cursor-pointer">
+                                  Remove from Cohort
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    {currentCohort
+                      ? "No tracks found in the current active cohort."
+                      : "No active cohort found. Please create or activate a cohort first."}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
