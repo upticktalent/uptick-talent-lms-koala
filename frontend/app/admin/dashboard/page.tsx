@@ -224,8 +224,8 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        <p className="text-sm sm:text-base text-gray-600 mt-2">
           Welcome to the system administration panel. Manage all aspects of
           Uptick Talent LMS.
         </p>

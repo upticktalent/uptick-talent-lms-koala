@@ -409,10 +409,10 @@ export default function CohortsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Cohorts</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Cohorts</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Manage student cohorts and track assignments
           </p>
           {availableMentors.length === 0 && (
@@ -729,7 +729,7 @@ export default function CohortsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Cohorts</CardTitle>
@@ -781,8 +781,8 @@ export default function CohortsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search cohorts..."
@@ -792,7 +792,7 @@ export default function CohortsPage() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">           
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -807,7 +807,8 @@ export default function CohortsPage() {
 
       {/* Cohorts Table */}
       <Card>
-        <Table>
+        <div className="overflow-x-auto">
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Cohort</TableHead>
@@ -956,13 +957,12 @@ export default function CohortsPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))
+                ))
             )}
           </TableBody>
         </Table>
-      </Card>
-
-      {/* Edit Dialog */}
+        </div>
+      </Card>      {/* Edit Dialog */}
       <Dialog
         open={!!editingCohort}
         onOpenChange={(open) => !open && setEditingCohort(null)}

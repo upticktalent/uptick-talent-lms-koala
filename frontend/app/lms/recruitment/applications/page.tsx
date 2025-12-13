@@ -317,7 +317,8 @@ export default function ApplicationsPage() {
               <p>No applications found matching your criteria.</p>
             </div>
           ) : (
-            <Table>
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader className='bg-gray-50/50'>
                 <TableRow>
                   <TableHead className='py-4 font-semibold text-gray-900'>
@@ -423,6 +424,7 @@ export default function ApplicationsPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </div>
 

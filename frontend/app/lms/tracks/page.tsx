@@ -326,7 +326,8 @@ export default function TracksPage() {
 
       {/* Tracks Table */}
       <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-        <Table>
+        <div className="overflow-x-auto">
+          <Table>
           <TableHeader className="bg-gray-50">
             <TableRow>
               <TableHead className="w-[300px]">Track Name</TableHead>
@@ -494,6 +495,7 @@ export default function TracksPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   );

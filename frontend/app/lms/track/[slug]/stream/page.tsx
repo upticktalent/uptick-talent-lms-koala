@@ -192,28 +192,28 @@ export default function StreamPage() {
   return (
     <div className=" space-y-6">
       {/* Banner */}
-      <div className="relative space-y-6 mt-6 w-full h-60 rounded-xl overflow-hidden bg-linear-to-r from-blue-600 to-blue-400 text-white p-8 flex flex-col justify-end">
+      <div className="relative space-y-4 sm:space-y-6 mt-4 sm:mt-6 w-full h-48 sm:h-60 rounded-xl overflow-hidden bg-linear-to-r from-blue-600 to-blue-400 text-white p-4 sm:p-6 md:p-8 flex flex-col justify-end">
         <div className="relative z-10">
-          <h1 className="text-4xl font-bold mb-2">{track?.name}</h1>
-          <p className="text-xl opacity-90">Uptick Talent Fellowship</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 sm:mb-2 break-words">{track?.name}</h1>
+          <p className="text-base sm:text-lg md:text-xl opacity-90">Uptick Talent Fellowship</p>
         </div>
         {/* Decorative Circle/Graphic Placeholder */}
         <div className="absolute right-0 bottom-0 opacity-10 transform translate-x-1/4 translate-y-1/4">
-          <div className="w-96 h-96 rounded-full bg-white"></div>
+          <div className="w-64 sm:w-80 md:w-96 h-64 sm:h-80 md:h-96 rounded-full bg-white"></div>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="absolute bottom-4 right-4 text-white hover:bg-white/20 rounded-full"
+          className="absolute bottom-2 sm:bottom-4 right-2 sm:right-4 text-white hover:bg-white/20 rounded-full w-8 h-8 sm:w-10 sm:h-10"
         >
-          <Info className="w-5 h-5" />
+          <Info className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Left Column: Upcoming - Students Only */}
         {user?.role === "student" && (
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             <Card className="border border-gray-200 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-700">
@@ -232,12 +232,12 @@ export default function StreamPage() {
                         key={task._id}
                         className="p-3 border rounded-lg bg-gray-50"
                       >
-                        <h4 className="text-sm font-medium text-gray-900 mb-1">
+                        <h4 className="text-sm font-medium text-gray-900 mb-1 break-words">
                           {task.title}
                         </h4>
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span className="capitalize">{task.type}</span>
-                          <span>
+                        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-1 text-xs text-gray-500">
+                          <span className="capitalize shrink-0">{task.type}</span>
+                          <span className="shrink-0">
                             Due {new Date(task.dueDate).toLocaleDateString()}
                           </span>
                         </div>
@@ -275,26 +275,27 @@ export default function StreamPage() {
 
         {/* Right Column: Stream Feed */}
         <div
-          className={`space-y-6 ${
+          className={`space-y-4 sm:space-y-6 ${
             user?.role === "student" ? "lg:col-span-3" : "lg:col-span-4"
           }`}
         >
           {/* Create Stream Section */}
           {(user?.role === "mentor" || user?.role === "admin") && (
             <Card className="border border-gray-200 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium">
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-medium break-words">
                       Share something with {track?.name || "the track"}
                     </h3>
                     <p className="text-xs text-muted-foreground">
                       Create announcements, lessons, or updates
                     </p>
                   </div>
-                  <Button onClick={() => setCreateStreamOpen(true)}>
+                  <Button onClick={() => setCreateStreamOpen(true)} className="shrink-0">
                     <Plus className="h-4 w-4 mr-2" />
-                    Create Stream
+                    <span className="hidden xs:inline">Create Stream</span>
+                    <span className="xs:hidden">Create</span>
                   </Button>
                 </div>
               </CardContent>
@@ -323,9 +324,9 @@ export default function StreamPage() {
                   key={item._id}
                   className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
+                  <CardHeader className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
                     <div
-                      className="flex items-center gap-4 flex-1"
+                      className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 w-full sm:w-auto"
                       onClick={() => setViewingItem(item)}
                     >
                       <div
@@ -342,8 +343,8 @@ export default function StreamPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                          <h3 className="text-sm font-medium text-gray-900 break-words">
                             <span className="font-semibold">{item.author}</span>{" "}
                             posted a new{" "}
                             {item.feedType === "task" ? item.type : item.type}:
@@ -352,22 +353,23 @@ export default function StreamPage() {
                             </span>
                           </h3>
                           <Badge
-                            className={getTypeColor(item.type)}
+                            className={`${getTypeColor(item.type)} shrink-0`}
                             variant="secondary"
                           >
                             {item.type}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>{item.date}</span>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
+                          <span className="shrink-0">{item.date}</span>
                           {item.feedType === "task" && item.dueDate && (
-                            <span className="flex items-center gap-1 text-orange-600 font-medium">
+                            <span className="flex items-center gap-1 text-orange-600 font-medium shrink-0">
                               <Calendar className="h-3 w-3" />
-                              Due {new Date(item.dueDate).toLocaleDateString()}
+                              <span className="hidden xs:inline">Due </span>
+                              {new Date(item.dueDate).toLocaleDateString()}
                             </span>
                           )}
                           {item.feedType === "task" && item.maxScore && (
-                            <span className="text-blue-600 font-medium">
+                            <span className="text-blue-600 font-medium shrink-0">
                               {item.maxScore} points
                             </span>
                           )}
@@ -381,7 +383,7 @@ export default function StreamPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 shrink-0"
                           >
                             <MoreVertical className="w-4 h-4 text-gray-500" />
                           </Button>
@@ -407,7 +409,7 @@ export default function StreamPage() {
 
                   {/* Content Preview for Streams */}
                   {item.feedType === "stream" && item.content && (
-                    <CardContent className="pt-0 pb-4 px-4 ml-14">
+                    <CardContent className="pt-0 pb-3 sm:pb-4 px-3 sm:px-4 ml-0 sm:ml-14">
                       <p className="text-sm text-gray-700 line-clamp-3">
                         {item.content}
                       </p>
@@ -420,7 +422,7 @@ export default function StreamPage() {
                             .map((attachment: any, index: number) => (
                               <div
                                 key={index}
-                                className="flex items-center gap-2 p-2 bg-gray-50 rounded border text-sm"
+                                className="flex items-center gap-2 p-2 bg-gray-50 rounded border text-sm overflow-hidden"
                               >
                                 {attachment.type === "link" && (
                                   <Link2 className="h-4 w-4 text-blue-500 shrink-0" />
@@ -469,7 +471,7 @@ export default function StreamPage() {
                             .map((attachment: any) => (
                               <div
                                 key={attachment._id}
-                                className="flex items-center gap-2 p-2 border rounded"
+                                className="flex items-center gap-2 p-2 border rounded overflow-hidden"
                               >
                                 <FileText className="h-4 w-4" />
                                 <a
@@ -486,7 +488,7 @@ export default function StreamPage() {
                       )}
 
                       {/* Reactions for Streams */}
-                      <div className="flex items-center gap-4 pt-4 border-t mt-4">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 pt-3 sm:pt-4 border-t mt-3 sm:mt-4">
                         <Button
                           variant="ghost"
                           size="sm"
